@@ -1,12 +1,10 @@
 require('dotenv').config();
 const User = require("../shcema/User");
 const { generateAccessToken, generateRefreshToken } = require("../Util/tokenUtils");
-
-// Use fetch for sending SMS
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
-// In-memory OTP store (for testing only)
-const otpStore = {}; // { phoneNumber: { otp: "123456", expiresAt: 1234567890 } }
+
+const otpStore = {}; 
 
 exports.sendOtp = async (req, res) => {
   const { phoneNumber } = req.body;

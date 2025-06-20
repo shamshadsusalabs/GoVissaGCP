@@ -47,7 +47,7 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("https://govisaagcp-583006320489.asia-south2.run.app/api/VisaApplication/stats")
+        const response = await fetch("http://localhost:5000/api/VisaApplication/stats")
         if (!response.ok) {
           throw new Error("Failed to fetch stats")
         }

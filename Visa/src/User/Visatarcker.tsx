@@ -24,7 +24,7 @@ const VisaStatusTracker = () => {
     const fetchStatus = async () => {
       try {
         const response = await fetch(
-          `https://govisaagcp-583006320489.asia-south2.run.app/api/VisaApplication/status/${paymentId}`
+          `http://localhost:5000/api/VisaApplication/status/${paymentId}`
         );
         const data = await response.json();
         

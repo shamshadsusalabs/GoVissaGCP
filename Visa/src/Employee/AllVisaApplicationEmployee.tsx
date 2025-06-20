@@ -80,7 +80,7 @@ export default function AllVisaIssued() {
         const employee = JSON.parse(employeeData)
         const employeeId = employee.id
 
-        const response = await fetch(`https://govisaagcp-583006320489.asia-south2.run.app/api/employee/getByUserId/${employeeId}/visas`)
+        const response = await fetch(`http://localhost:5000/api/employee/getByUserId/${employeeId}/visas`)
         if (response.ok) {
           const data: ApiResponse = await response.json()
           setApplications(data.visaDetails)
@@ -160,7 +160,7 @@ export default function AllVisaIssued() {
     if (!selectedApp || !newStatus.trim()) return
 
     try {
-      const response = await fetch(`https://govisaagcp-583006320489.asia-south2.run.app/api/VisaApplication/visa-status/${selectedApp._id}`, {
+      const response = await fetch(`http://localhost:5000/api/VisaApplication/visa-status/${selectedApp._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: newStatus }),

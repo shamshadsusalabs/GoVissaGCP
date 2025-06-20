@@ -40,7 +40,7 @@ export default function UploadDocuments() {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await fetch(`https://govisaagcp-583006320489.asia-south2.run.app/api/configurations/documents/${visaId}/documents-only`)
+        const response = await fetch(`http://localhost:5000/api/configurations/documents/${visaId}/documents-only`)
         const data = await response.json()
         if (data.success) {
           const docsWithSides = data.documents.map((doc: Document) => ({
@@ -96,7 +96,7 @@ export default function UploadDocuments() {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 30000)
 
-        const response = await fetch("http://localhost:8000/upload", {
+        const response = await fetch("https://govissagcp-872569311567.asia-south2.run.app/upload", {
           method: "POST",
           body: formData,
           signal: controller.signal,
@@ -326,7 +326,7 @@ export default function UploadDocuments() {
 
       console.log("🚀 Submitting visa application for", travellersCount, "travellers")
 
-      const response = await fetch("https://govisaagcp-583006320489.asia-south2.run.app/api/VisaApplication/apply-visa", {
+      const response = await fetch("http://localhost:5000/api/VisaApplication/apply-visa", {
         method: "POST",
         body: formData,
       })
