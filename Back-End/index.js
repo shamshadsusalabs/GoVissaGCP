@@ -34,6 +34,7 @@ const allowedOrigins = [
   'http://localhost:8081',
   'http://localhost:5173',
    'https://govissa-9f840.web.app',
+   'https://govisaa-4876f.web.app',
 
   'capacitor://localhost', // Capacitor apps
   'ionic://localhost' // Ionic apps
