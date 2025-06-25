@@ -339,6 +339,25 @@ const getStatusHistoryById = async (req, res) => {
   }
 };
 
+const getLatestVisaApplications = async (req, res) => {
+  try {
+    const latestApplications = await VisaApplication.find({})
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean()
+      .exec();
+
+    res.status(200).json({
+      message: 'Latest 5 visa applications fetched successfully',
+      data: latestApplications,
+    });
+  } catch (error) {
+    console.error('Error fetching latest visa applications:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 module.exports = { createVisaApplication , getAllVisaApplications,updateVisaStatus,getVisaApplicationById,
-  getVisaApplicationsByPhone,getVisaApplicationStats,
+  getVisaApplicationsByPhone,getVisaApplicationStats, getLatestVisaApplications,
   getVisaStatusByPaymentId,getPaymentByPaymentId,getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById};

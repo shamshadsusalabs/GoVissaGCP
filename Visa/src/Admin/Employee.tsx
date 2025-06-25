@@ -44,7 +44,7 @@ const Employee = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await fetch('https://govissa-872569311567.asia-south2.run.app/api/employee/getAll');
+        const response = await fetch('http://localhost:5000/api/employee/getAll');
         if (!response.ok) {
           throw new Error('Failed to fetch employees');
         }
@@ -74,7 +74,7 @@ const Employee = () => {
   const handleVerifyEmployee = async (id: string, currentStatus: boolean) => {
     setVerifyingId(id);
     try {
-      const response = await fetch(`https://govissa-872569311567.asia-south2.run.app/api/employee/verify/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/employee/verify/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

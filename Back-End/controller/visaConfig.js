@@ -272,3 +272,24 @@ exports.getAllVisaSubmissions = async (req, res) => {
     res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 };
+
+
+// Get counts of visaTypes by name across all submissions
+exports.getVisaTypeCounts = async (req, res) => {
+  try {
+    // Aggregation pipeline:
+    // 1) unwind visaTypes array
+    // 2) group by visaTypes.name, count occurrences
+    const results = await VisaSubmission.aggregate([
+      { $unwind: "$visaTypes" },
+      { $group: { _id: "$visaTypes.name", count: { $sum: 1 } } },
+      { $project: { _id: 0, visaType: "$_id", count: 1 } },
+      { $sort: { count: -1, visaType: 1 } }  // sorted descending by count, then name
+    ]);
+
+    res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    console.error("Error fetching visa type counts:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};

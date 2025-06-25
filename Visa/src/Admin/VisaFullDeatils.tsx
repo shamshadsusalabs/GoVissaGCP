@@ -63,7 +63,7 @@ const VisaFullDetails: React.FC = () => {
   useEffect(() => {
     const fetchApplication = async () => {
       try {
-        const response = await fetch(`https://govissa-872569311567.asia-south2.run.app/api/VisaApplication/getById/${id}`)
+        const response = await fetch(`http://localhost:5000/api/VisaApplication/getById/${id}`)
         const data = await response.json()
         setApplication(data)
         setLoading(false)

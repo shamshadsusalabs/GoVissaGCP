@@ -43,8 +43,8 @@ const LoginSignup = () => {
 
     try {
       const url = isLogin 
-        ? 'https://govissa-872569311567.asia-south2.run.app/api/employee/login'
-        : 'https://govissa-872569311567.asia-south2.run.app/api/employee/signup';
+        ? 'http://localhost:5000/api/employee/login'
+        : 'http://localhost:5000/api/employee/signup';
 
       const body = isLogin
         ? { email, password }

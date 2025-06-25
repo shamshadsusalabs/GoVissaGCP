@@ -38,4 +38,6 @@ router.delete('/:id', visaController.deleteVisaSubmission);
 
 router.get('/documents/:id/documents-only', visaController.getOnlyVisaDocuments);
 
+router.get('/counts/types',verifyAccessToken, visaController.getVisaTypeCounts);
+
 module.exports = router;

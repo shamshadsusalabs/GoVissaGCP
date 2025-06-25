@@ -4,7 +4,7 @@ const parser = require('../middileware/Uplod');
 const { verifyAccessToken } = require('../middileware/authMiddleware');
 const { createVisaApplication,getAllVisaApplications,updateVisaStatus ,
     getVisaApplicationById,getVisaApplicationsByPhone,
-    getVisaStatusByPaymentId,getPaymentByPaymentId,getVisaApplicationStats,
+    getVisaStatusByPaymentId,getPaymentByPaymentId,getVisaApplicationStats,getLatestVisaApplications,
     getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById} = require('../controller/VisaApplication');
 
 router.post('/apply-visa',verifyAccessToken, parser.any(), createVisaApplication);
@@ -34,4 +34,5 @@ router.get('/by-phone/:phone',verifyAccessToken, getVisasByPhone);
 router.get('/status-history/:id',verifyAccessToken, getStatusHistoryById);
 
 router.get('/stats',verifyAccessToken, getVisaApplicationStats);
+router.get('/getLatest',verifyAccessToken, getLatestVisaApplications);
 module.exports = router;

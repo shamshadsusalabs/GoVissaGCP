@@ -9,11 +9,32 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Eye,
   BarChart3,
   PieChart,
   Activity,
 } from "lucide-react"
+
+interface RecentApplication {
+  _id: string;
+  visaId: string;
+  travellers: string;
+  email: string;
+  phone: string;
+  country: string;
+  passportData: {
+    givenName: string;
+    surname: string;
+  }[];
+  statusHistory: {
+    label: string;
+  }[];
+  createdAt: string;
+}
+
+interface VisaTypeCount {
+  count: number;
+  visaType: string;
+}
 
 const DashboardPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("month")
@@ -25,6 +46,8 @@ const DashboardPage: React.FC = () => {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([])
+  const [visaTypeCounts, setVisaTypeCounts] = useState<VisaTypeCount[]>([])
 
   // Define monthlyData before it's used
   const monthlyData = [
@@ -45,14 +68,32 @@ const DashboardPage: React.FC = () => {
   const maxValue = Math.max(...monthlyData.map((d) => d.applications))
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/VisaApplication/stats")
-        if (!response.ok) {
+        setLoading(true)
+        // Fetch stats
+        const statsResponse = await fetch("http://localhost:5000/api/VisaApplication/stats")
+        if (!statsResponse.ok) {
           throw new Error("Failed to fetch stats")
         }
-        const data = await response.json()
-        setStats(data)
+        const statsData = await statsResponse.json()
+        setStats(statsData)
+
+        // Fetch recent applications
+        const recentResponse = await fetch("http://localhost:5000/api/VisaApplication/getLatest")
+        if (!recentResponse.ok) {
+          throw new Error("Failed to fetch recent applications")
+        }
+        const recentData = await recentResponse.json()
+        setRecentApplications(recentData.data)
+
+        // Fetch visa type counts
+        const visaTypesResponse = await fetch("http://localhost:5000/api/configurations/counts/types")
+        if (!visaTypesResponse.ok) {
+          throw new Error("Failed to fetch visa type counts")
+        }
+        const visaTypesData = await visaTypesResponse.json()
+        setVisaTypeCounts(visaTypesData.data)
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred")
       } finally {
@@ -60,7 +101,7 @@ const DashboardPage: React.FC = () => {
       }
     }
 
-    fetchStats()
+    fetchData()
   }, [])
 
   const dashboardStats = [
@@ -98,21 +139,37 @@ const DashboardPage: React.FC = () => {
     },
   ]
 
-  const visaTypeData = [
-    { type: "Tourist", count: 520, percentage: 42, color: "bg-blue-500" },
-    { type: "Business", count: 380, percentage: 31, color: "bg-green-500" },
-    { type: "Student", count: 210, percentage: 17, color: "bg-purple-500" },
-    { type: "Work", count: 135, percentage: 10, color: "bg-orange-500" },
+  // Define all possible visa types with their colors
+  const visaTypeColors = [
+    { type: "Tourist", color: "bg-blue-500" },
+    { type: "Business", color: "bg-green-500" },
+    { type: "Student", color: "bg-purple-500" },
+    { type: "Work", color: "bg-orange-500" },
+    { type: "Traveller", color: "bg-indigo-500" },
   ]
 
-  const recentApplications = [
-    { id: 1, name: "John Smith", visaType: "Tourist", date: "2024-06-15", status: "approved", country: "USA" },
-    { id: 2, name: "Sarah Johnson", visaType: "Business", date: "2024-06-14", status: "pending", country: "UK" },
-    { id: 3, name: "Mike Chen", visaType: "Student", date: "2024-06-13", status: "approved", country: "Canada" },
-    { id: 4, name: "Emma Wilson", visaType: "Work", date: "2024-06-12", status: "rejected", country: "Australia" },
-    { id: 5, name: "David Brown", visaType: "Tourist", date: "2024-06-11", status: "pending", country: "Germany" },
-    { id: 6, name: "Lisa Garcia", visaType: "Business", date: "2024-06-10", status: "approved", country: "France" },
-  ]
+  // Calculate visa type data with percentages
+  const getVisaTypeData = () => {
+    const total = visaTypeCounts.reduce((sum, item) => sum + item.count, 0) || 1 // Avoid division by zero
+    const defaultCounts = visaTypeColors.map(type => ({
+      type: type.type,
+      count: 0,
+      percentage: 0,
+      color: type.color
+    }))
+
+    // Merge API data with default types
+    return defaultCounts.map(defaultType => {
+      const apiType = visaTypeCounts.find(vt => vt.visaType === defaultType.type)
+      return {
+        ...defaultType,
+        count: apiType?.count || 0,
+        percentage: Math.round(((apiType?.count || 0) / total) * 100)
+      }
+    })
+  }
+
+  const visaTypeData = getVisaTypeData()
 
   const getStatColor = (color: string) => {
     const colors = {
@@ -135,6 +192,17 @@ const DashboardPage: React.FC = () => {
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
     }
+  }
+
+  const getLatestStatus = (statusHistory: { label: string }[]) => {
+    if (!statusHistory || statusHistory.length === 0) return "pending"
+    return statusHistory[statusHistory.length - 1].label.toLowerCase()
+  }
+
+  const getVisaTypeFromId = (visaId: string) => {
+    // This is a simplified mapping - you might need to fetch actual visa types from your API
+    if (visaId === "6832ca94936803554003df3b") return "Tourist"
+    return "Other"
   }
 
   if (loading) {
@@ -326,51 +394,46 @@ const DashboardPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentApplications.map((application) => (
-                  <tr key={application.id} className="hover:bg-gray-50 transition-colors duration-200">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                          {application.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
+                {recentApplications.map((application) => {
+                  const status = getLatestStatus(application.statusHistory)
+                  const fullName = `${application.passportData[0]?.givenName || ''} ${application.passportData[0]?.surname || ''}`.trim()
+                  const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase()
+                  
+                  return (
+                    <tr key={application._id} className="hover:bg-gray-50 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                            {initials || 'NA'}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{fullName || 'Unknown'}</div>
+                            <div className="text-sm text-gray-500">{application.email}</div>
+                          </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{application.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {application.visaType}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{application.country}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(application.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(application.status)}`}
-                      >
-                        {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="inline-flex items-center text-blue-600 hover:text-blue-900 transition-colors duration-200">
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {getVisaTypeFromId(application.visaId)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{application.country}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(application.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(status)}`}
+                        >
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

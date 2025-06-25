@@ -1,4 +1,4 @@
-import { FiHome, FiFileText, FiPieChart, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiFileText,  FiSettings, FiLogOut } from 'react-icons/fi';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 
 const AdminLayout = () => {
@@ -10,7 +10,7 @@ const AdminLayout = () => {
     localStorage.clear();
 
     // ✅ Step 2: Call logout API
-    await fetch('https://govissa-872569311567.asia-south2.run.app/api/admin/logout', {
+    await fetch('http://localhost:5000/api/admin/logout', {
       method: 'POST',
       credentials: 'include', // include cookies if used
       headers: {
@@ -81,18 +81,9 @@ const AdminLayout = () => {
                   <span className="ml-3">All VisaConfigList</span>
                 </Link>
               </li>
-              <li>
-                <Link to="/dashboard/reports" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                  <FiPieChart className="h-5 w-5" />
-                  <span className="ml-3">Reports</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/dashboard/settings" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
-                  <FiSettings className="h-5 w-5" />
-                  <span className="ml-3">Settings</span>
-                </Link>
-              </li>
+              
+            
+             
               <li>
                  <li>
                 <Link to="/dashboard/Employee" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">

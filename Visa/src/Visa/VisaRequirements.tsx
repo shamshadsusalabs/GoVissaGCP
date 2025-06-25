@@ -35,7 +35,7 @@ const VisaRequirements = () => {
         }
 
         const response = await fetch(
-          `https://govissa-872569311567.asia-south2.run.app/api/configurations/country-details/${countryId}`
+          `http://localhost:5000/api/configurations/country-details/${countryId}`
         );
 
         if (!response.ok) {
