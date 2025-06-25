@@ -26,18 +26,12 @@ const app = express();
 
 // Enable CORS
 const allowedOrigins = [
-  'https://bespoke-hotteok-477199.netlify.app',
-  'http://localhost', // for local testing
 
-  'http://localhost:8081', // common React Native debug port
 
-  'http://localhost:8081',
-  'http://localhost:5173',
-   'https://govissa-9f840.web.app',
-   'https://govisaa-4876f.web.app',
+ 
+   'https://govisaa-83693.web.app',
 
-  'capacitor://localhost', // Capacitor apps
-  'ionic://localhost' // Ionic apps
+ 
 ];
 
 app.use(cors({
