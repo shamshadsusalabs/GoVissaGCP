@@ -30,6 +30,7 @@ const allowedOrigins = [
 
  
    'https://govisaa-83693.web.app',
+   'http://localhost:5173',
 
  
 ];
