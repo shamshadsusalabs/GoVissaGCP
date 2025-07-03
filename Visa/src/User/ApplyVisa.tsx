@@ -78,7 +78,7 @@ export default function PaymentHistory() {
   const columns = [
     columnHelper.accessor("paymentId", {
       header: "Payment ID",
-      cell: (info) => <span className="font-medium text-gray-900">{info.getValue() || 'N/A'}</span>,
+      cell: (info) => <span className="font-medium text-gray-900">{info.getValue() || 'Offline'}</span>,
     }),
     columnHelper.accessor("country", {
       header: "Country",

@@ -4,7 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { Camera, Upload, FileText, AlertCircle, CheckCircle, X } from "lucide-react"
 import PassportDataForm from "./passport-data-form"
-import type { Document, PassportData } from "./document-types"
+import type { Document, PassportData, OCRResponse } from "./document-types"
 
 interface DocumentUploaderProps {
   currentDocument: Document
@@ -18,10 +18,7 @@ interface DocumentUploaderProps {
   }
   handleFileChange: (file: File | null) => void
   handleRemoveFile: (docId: string, side: "front" | "back") => void
-  ocrData: {
-    extracted_text: string
-    passport_data: PassportData
-  } | null
+  ocrData: OCRResponse | null
   ocrError: string | null
   handlePassportDataChange: (data: PassportData) => void
   travellerNumber: number
@@ -58,7 +55,6 @@ export default function DocumentUploader({
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
-
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileChange(e.dataTransfer.files[0])
     }
@@ -101,7 +97,6 @@ export default function DocumentUploader({
       canvas.width = videoRef.videoWidth
       canvas.height = videoRef.videoHeight
       const ctx = canvas.getContext("2d")
-
       if (ctx) {
         ctx.drawImage(videoRef, 0, 0, canvas.width, canvas.height)
         canvas.toBlob(
@@ -140,7 +135,6 @@ export default function DocumentUploader({
       insurance: "🛡️",
       "cover letter": "✉️",
     }
-
     return icons[docName.toLowerCase()] || "📄"
   }
 
@@ -283,7 +277,7 @@ export default function DocumentUploader({
 
               {/* Right side - Passport Form */}
               <div className="order-1 xl:order-2">
-                <PassportDataForm initialData={ocrData.passport_data} onDataChange={handlePassportDataChange} />
+                <PassportDataForm initialData={ocrData.data} onDataChange={handlePassportDataChange} />
               </div>
             </div>
           </div>

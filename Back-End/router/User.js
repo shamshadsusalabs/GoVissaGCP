@@ -6,7 +6,7 @@ const {
   sendOtp,
   verifyOtp,
   loginOrSignupWithPhone,
-  logoutUser,
+  logoutUser,checkUserExistence
 } = require("../controller/User");
 
 // Send OTP
@@ -20,6 +20,8 @@ router.post("/login", loginOrSignupWithPhone);
 
 // Logout (via refresh token)
 router.post("/logout",verifyAccessToken, logoutUser);
+
+router.post("/check-user",checkUserExistence);
 
 
 module.exports = router;

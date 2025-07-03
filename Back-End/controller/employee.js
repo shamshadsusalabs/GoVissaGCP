@@ -6,37 +6,38 @@ const { generateAccessToken, generateRefreshToken } = require('../Util/tokenUtil
 const mongoose = require('mongoose');
  // Your User model
 const Visa = require('../shcema/VisaApplication'); 
+const generateEmployeeId = require('../Util/generateEmployeeId');
+// Signup
 // Signup
 exports.signup = async (req, res) => {
   try {
     const { name, phoneNumber, email, password } = req.body;
 
     const existingEmployee = await Employee.findOne({ email });
-    if (existingEmployee) return res.status(400).json({ message: 'Email already registered' });
+    if (existingEmployee)
+      return res.status(400).json({ message: 'Email already registered' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    const employeeId = generateEmployeeId(); // Generate the employee ID
 
     const newEmployee = new Employee({
       name,
       phoneNumber,
       email,
       password: hashedPassword,
+      employeeId, // Store generated ID
     });
 
     const savedEmployee = await newEmployee.save();
 
-  
-
-    await savedEmployee.save();
-
     res.status(201).json({
       message: 'Employee registered successfully',
-    
       employee: {
         id: savedEmployee._id,
+        employeeId: savedEmployee.employeeId,
         name: savedEmployee.name,
         email: savedEmployee.email,
-        
       },
     });
   } catch (error) {
@@ -207,5 +208,95 @@ exports.getUserVisaDetails = async (req, res) => {
   } catch (error) {
     console.error('Error fetching user visa details:', error);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getEmployeeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const employee = await Employee.findById(id).select('-password -refreshToken');
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    res.status(200).json({ employee });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to retrieve employee', error: error.message });
+  }
+};
+exports.deleteEmployeeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await Employee.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    res.status(200).json({ message: 'Employee deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete employee', error: error.message });
+  }
+};
+exports.updateEmployeeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Prevent updating sensitive fields
+    delete updateData.password;
+    delete updateData.refreshToken;
+
+    const updated = await Employee.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+      select: '-password -refreshToken'
+    });
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    res.status(200).json({ message: 'Employee updated successfully', employee: updated });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update employee', error: error.message });
+  }
+};
+
+
+exports.getEmployeePoints = async (req, res) => {
+  try {
+    const { id } = req.params; // can be _id or employeeId
+
+    // You can switch between _id or employeeId as needed
+    const employee = await Employee.findOne({
+      $or: [
+        { _id: id },
+        { employeeId: id }
+      ]
+    });
+
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    // Optionally update points if visaIds changed
+    const correctPoints = (employee.visaIds?.length || 0) * 50;
+    if (employee.points !== correctPoints) {
+      employee.points = correctPoints;
+      await employee.save(); // triggers pre-save hook too
+    }
+
+    return res.status(200).json({
+      success: true,
+      employeeId: employee.employeeId,
+      name: employee.name,
+      points: employee.points,
+      totalVisas: employee.visaIds.length
+    });
+  } catch (error) {
+    console.error('Error getting employee points:', error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };

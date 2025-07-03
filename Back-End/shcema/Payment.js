@@ -4,11 +4,11 @@ const paymentOrderSchema = new mongoose.Schema(
   {
     orderId: { type: String, required: true, unique: true },
     paymentId: String,
-    amount: { type: Number, required: true },
+    amount: { type: String, required: true },
     currency: { type: String, default: "INR" },
     status: {
       type: String,
-      enum: ["created", "paid", "captured", "failed"],
+      enum: ["created", "paid", "captured", "failed","offline"],
       default: "created",
     },
     receipt: String,

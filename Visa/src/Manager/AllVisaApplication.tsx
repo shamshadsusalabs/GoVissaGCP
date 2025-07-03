@@ -174,7 +174,7 @@ const AllVisaApplication: React.FC = () => {
   }
 
   const handleViewDetails = (app: VisaApplication) => {
-    navigate(`/dashboard/VisaFullDeatils/${app._id}`)
+    navigate(`/manager-dashboard/VisaFulldetailsManager/${app._id}`)
   }
 
   const openStatusModal = (app: VisaApplication) => {
@@ -424,7 +424,7 @@ const AllVisaApplication: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <CreditCard className="w-4 h-4 mr-2 text-gray-400" />
-                    <span className="text-sm text-gray-900">
+                     <span className="text-sm text-gray-900">
   {app.paymentId ? app.paymentId : "offline"}
 </span>
 

@@ -7,6 +7,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminProtectedRoute from "./AdminProtectedRoute";
 import EmployeeProtectedRoute from "./EmployeeProtectedRoute";
+import ManagerProtectedRouter from "./ManagerProtectedRouter";
 
 // Lazy load Visa-related components
 const Navbar = lazy(() => import('./Visa/Navbar'));
@@ -14,7 +15,7 @@ const DetailsNavbar = lazy(() => import('./Visa/DetailsNavbar'));
 
 const VisaDestinations = lazy(() => import('./Visa/VisaDestinations'));
 const Banner = lazy(() => import('./Visa/Banner'));
-const VisaBookingCard = lazy(() => import('./Visa/VisaBookingCard'));
+const VisaBookingCard = lazy(() => import('./Visa/VisaBooking/visa-booking-card'));
 const VisasOnTime = lazy(() => import('./Visa/VisasOnTime'));
 const AtlysNews = lazy(() => import('./Visa/AtlysNews'));
 const Footer = lazy(() => import('./Visa/Footer'));
@@ -31,6 +32,8 @@ const AllVisaApplication = lazy(() => import('./Admin/AllVisaApplication'));
 const VisaFullDetails = lazy(() => import('./Admin/VisaFullDeatils'));
 const VisaConfigList = lazy(() => import('./Admin/VisaConfigList'));
 const Employee = lazy(() => import('./Admin/Employee'));
+const CouponCode = lazy(() => import('./Admin/CouponCode'));
+const Manager = lazy(() => import('./Admin/Manager'));
 
 // Lazy load User components
 const Auth = lazy(() => import('./User/auth'));
@@ -48,6 +51,15 @@ const UploadDocuments = lazy(() => import('./User/UplodDocumnets/upload-document
 const Loginsignup = lazy(() => import('./Employee/Loginsignup'));
 const Employeelayout = lazy(() => import('./Employee/Employeelayout'));
 const AllVisaApplicationEmployee = lazy(() => import('./Employee/AllVisaApplicationEmployee'));
+const EmployeeDashbord = lazy(() => import('./Employee/EmployeeDashbord'));
+// Lazy load Employee components
+const LoginsignupManager = lazy(() => import('./Manager/Loginsignup'));
+const Managerlayout = lazy(() => import('./Manager/Managerlayout'));
+const AllVisaApplicationManager = lazy(() => import('./Manager/AllVisaApplication'));
+const DashboardPagemanager = lazy(() => import('./Manager/DashboardPagemanager'));
+const EmployeeManager = lazy(() => import('./Manager/EmployeeManager'));
+const ManagerCouponcode = lazy(() => import('./Manager/ManagerCouponcode'));
+const VisaFulldetailsManager = lazy(() => import('./Manager/VisaFulldetailsManager'));
 
 function AppRoutes() {
   return (
@@ -136,6 +148,8 @@ function AppRoutes() {
           <Route path="AllVisaApplication" element={<AllVisaApplication />} />
           <Route path="VisaFullDeatils/:id" element={<VisaFullDetails />} />
           <Route path="Employee" element={<Employee />} />
+           <Route path="CouponCode" element={<CouponCode/>} />
+            <Route path="Manager" element={<Manager/>} />
         </Route>
 
         {/* Employee Routes */}
@@ -149,8 +163,28 @@ function AppRoutes() {
             </EmployeeProtectedRoute>
           }
         >
-          <Route index element={<AllVisaApplicationEmployee />} />
+          <Route index element={<EmployeeDashbord />} />
           <Route path="AllVisaApplicationEmployee" element={<AllVisaApplicationEmployee />} />
+           <Route path="EmployeeDashbord" element={<EmployeeDashbord/>} />
+        </Route>
+
+         <Route path="/manager" element={<LoginsignupManager/>} />
+
+        <Route
+          path="/manager-dashboard/*"
+          element={
+            <ManagerProtectedRouter>
+              < Managerlayout />
+            </ManagerProtectedRouter>
+          }
+        >
+          <Route index element={<DashboardPagemanager />} />
+           <Route path="DashboardPagemanager" element={<DashboardPagemanager/>} />
+          <Route path="AllVisaApplicationManager" element={<AllVisaApplicationManager/>} />
+            <Route path="EmployeeManager" element={<EmployeeManager/>} />
+            <Route path="ManagerCouponcode" element={<ManagerCouponcode/>} />
+             <Route path="VisaFulldetailsManager/:id" element={<VisaFulldetailsManager/>} />
+             
         </Route>
 
         {/* 404 Fallback */}

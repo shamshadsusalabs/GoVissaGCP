@@ -58,7 +58,7 @@ const EmployeeLayout = () => {
           <nav className="p-4">
             <ul className="space-y-2">
               <li>
-                <Link to="/dashboard/DashboardPage" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                <Link to="/employee-dashboard/EmployeeDashbord" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
                   <FiHome className="h-5 w-5" />
                   <span className="ml-3">Dashboard</span>
                 </Link>

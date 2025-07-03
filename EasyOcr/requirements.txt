@@ -1,6 +1,8 @@
-flask
-flask-cors
+fastapi
+uvicorn[standard]
 easyocr
-pdf2image
-werkzeug
-pillow
+opencv-python-headless
+numpy
+Pillow
+PyMuPDF
+python-multipart

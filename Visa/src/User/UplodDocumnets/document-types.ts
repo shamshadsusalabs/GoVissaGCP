@@ -8,26 +8,36 @@ export interface Document {
   requiresBothSides?: boolean
 }
 
+// Updated to match Python OCR response
 export interface PassportData {
-  dateOfExpiry: string
-  dateOfIssue: string
-  dob: string
-  fileNumber: string
-  givenName: string
-  nationality: string
-  passportNumber: string
-  placeOfBirth: string
-  placeOfIssue: string
-  sex: string
+  passport_number: string
   surname: string
+  given_names: string
+  date_of_birth: string
+  date_of_issue: string
+  date_of_expiry: string
+  place_of_birth: string
+  place_of_issue: string
+  nationality: string
+  sex: string
+  father_name: string
+  mother_name: string
+  spouse_name: string
+  address: string
+  file_number: string
+}
+
+// Updated OCR response structure to match Python API
+export interface OCRResponse {
+  success: boolean
+  filename: string
+  data: PassportData
+  timestamp: string
 }
 
 export interface TravellerData {
   travellerIndex: number
   uploadedFiles: Record<string, { front?: File; back?: File; frontPreview?: string; backPreview?: string }>
-  ocrData: {
-    extracted_text: string
-    passport_data: PassportData
-  } | null
+  ocrData: OCRResponse | null
   ocrError: string | null
 }

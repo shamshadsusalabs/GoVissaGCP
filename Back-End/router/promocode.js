@@ -11,4 +11,6 @@ router.delete('/:id', promoCtrl.deletePromoCode);
 // Special Route for Validation
 router.post('/validate', promoCtrl.validatePromoCode);
 
+router.post('/incrementUsage', promoCtrl.incrementPromoCodeUsage);
+
 module.exports = router;

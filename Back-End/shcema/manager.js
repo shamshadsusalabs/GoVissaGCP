@@ -1,9 +1,15 @@
 const mongoose = require('mongoose');
 
-const employeeSchema = new mongoose.Schema({
+const managerSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
+    trim: true
+  },
+  employeeId: {
+    type: String,
+    required: true,
+    unique: true,
     trim: true
   },
   phoneNumber: {
@@ -30,12 +36,6 @@ const employeeSchema = new mongoose.Schema({
     type: [String], // Array of visa ID strings
     default: []
   },
-  employeeId: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true
-  },
   points: {
     type: Number,
     default: 0
@@ -48,10 +48,4 @@ const employeeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Pre-save hook to update points based on visaIds
-employeeSchema.pre('save', function (next) {
-  this.points = (this.visaIds && this.visaIds.length) ? this.visaIds.length * 50 : 0;
-  next();
-});
-
-module.exports = mongoose.model('Employee', employeeSchema);
+module.exports = mongoose.model('Manager', managerSchema);

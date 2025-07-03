@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Edit3, Save, X, User, Hash } from "lucide-react"
+import { Edit3, Save, X, User, Hash, Users } from "lucide-react"
 import type { PassportData } from "./document-types"
 
 interface PassportDataFormProps {
@@ -15,7 +15,7 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
   const [isEditing, setIsEditing] = useState(false)
 
   // Check if form has any data (to determine if OCR worked)
-  const hasOcrData = Object.values(initialData).some((value) => value.trim() !== "")
+  const hasOcrData = Object.values(initialData).some((value) => value && value.trim() !== "")
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -70,7 +70,7 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
         {/* Always show form in editing mode if no OCR data, otherwise show view/edit toggle */}
         {isEditing || !hasOcrData ? (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Personal Information */}
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center">
@@ -83,7 +83,7 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                   <input
                     type="text"
                     name="surname"
-                    value={formData.surname}
+                    value={formData.surname || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter surname"
@@ -91,14 +91,14 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Given Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Given Names</label>
                   <input
                     type="text"
-                    name="givenName"
-                    value={formData.givenName}
+                    name="given_names"
+                    value={formData.given_names || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter given name"
+                    placeholder="Enter given names"
                   />
                 </div>
 
@@ -106,7 +106,7 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sex</label>
                   <select
                     name="sex"
-                    value={formData.sex}
+                    value={formData.sex || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   >
@@ -119,11 +119,12 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
                   <input
-                    type="date"
-                    name="dob"
-                    value={formData.dob}
+                    type="text"
+                    name="date_of_birth"
+                    value={formData.date_of_birth || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="DD/MM/YYYY"
                   />
                 </div>
 
@@ -131,16 +132,28 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                   <label className="block text-sm font-medium text-gray-700 mb-2">Place of Birth</label>
                   <input
                     type="text"
-                    name="placeOfBirth"
-                    value={formData.placeOfBirth}
+                    name="place_of_birth"
+                    value={formData.place_of_birth || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter place of birth"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nationality</label>
+                  <input
+                    type="text"
+                    name="nationality"
+                    value={formData.nationality || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter nationality"
+                  />
+                </div>
               </div>
 
-              {/* Passport Information */}
+              {/* Passport & Family Information */}
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center">
                   <Hash className="w-4 h-4 mr-2 text-blue-600" />
@@ -151,8 +164,8 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                   <label className="block text-sm font-medium text-gray-700 mb-2">Passport Number</label>
                   <input
                     type="text"
-                    name="passportNumber"
-                    value={formData.passportNumber}
+                    name="passport_number"
+                    value={formData.passport_number || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter passport number"
@@ -160,36 +173,26 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nationality</label>
-                  <input
-                    type="text"
-                    name="nationality"
-                    value={formData.nationality}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter nationality"
-                  />
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Date of Issue</label>
                   <input
-                    type="date"
-                    name="dateOfIssue"
-                    value={formData.dateOfIssue}
+                    type="text"
+                    name="date_of_issue"
+                    value={formData.date_of_issue || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="DD/MM/YYYY"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Date of Expiry</label>
                   <input
-                    type="date"
-                    name="dateOfExpiry"
-                    value={formData.dateOfExpiry}
+                    type="text"
+                    name="date_of_expiry"
+                    value={formData.date_of_expiry || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="DD/MM/YYYY"
                   />
                 </div>
 
@@ -197,11 +200,81 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                   <label className="block text-sm font-medium text-gray-700 mb-2">Place of Issue</label>
                   <input
                     type="text"
-                    name="placeOfIssue"
-                    value={formData.placeOfIssue}
+                    name="place_of_issue"
+                    value={formData.place_of_issue || ""}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter place of issue"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">File Number</label>
+                  <input
+                    type="text"
+                    name="file_number"
+                    value={formData.file_number || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter file number"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Family Information Section */}
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center mb-4">
+                <Users className="w-4 h-4 mr-2 text-blue-600" />
+                Family Information
+              </h4>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Father's Name</label>
+                  <input
+                    type="text"
+                    name="father_name"
+                    value={formData.father_name || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter father's name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mother's Name</label>
+                  <input
+                    type="text"
+                    name="mother_name"
+                    value={formData.mother_name || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter mother's name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Spouse Name</label>
+                  <input
+                    type="text"
+                    name="spouse_name"
+                    value={formData.spouse_name || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter spouse name (if applicable)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address || ""}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter address"
                   />
                 </div>
               </div>
@@ -229,38 +302,37 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
           </form>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Personal Information Display */}
               <div className="space-y-4">
                 <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center">
                   <User className="w-4 h-4 mr-2 text-blue-600" />
                   Personal Details
                 </h4>
-
                 <div className="space-y-3">
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Surname</p>
                     <p className="font-semibold text-gray-900">{formData.surname || "-"}</p>
                   </div>
-
                   <div className="bg-gray-50 p-4 rounded-xl">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Given Name</p>
-                    <p className="font-semibold text-gray-900">{formData.givenName || "-"}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Given Names</p>
+                    <p className="font-semibold text-gray-900">{formData.given_names || "-"}</p>
                   </div>
-
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Sex</p>
                     <p className="font-semibold text-gray-900">{formData.sex || "-"}</p>
                   </div>
-
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date of Birth</p>
-                    <p className="font-semibold text-gray-900">{formData.dob || "-"}</p>
+                    <p className="font-semibold text-gray-900">{formData.date_of_birth || "-"}</p>
                   </div>
-
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Place of Birth</p>
-                    <p className="font-semibold text-gray-900">{formData.placeOfBirth || "-"}</p>
+                    <p className="font-semibold text-gray-900">{formData.place_of_birth || "-"}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Nationality</p>
+                    <p className="font-semibold text-gray-900">{formData.nationality || "-"}</p>
                   </div>
                 </div>
               </div>
@@ -271,32 +343,53 @@ export default function PassportDataForm({ initialData, onDataChange }: Passport
                   <Hash className="w-4 h-4 mr-2 text-blue-600" />
                   Passport Details
                 </h4>
-
                 <div className="space-y-3">
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Passport Number</p>
-                    <p className="font-semibold text-gray-900">{formData.passportNumber || "-"}</p>
+                    <p className="font-semibold text-gray-900">{formData.passport_number || "-"}</p>
                   </div>
-
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Nationality</p>
-                    <p className="font-semibold text-gray-900">{formData.nationality || "-"}</p>
-                  </div>
-
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date of Issue</p>
-                    <p className="font-semibold text-gray-900">{formData.dateOfIssue || "-"}</p>
+                    <p className="font-semibold text-gray-900">{formData.date_of_issue || "-"}</p>
                   </div>
-
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Date of Expiry</p>
-                    <p className="font-semibold text-gray-900">{formData.dateOfExpiry || "-"}</p>
+                    <p className="font-semibold text-gray-900">{formData.date_of_expiry || "-"}</p>
                   </div>
-
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Place of Issue</p>
-                    <p className="font-semibold text-gray-900">{formData.placeOfIssue || "-"}</p>
+                    <p className="font-semibold text-gray-900">{formData.place_of_issue || "-"}</p>
                   </div>
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">File Number</p>
+                    <p className="font-semibold text-gray-900">{formData.file_number || "-"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Family Information Display */}
+            <div className="border-t border-gray-200 pt-6">
+              <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center mb-4">
+                <Users className="w-4 h-4 mr-2 text-blue-600" />
+                Family Information
+              </h4>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Father's Name</p>
+                  <p className="font-semibold text-gray-900">{formData.father_name || "-"}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Mother's Name</p>
+                  <p className="font-semibold text-gray-900">{formData.mother_name || "-"}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Spouse Name</p>
+                  <p className="font-semibold text-gray-900">{formData.spouse_name || "-"}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Address</p>
+                  <p className="font-semibold text-gray-900">{formData.address || "-"}</p>
                 </div>
               </div>
             </div>

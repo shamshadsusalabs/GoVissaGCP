@@ -1,289 +1,142 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Paper, 
-  
-  Link, 
-  Alert,
-  Collapse,
-  IconButton,
-  InputAdornment,
-  CircularProgress
-} from '@mui/material';
-import { 
-  LockOutlined, 
-  PersonOutlined, 
-  PhoneOutlined, 
-  EmailOutlined,
-  Visibility,
-  VisibilityOff,
-  Close
-} from '@mui/icons-material';
-import GovisaaLogo from '../assets/logo.jpeg';
+"use client"
 
-const LoginSignup = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+import type React from "react"
+
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { LockOutlined, EmailOutlined, Visibility, VisibilityOff } from "@mui/icons-material"
+
+const Login = () => {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    e.preventDefault()
+    setLoading(true)
+    setError("")
 
     try {
-      const url = isLogin 
-        ? 'http://localhost:5000/api/employee/login'
-        : 'http://localhost:5000/api/employee/signup';
-
-      const body = isLogin
-        ? { email, password }
-        : { name, email, phoneNumber, password };
-
-      const response = await fetch(url, {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/api/employee/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
-      });
+        body: JSON.stringify({ email, password }),
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
+        throw new Error(data.message || "Something went wrong")
       }
 
-      if (isLogin) {
-        // Handle login success
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        localStorage.setItem('employee', JSON.stringify(data.employee));
+      // Handle login success
+      localStorage.setItem("accessToken", data.accessToken)
+      localStorage.setItem("refreshToken", data.refreshToken)
+      localStorage.setItem("employee", JSON.stringify(data.employee))
 
-        if (data.employee.isVerified) {
-          navigate('/employee-dashboard');
-        } else {
-          setError('Your account is not verified yet. Please contact admin.');
-        }
+      if (data.employee.isVerified) {
+        navigate("/employee-dashboard")
       } else {
-        // Handle signup success
-        setError('Signup successful! Please wait for admin verification.');
-        setIsLogin(true); // Switch to login after successful signup
+        setError("Your account is not verified yet. Please contact admin.")
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-
-  const toggleAuthMode = () => {
-    setIsLogin(!isLogin);
-    setError('');
-  };
+  }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-        p: 2
-      }}
-    >
-      <Paper
-        elevation={6}
-        sx={{
-          width: '100%',
-          maxWidth: 500,
-          p: 4,
-          borderRadius: 2,
-          background: 'white'
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <img 
-            src={GovisaaLogo} 
-            alt="GoVissa Logo" 
-            style={{ width: 120, height: 'auto' }} 
-          />
-        </Box>
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-100 to-blue-100 p-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
+        <div className="flex justify-center mb-6">
+          <img src="/logo.jpeg" alt="GoVissa Logo" className="w-30 h-auto" />
+        </div>
 
-        <Typography 
-          variant="h4" 
-          component="h1" 
-          align="center" 
-          sx={{ mb: 2, fontWeight: 'bold', color: '#1976d2' }}
-        >
-          {isLogin ? 'Login to GoVissa' : 'Create Account'}
-        </Typography>
+        <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">Login to GoVissa</h1>
 
-        <Collapse in={!!error}>
-          <Alert
-            severity={error.includes('successful') ? 'success' : 'error'}
-            action={
-              <IconButton
-                aria-label="close"
-                color="inherit"
-                size="small"
-                onClick={() => setError('')}
-              >
-                <Close fontSize="inherit" />
-              </IconButton>
-            }
-            sx={{ mb: 2 }}
+        {error && (
+          <div
+            className={`mb-4 p-3 rounded-lg flex items-center justify-between ${
+              error.includes("successful") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+            }`}
           >
-            {error}
-          </Alert>
-        </Collapse>
+            <span className="text-sm">{error}</span>
+            <button onClick={() => setError("")} className="ml-2 text-lg font-bold hover:opacity-70">
+              ×
+            </button>
+          </div>
+        )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          {!isLogin && (
-            <TextField
-              margin="normal"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <EmailOutlined className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="email"
+              id="email"
+              name="email"
               required
-              fullWidth
-              id="name"
-              label="Full Name"
-              name="name"
-              autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonOutlined color="action" />
-                  </InputAdornment>
-                ),
-              }}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="Email Address"
+              autoComplete="email"
             />
-          )}
+          </div>
 
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailOutlined color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {!isLogin && (
-            <TextField
-              margin="normal"
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <LockOutlined className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              name="password"
               required
-              fullWidth
-              id="phone"
-              label="Phone Number"
-              name="phone"
-              autoComplete="tel"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PhoneOutlined color="action" />
-                  </InputAdornment>
-                ),
-              }}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="Password"
+              autoComplete="current-password"
             />
-          )}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            >
+              {showPassword ? (
+                <VisibilityOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              ) : (
+                <Visibility className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+              )}
+            </button>
+          </div>
 
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            id="password"
-            autoComplete={isLogin ? 'current-password' : 'new-password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockOutlined color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <Button
+          <button
             type="submit"
-            fullWidth
-            variant="contained"
             disabled={loading}
-            sx={{
-              mt: 3,
-              mb: 2,
-              py: 1.5,
-              borderRadius: 1,
-              bgcolor: '#1976d2',
-              '&:hover': {
-                bgcolor: '#1565c0'
-              }
-            }}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : isLogin ? (
-              'Login'
+              <div className="flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Logging in...
+              </div>
             ) : (
-              'Sign Up'
+              "Login"
             )}
-          </Button>
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
 
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
-            <Link
-              component="button"
-              type="button"
-              variant="body2"
-              onClick={toggleAuthMode}
-              sx={{ color: '#1976d2' }}
-            >
-              {isLogin
-                ? "Don't have an account? Sign Up"
-                : "Already have an account? Sign in"}
-            </Link>
-          </Box>
-        </Box>
-      </Paper>
-    </Box>
-  );
-};
-
-export default LoginSignup;
+export default Login

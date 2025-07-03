@@ -88,7 +88,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 text-center">
           <h1 className="text-2xl font-bold text-white">Welcome to GoVissa</h1>
           <p className="text-blue-100 mt-1">
-            {isOtpSent ? 'Enter the OTP sent to your phone' : 'Login with your phone number'}
+            {isOtpSent ? 'Enter the OTP sent to your phone' : 'Login/SignUp with your phone number'}
           </p>
         </div>
 

@@ -15,12 +15,9 @@ const Header = ({ onSearch }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-[#4A54F1] text-white pt-8 pb-12 md:pb-16 relative overflow-hidden h-96">
+    <header className="bg-white text-white pt-8 pb-12 md:pb-16 relative overflow-hidden h-96">
       {/* Decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#5D66F3] opacity-30"></div>
-        <div className="absolute -bottom-40 left-1/4 w-80 h-80 rounded-full bg-[#5D66F3] opacity-20"></div>
-      </div>
+     
 
       {/* Hero Content */}
       <section className="flex flex-col items-center justify-center text-center mt-12 mb-8 px-4 max-w-4xl mx-auto relative z-10">
@@ -41,7 +38,7 @@ const Header = ({ onSearch }: HeaderProps) => {
           Get Your Visa <span className="text-[#F9D85E]">On Time</span> with GoVisaa
         </motion.h2>
         <motion.p 
-          className="text-lg text-blue-100 max-w-2xl"
+          className="text-lg text-blue-500 max-w-2xl"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}

@@ -18,6 +18,7 @@ const admin = require('./router/admin');
   const User = require('./router/User');
     const promocode = require('./router/promocode');
      const employee = require('./router/employee');
+        const manager = require('./router/manager');
 
 connectDB();
 const app = express();
@@ -53,10 +54,11 @@ app.use(helmet());
 
 // Limit requests from same API
 const limiter = rateLimit({
-  max: 100,
-  windowMs: 60 * 60 * 1000,
+  max: 1000, // pehle 100 tha, ab 1000 kar diya
+  windowMs: 60 * 60 * 1000, // 1 ghanta
   message: 'Too many requests from this IP, please try again in an hour!'
 });
+
 app.use('/api', limiter);
 
 // Body parser, reading data from body into req.body
@@ -64,13 +66,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
-// Data sanitization against NoSQL query injection
-// app.use(mongoSanitize());
 
-// Data sanitization against XSS
-// app.use(xss());
-
-// Prevent parameter pollution
 app.use(hpp());
 
 
@@ -89,6 +85,7 @@ app.use('/api/payments', paymentRoutes);
 
 app.use('/api/promocode', promocode);
 app.use('/api/employee', employee);
+app.use('/api/manager', manager);
 // Test route
 app.get('/api/health', (req, res) => {
   res.status(200).json({

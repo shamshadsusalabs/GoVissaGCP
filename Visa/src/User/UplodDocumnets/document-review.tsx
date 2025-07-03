@@ -2,25 +2,12 @@
 
 import type React from "react"
 import { CheckCircle, AlertTriangle, Users, FileText, Send, ArrowLeft, X } from "lucide-react"
-import type { PassportData } from "./document-types"
+import type { PassportData, TravellerData, Document } from "./document-types"
 import PassportDataForm from "./passport-data-form"
 
 interface DocumentReviewProps {
-  documents: Array<{
-    id: string
-    name: string
-    description: string
-    requiresBothSides?: boolean
-  }>
-  travellersData: Array<{
-    travellerIndex: number
-    uploadedFiles: Record<string, { front?: File; back?: File; frontPreview?: string; backPreview?: string }>
-    ocrData: {
-      extracted_text: string
-      passport_data: PassportData
-    } | null
-    ocrError: string | null
-  }>
+  documents: Document[]
+  travellersData: TravellerData[]
   handleRemoveFile: (travellerIndex: number, docId: string, side: "front" | "back") => void
   handlePassportDataChange: (travellerIndex: number, data: PassportData) => void
   handleSubmitApplication: () => void
@@ -60,7 +47,6 @@ export default function DocumentReview({
       insurance: "🛡️",
       "cover letter": "✉️",
     }
-
     return icons[docName.toLowerCase()] || "📄"
   }
 
@@ -231,7 +217,7 @@ export default function DocumentReview({
                         {doc.name.toLowerCase() === "passport" && travellerData.ocrData && (
                           <div className="mt-8">
                             <PassportDataForm
-                              initialData={travellerData.ocrData.passport_data}
+                              initialData={travellerData.ocrData.data}
                               onDataChange={(data) => handlePassportDataChange(travellerIndex, data)}
                             />
                           </div>

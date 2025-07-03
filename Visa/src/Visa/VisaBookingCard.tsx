@@ -1,7 +1,9 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
+
 import { useNavigate, useParams } from "react-router-dom"
 
 interface VisaType {
@@ -32,7 +34,6 @@ interface VisaConfiguration {
 const VisaBookingCard = () => {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [visaData, setVisaData] = useState<VisaConfiguration | null>(null)
@@ -49,13 +50,16 @@ const VisaBookingCard = () => {
   const [otpVerified, setOtpVerified] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
   const [otpError, setOtpError] = useState("")
-
   const [promoCodes, setPromoCodes] = useState<any[]>([])
   const [selectedPromoCode, setSelectedPromoCode] = useState<string>("")
   const [appliedPromoCode, setAppliedPromoCode] = useState<any>(null)
   const [promoCodeError, setPromoCodeError] = useState("")
   const [promoCodeLoading, setPromoCodeLoading] = useState(false)
   const [discountAmount, setDiscountAmount] = useState(0)
+
+  // New states for payment method selection
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "offline" | null>(null)
 
   useEffect(() => {
     const fetchVisaData = async () => {
@@ -65,9 +69,11 @@ const VisaBookingCard = () => {
         }
 
         const response = await fetch(`http://localhost:5000/api/configurations/details/${id}`)
+
         if (!response.ok) {
           throw new Error(`Failed to fetch visa data: ${response.statusText}`)
         }
+
         const result = await response.json()
 
         if (
@@ -125,13 +131,11 @@ const VisaBookingCard = () => {
     const month = new Date(Date.parse(dateParts[1] + " 1, 2012")).getMonth() + 1
     const day = Number.parseInt(dateParts[0])
     const year = Number.parseInt(dateParts[2])
-
     const selectedDate = new Date(year, month - 1, day)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const diffTime = selectedDate.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
     return `in ${diffDays} day${diffDays !== 1 ? "s" : ""}`
   }
 
@@ -196,7 +200,6 @@ const VisaBookingCard = () => {
       if (response.ok) {
         setOtpVerified(true)
         setOtpError("")
-
         // Store user data and tokens in localStorage
         if (data.user) {
           localStorage.setItem("user", JSON.stringify(data.user))
@@ -207,7 +210,6 @@ const VisaBookingCard = () => {
         if (data.refreshToken) {
           localStorage.setItem("refreshToken", data.refreshToken)
         }
-
         console.log("User logged in successfully:", data.message)
       } else {
         setOtpError(data.message || "Invalid OTP")
@@ -331,10 +333,7 @@ const VisaBookingCard = () => {
           amount,
           currency: "INR",
           visaId: visaData._id,
-            country: visaData.country,
-
-          
-
+          country: visaData.country,
           email: contactInfo.email,
           phone: contactInfo.phone,
           selectedDate,
@@ -457,11 +456,25 @@ const VisaBookingCard = () => {
     setTravellers((prev) => Math.max(1, prev + delta))
   }
 
+  const handleWhatsAppRedirect = () => {
+    if (!visaData) return
+
+    const message = encodeURIComponent(
+      `Hi! I want to apply for ${visaData.country} visa. Here are my details:\n\n` +
+        `📅 Appointment Date: ${selectedDate}\n` +
+        `👥 Travelers: ${travellers}\n` +
+        `📧 Email: ${contactInfo.email}\n` +
+        `📱 Phone: ${contactInfo.phone}\n` +
+        `💰 Total Amount: ₹${total}\n\n` +
+        `Please guide me with the offline payment process.`,
+    )
+    window.open(`https://wa.me/917070357583?text=${message}`, "_blank")
+  }
+
   const renderCalendar = () => {
     const today = new Date()
     const currentMonth = today.getMonth()
     const currentYear = today.getFullYear()
-
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
     const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay()
 
@@ -490,7 +503,6 @@ const VisaBookingCard = () => {
               </span>
               <button className="p-2 rounded hover:bg-gray-100">&gt;</button>
             </div>
-
             <div className="grid grid-cols-7 gap-2 mb-2">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                 <div key={day} className="text-center font-medium text-sm text-gray-500">
@@ -498,7 +510,6 @@ const VisaBookingCard = () => {
                 </div>
               ))}
             </div>
-
             <div className="grid grid-cols-7 gap-2">
               {weeks.flatMap((week, weekIndex) =>
                 week.map((date, dayIndex) =>
@@ -524,9 +535,7 @@ const VisaBookingCard = () => {
               )}
             </div>
           </div>
-
           {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
-
           <div className="flex justify-end space-x-2">
             <button
               onClick={() => setShowCalendar(false)}
@@ -591,22 +600,15 @@ const VisaBookingCard = () => {
         <p className="mb-6">
           Your visa application is being processed. Please check your email for further instructions.
         </p>
-
         <div className="bg-blue-50 p-4 rounded-lg mb-6 text-left">
           <h3 className="font-semibold mb-2">Next Steps:</h3>
           <ol className="list-decimal list-inside space-y-2 text-sm">
-            
             <li>Session be start Upload required documents within 48 hours</li>
             <li>{"We'll notify you about your visa status"}</li>
           </ol>
         </div>
-
         <button
-          onClick={() =>
-            navigate(
-              `/user-dashboard/ApplyVisa`,
-            )
-          }
+          onClick={() => navigate(`/user-dashboard/ApplyVisa`)}
           className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg"
         >
           Upload Documents Now
@@ -659,7 +661,6 @@ const VisaBookingCard = () => {
             <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
             Get a Guaranteed Visa on
           </h3>
-
           {guaranteeOptions.map((option, i) => (
             <div
               key={i}
@@ -670,7 +671,6 @@ const VisaBookingCard = () => {
               }`}
             >
               <div>
-             
                 <p className="text-md font-medium text-gray-800 mt-2">{option.date}</p>
                 <button
                   onClick={() => setShowCalendar(true)}
@@ -691,7 +691,6 @@ const VisaBookingCard = () => {
               </button>
             </div>
           ))}
-
           {showCalendar && renderCalendar()}
         </div>
       </div>
@@ -744,18 +743,16 @@ const VisaBookingCard = () => {
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Phone Number</label>
                 <div className="flex gap-2">
-      <input
-  type="tel"
-  name="phone"
-  value={contactInfo.phone}
-  onChange={handlePhoneChange}
-  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-  placeholder="+91 9876543210"
-  required
-  disabled={otpVerified}
-/>
-
-
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={contactInfo.phone}
+                    onChange={handlePhoneChange}
+                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="+91 9876543210"
+                    required
+                    disabled={otpVerified}
+                  />
                   {!otpSent && !otpVerified && (
                     <button
                       type="button"
@@ -772,7 +769,6 @@ const VisaBookingCard = () => {
                     </div>
                   )}
                 </div>
-
                 {otpSent && !otpVerified && (
                   <div className="mt-3 space-y-2">
                     <label className="block text-sm text-gray-600">Enter 6-digit OTP</label>
@@ -804,7 +800,6 @@ const VisaBookingCard = () => {
                     </button>
                   </div>
                 )}
-
                 {otpError && <div className="mt-2 text-red-500 text-sm">{otpError}</div>}
               </div>
             </div>
@@ -923,15 +918,116 @@ const VisaBookingCard = () => {
             </div>
           </div>
 
-          <button
-            onClick={handlePayment}
-            disabled={!contactInfo.email || !contactInfo.phone || !otpVerified}
-            className={`w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all ${
-              !contactInfo.email || !contactInfo.phone || !otpVerified ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-          >
-            {!otpVerified ? "Verify Phone Number to Continue" : "Pay Now"}
-          </button>
+          {/* Payment Method Selection */}
+          {!showPaymentOptions ? (
+            <button
+              onClick={() => {
+                if (!contactInfo.email || !contactInfo.phone || !otpVerified) {
+                  return
+                }
+                setShowPaymentOptions(true)
+              }}
+              disabled={!contactInfo.email || !contactInfo.phone || !otpVerified}
+              className={`w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all ${
+                !contactInfo.email || !contactInfo.phone || !otpVerified ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {!otpVerified ? "Verify Phone Number to Continue" : "Continue to Payment"}
+            </button>
+          ) : (
+            <div className="space-y-4">
+              <h5 className="font-medium text-gray-700 text-center">Choose Payment Method</h5>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setPaymentMethod("online")}
+                  className={`p-4 border-2 rounded-lg text-center transition-all ${
+                    paymentMethod === "online"
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="text-2xl mb-2">💳</div>
+                  <div className="font-medium">Online Payment</div>
+                  <div className="text-xs text-gray-500 mt-1">Pay via UPI, Card, Net Banking</div>
+                </button>
+
+                <button
+                  onClick={() => setPaymentMethod("offline")}
+                  className={`p-4 border-2 rounded-lg text-center transition-all ${
+                    paymentMethod === "offline"
+                      ? "border-green-500 bg-green-50 text-green-700"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="text-2xl mb-2">💬</div>
+                  <div className="font-medium">Offline Payment</div>
+                  <div className="text-xs text-gray-500 mt-1">Connect via WhatsApp</div>
+                </button>
+              </div>
+
+              {paymentMethod && (
+                <div className="space-y-3">
+                  {paymentMethod === "offline" && (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-green-600 text-lg">📱</span>
+                        <span className="font-medium text-green-800">WhatsApp Support</span>
+                      </div>
+                      <p className="text-sm text-green-700 mb-3">
+                        Connect with our team on WhatsApp for personalized assistance and offline payment options.
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Our team will guide you through the payment process and document requirements.
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentMethod === "online" && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-blue-600 text-lg">🔒</span>
+                        <span className="font-medium text-blue-800">Secure Online Payment</span>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-2">
+                        Pay securely using UPI, Credit/Debit Card, or Net Banking.
+                      </p>
+                      <p className="text-xs text-blue-600">Your payment is protected by bank-level security.</p>
+                    </div>
+                  )}
+
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => {
+                        setShowPaymentOptions(false)
+                        setPaymentMethod(null)
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Back
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (paymentMethod === "offline") {
+                          handleWhatsAppRedirect()
+                        } else if (paymentMethod === "online") {
+                          handlePayment()
+                        }
+                      }}
+                      className={`flex-1 px-4 py-3 font-bold rounded-lg transition-all ${
+                        paymentMethod === "online"
+                          ? "bg-blue-500 hover:bg-blue-600 text-white"
+                          : "bg-green-500 hover:bg-green-600 text-white"
+                      }`}
+                    >
+                      {paymentMethod === "offline" ? "Connect on WhatsApp" : "Pay Now"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

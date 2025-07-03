@@ -36,11 +36,12 @@ import {
   Close,
 } from "@mui/icons-material"
 
-interface Employee {
+interface Manager {
   _id: string
   name: string
   phoneNumber: string
   email: string
+  employeeId: string
   password?: string
   isVerified: boolean
   visaIds: string[]
@@ -50,16 +51,16 @@ interface Employee {
   __v: number
 }
 
-interface EmployeeFormData {
+interface ManagerFormData {
   name: string
   email: string
   phoneNumber: string
-  password?: string // Make password optional
+  password?: string
 }
 
-const EmployeeManagement = () => {
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([])
+const ManagerManagement = () => {
+  const [managers, setManagers] = useState<Manager[]>([])
+  const [filteredManagers, setFilteredManagers] = useState<Manager[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
@@ -70,9 +71,9 @@ const EmployeeManagement = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null)
-  const [formData, setFormData] = useState<EmployeeFormData>({
+  const [editingManager, setEditingManager] = useState<Manager | null>(null)
+  const [deletingManager, setDeletingManager] = useState<Manager | null>(null)
+  const [formData, setFormData] = useState<ManagerFormData>({
     name: "",
     email: "",
     phoneNumber: "",
@@ -82,38 +83,44 @@ const EmployeeManagement = () => {
   const [successMessage, setSuccessMessage] = useState("")
 
   useEffect(() => {
-    fetchEmployees()
+    fetchManagers()
   }, [])
 
   useEffect(() => {
-    const filtered = employees.filter((employee) => {
-      if (!employee) return false // Skip if employee is null/undefined
+    const filtered = managers.filter((manager) => {
+      if (!manager) return false // Skip if manager is null/undefined
 
-      const name = employee.name?.toLowerCase() || ""
-      const email = employee.email?.toLowerCase() || ""
-      const phoneNumber = employee.phoneNumber || ""
+      const name = manager.name?.toLowerCase() || ""
+      const email = manager.email?.toLowerCase() || ""
+      const phoneNumber = manager.phoneNumber || ""
+      const employeeId = manager.employeeId?.toLowerCase() || ""
       const searchLower = searchTerm.toLowerCase()
 
-      return name.includes(searchLower) || email.includes(searchLower) || phoneNumber.includes(searchTerm)
+      return (
+        name.includes(searchLower) ||
+        email.includes(searchLower) ||
+        phoneNumber.includes(searchTerm) ||
+        employeeId.includes(searchLower)
+      )
     })
-    setFilteredEmployees(filtered)
-  }, [searchTerm, employees])
+    setFilteredManagers(filtered)
+  }, [searchTerm, managers])
 
-  const fetchEmployees = async () => {
+  const fetchManagers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/employee/getAll")
+      const response = await fetch("http://localhost:5000/api/manager/GetAll")
       if (!response.ok) {
-        throw new Error("Failed to fetch employees")
+        throw new Error("Failed to fetch managers")
       }
       const data = await response.json()
 
       // Filter out any null/undefined entries and ensure required fields exist
-      const validEmployees = (Array.isArray(data) ? data : []).filter(
-        (employee) => employee && employee._id && employee.name && employee.email,
+      const validManagers = (Array.isArray(data) ? data : []).filter(
+        (manager) => manager && manager._id && manager.name && manager.email,
       )
 
-      setEmployees(validEmployees)
-      setFilteredEmployees(validEmployees)
+      setManagers(validManagers)
+      setFilteredManagers(validManagers)
       setLoading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred")
@@ -121,12 +128,12 @@ const EmployeeManagement = () => {
     }
   }
 
-  const handleCreateEmployee = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateManager = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setFormLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5000/api/employee/signup", {
+      const response = await fetch("http://localhost:5000/api/manager/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,32 +143,32 @@ const EmployeeManagement = () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to create employee")
+        throw new Error(errorData.message || "Failed to create manager")
       }
 
-      const newEmployee = await response.json()
-      setEmployees((prev) => [...prev, newEmployee])
+      const newManager = await response.json()
+      setManagers((prev) => [...prev, newManager])
       setIsCreateDialogOpen(false)
       setFormData({ name: "", email: "", phoneNumber: "", password: "" })
-      setSuccessMessage("Employee created successfully")
+      setSuccessMessage("Manager created successfully")
       setTimeout(() => setSuccessMessage(""), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create employee")
+      setError(err instanceof Error ? err.message : "Failed to create manager")
       setTimeout(() => setError(""), 5000)
     } finally {
       setFormLoading(false)
     }
   }
 
-  const handleUpdateEmployee = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdateManager = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingEmployee) return
+    if (!editingManager) return
 
     setFormLoading(true)
 
     try {
       // Create update data without password first
-      const updateData: Partial<EmployeeFormData> = {
+      const updateData: Partial<ManagerFormData> = {
         name: formData.name,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
@@ -172,7 +179,7 @@ const EmployeeManagement = () => {
         updateData.password = formData.password
       }
 
-      const response = await fetch(`http://localhost:5000/api/employee/upadtebyId/${editingEmployee._id}`, {
+      const response = await fetch(`http://localhost:5000/api/manager/updateById/${editingManager._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -182,55 +189,55 @@ const EmployeeManagement = () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to update employee")
+        throw new Error(errorData.message || "Failed to update manager")
       }
 
-      const updatedEmployee = await response.json()
-      setEmployees((prev) => prev.map((emp) => (emp._id === editingEmployee._id ? updatedEmployee : emp)))
+      const updatedManager = await response.json()
+      setManagers((prev) => prev.map((mgr) => (mgr._id === editingManager._id ? updatedManager : mgr)))
       setIsEditDialogOpen(false)
-      setEditingEmployee(null)
+      setEditingManager(null)
       setFormData({ name: "", email: "", phoneNumber: "", password: "" })
-      setSuccessMessage("Employee updated successfully")
+      setSuccessMessage("Manager updated successfully")
       setTimeout(() => setSuccessMessage(""), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update employee")
+      setError(err instanceof Error ? err.message : "Failed to update manager")
       setTimeout(() => setError(""), 5000)
     } finally {
       setFormLoading(false)
     }
   }
 
-  const handleDeleteEmployee = async () => {
-    if (!deletingEmployee) return
+  const handleDeleteManager = async () => {
+    if (!deletingManager) return
 
-    setDeletingId(deletingEmployee._id)
+    setDeletingId(deletingManager._id)
 
     try {
-      const response = await fetch(`http://localhost:5000/api/employee/delete/${deletingEmployee._id}`, {
+      const response = await fetch(`http://localhost:5000/api/manager/deleteByID/${deletingManager._id}`, {
         method: "DELETE",
       })
 
       if (!response.ok) {
-        throw new Error("Failed to delete employee")
+        throw new Error("Failed to delete manager")
       }
 
-      setEmployees((prev) => prev.filter((emp) => emp._id !== deletingEmployee._id))
+      setManagers((prev) => prev.filter((mgr) => mgr._id !== deletingManager._id))
       setIsDeleteDialogOpen(false)
-      setDeletingEmployee(null)
-      setSuccessMessage("Employee deleted successfully")
+      setDeletingManager(null)
+      setSuccessMessage("Manager deleted successfully")
       setTimeout(() => setSuccessMessage(""), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete employee")
+      setError(err instanceof Error ? err.message : "Failed to delete manager")
       setTimeout(() => setError(""), 5000)
     } finally {
       setDeletingId(null)
     }
   }
 
-  const handleVerifyEmployee = async (id: string, currentStatus: boolean) => {
+  const handleVerifyManager = async (id: string, currentStatus: boolean) => {
     setVerifyingId(id)
     try {
-      const response = await fetch(`http://localhost:5000/api/employee/verify/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/manager/verify/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -241,38 +248,38 @@ const EmployeeManagement = () => {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to verify employee")
+        throw new Error("Failed to verify manager")
       }
 
-      setEmployees((prev) => prev.map((emp) => (emp._id === id ? { ...emp, isVerified: !currentStatus } : emp)))
+      setManagers((prev) => prev.map((mgr) => (mgr._id === id ? { ...mgr, isVerified: !currentStatus } : mgr)))
 
-      setSuccessMessage(`Employee ${!currentStatus ? "verified" : "unverified"} successfully`)
+      setSuccessMessage(`Manager ${!currentStatus ? "verified" : "unverified"} successfully`)
       setTimeout(() => setSuccessMessage(""), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to verify employee")
+      setError(err instanceof Error ? err.message : "Failed to verify manager")
       setTimeout(() => setError(""), 5000)
     } finally {
       setVerifyingId(null)
     }
   }
 
-  const openEditDialog = (employee: Employee) => {
-    setEditingEmployee(employee)
+  const openEditDialog = (manager: Manager) => {
+    setEditingManager(manager)
     setFormData({
-      name: employee.name,
-      email: employee.email,
-      phoneNumber: employee.phoneNumber,
+      name: manager.name,
+      email: manager.email,
+      phoneNumber: manager.phoneNumber,
       password: "",
     })
     setIsEditDialogOpen(true)
   }
 
-  const openDeleteDialog = (employee: Employee) => {
-    setDeletingEmployee(employee)
+  const openDeleteDialog = (manager: Manager) => {
+    setDeletingManager(manager)
     setIsDeleteDialogOpen(true)
   }
 
-  const handleInputChange = (field: keyof EmployeeFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (field: keyof ManagerFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [field]: e.target.value })
   }
 
@@ -295,7 +302,7 @@ const EmployeeManagement = () => {
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: "bold" }}>
-        Employee Management
+        Manager Management
       </Typography>
 
       {error && (
@@ -314,7 +321,7 @@ const EmployeeManagement = () => {
         <TextField
           variant="outlined"
           size="small"
-          placeholder="Search employees..."
+          placeholder="Search managers..."
           InputProps={{
             startAdornment: <Search sx={{ mr: 1, color: "action.active" }} />,
           }}
@@ -329,7 +336,7 @@ const EmployeeManagement = () => {
           onClick={() => setIsCreateDialogOpen(true)}
           sx={{ bgcolor: "#1976d2", "&:hover": { bgcolor: "#1565c0" } }}
         >
-          Add Employee
+          Add Manager
         </Button>
       </Box>
 
@@ -338,6 +345,7 @@ const EmployeeManagement = () => {
           <TableHead sx={{ backgroundColor: "#f5f5f5" }}>
             <TableRow>
               <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Employee ID</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Email</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Phone</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Points</TableCell>
@@ -347,32 +355,35 @@ const EmployeeManagement = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredEmployees.map((employee) => (
-              <TableRow key={employee._id} hover>
-                <TableCell sx={{ fontWeight: "medium" }}>{employee.name}</TableCell>
-                <TableCell>{employee.email}</TableCell>
-                <TableCell>{employee.phoneNumber}</TableCell>
-                <TableCell>{employee.points}</TableCell>
+            {filteredManagers.map((manager) => (
+              <TableRow key={manager._id} hover>
+                <TableCell sx={{ fontWeight: "medium" }}>{manager.name}</TableCell>
+                <TableCell>
+                  <Chip label={manager.employeeId} variant="outlined" size="small" />
+                </TableCell>
+                <TableCell>{manager.email}</TableCell>
+                <TableCell>{manager.phoneNumber}</TableCell>
+                <TableCell>{manager.points}</TableCell>
                 <TableCell>
                   <Chip
-                    label={employee.isVerified ? "Verified" : "Unverified"}
-                    color={employee.isVerified ? "success" : "default"}
+                    label={manager.isVerified ? "Verified" : "Unverified"}
+                    color={manager.isVerified ? "success" : "default"}
                     size="small"
                   />
                 </TableCell>
-                <TableCell>{formatDate(employee.createdAt)}</TableCell>
+                <TableCell>{formatDate(manager.createdAt)}</TableCell>
                 <TableCell>
                   <Box sx={{ display: "flex", gap: 1 }}>
-                    <Tooltip title={employee.isVerified ? "Unverify Employee" : "Verify Employee"}>
+                    <Tooltip title={manager.isVerified ? "Unverify Manager" : "Verify Manager"}>
                       <IconButton
                         size="small"
-                        disabled={verifyingId === employee._id}
-                        onClick={() => handleVerifyEmployee(employee._id, employee.isVerified)}
-                        color={employee.isVerified ? "warning" : "success"}
+                        disabled={verifyingId === manager._id}
+                        onClick={() => handleVerifyManager(manager._id, manager.isVerified)}
+                        color={manager.isVerified ? "warning" : "success"}
                       >
-                        {verifyingId === employee._id ? (
+                        {verifyingId === manager._id ? (
                           <CircularProgress size={20} />
-                        ) : employee.isVerified ? (
+                        ) : manager.isVerified ? (
                           <UserX />
                         ) : (
                           <UserCheck />
@@ -380,20 +391,20 @@ const EmployeeManagement = () => {
                       </IconButton>
                     </Tooltip>
 
-                    <Tooltip title="Edit Employee">
-                      <IconButton size="small" onClick={() => openEditDialog(employee)} color="primary">
+                    <Tooltip title="Edit Manager">
+                      <IconButton size="small" onClick={() => openEditDialog(manager)} color="primary">
                         <Edit />
                       </IconButton>
                     </Tooltip>
 
-                    <Tooltip title="Delete Employee">
+                    <Tooltip title="Delete Manager">
                       <IconButton
                         size="small"
-                        onClick={() => openDeleteDialog(employee)}
+                        onClick={() => openDeleteDialog(manager)}
                         color="error"
-                        disabled={deletingId === employee._id}
+                        disabled={deletingId === manager._id}
                       >
-                        {deletingId === employee._id ? <CircularProgress size={20} /> : <Trash2 />}
+                        {deletingId === manager._id ? <CircularProgress size={20} /> : <Trash2 />}
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -405,13 +416,13 @@ const EmployeeManagement = () => {
       </TableContainer>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-        Showing {filteredEmployees.length} of {employees.length} employees
+        Showing {filteredManagers.length} of {managers.length} managers
       </Typography>
 
-      {/* Create Employee Dialog */}
+      {/* Create Manager Dialog */}
       <Dialog open={isCreateDialogOpen} onClose={() => setIsCreateDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Create New Employee
+          Create New Manager
           <IconButton
             aria-label="close"
             onClick={() => setIsCreateDialogOpen(false)}
@@ -420,10 +431,10 @@ const EmployeeManagement = () => {
             <Close />
           </IconButton>
         </DialogTitle>
-        <form onSubmit={handleCreateEmployee}>
+        <form onSubmit={handleCreateManager}>
           <DialogContent>
             <DialogContentText sx={{ mb: 2 }}>
-              Add a new employee to the system. They will need to be verified before they can access the system.
+              Add a new manager to the system. They will be automatically assigned an employee ID.
             </DialogContentText>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <TextField
@@ -462,16 +473,16 @@ const EmployeeManagement = () => {
             <Button onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
             <Button type="submit" variant="contained" disabled={formLoading}>
               {formLoading && <CircularProgress size={20} sx={{ mr: 1 }} />}
-              Create Employee
+              Create Manager
             </Button>
           </DialogActions>
         </form>
       </Dialog>
 
-      {/* Edit Employee Dialog */}
+      {/* Edit Manager Dialog */}
       <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Edit Employee
+          Edit Manager
           <IconButton
             aria-label="close"
             onClick={() => setIsEditDialogOpen(false)}
@@ -480,10 +491,10 @@ const EmployeeManagement = () => {
             <Close />
           </IconButton>
         </DialogTitle>
-        <form onSubmit={handleUpdateEmployee}>
+        <form onSubmit={handleUpdateManager}>
           <DialogContent>
             <DialogContentText sx={{ mb: 2 }}>
-              Update employee information. Leave password empty to keep current password.
+              Update manager information. Leave password empty to keep current password.
             </DialogContentText>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <TextField
@@ -522,7 +533,7 @@ const EmployeeManagement = () => {
             <Button onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
             <Button type="submit" variant="contained" disabled={formLoading}>
               {formLoading && <CircularProgress size={20} sx={{ mr: 1 }} />}
-              Update Employee
+              Update Manager
             </Button>
           </DialogActions>
         </form>
@@ -533,13 +544,13 @@ const EmployeeManagement = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete the employee account for <strong>{deletingEmployee?.name}</strong>? This
+            Are you sure you want to delete the manager account for <strong>{deletingManager?.name}</strong>? This
             action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteEmployee} color="error" variant="contained">
+          <Button onClick={handleDeleteManager} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>
@@ -548,4 +559,4 @@ const EmployeeManagement = () => {
   )
 }
 
-export default EmployeeManagement
+export default ManagerManagement

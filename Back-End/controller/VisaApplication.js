@@ -2,56 +2,72 @@ const VisaApplication = require('../shcema/VisaApplication');
 
 const createVisaApplication = async (req, res) => {
   try {
-    const { visaId, travellers, email,country, phone, paymentId } = req.body;
+    const {
+      visaId,
+      travellers,
+      email,
+      country,
+      phone,
+      paymentId,
+      processingMode, // ✅ New field
+      employeeId, // ✅ New field
+    } = req.body
 
     // Parse passportData (should be an array of objects)
-    let passportData = [];
+    let passportData = []
     if (req.body.passportData) {
       try {
-        passportData = typeof req.body.passportData === 'string'
-          ? JSON.parse(req.body.passportData)
-          : req.body.passportData;
-
+        passportData =
+          typeof req.body.passportData === "string" ? JSON.parse(req.body.passportData) : req.body.passportData
         // Ensure it's always an array
         if (!Array.isArray(passportData)) {
-          passportData = [passportData];
+          passportData = [passportData]
         }
       } catch (err) {
-        console.warn('Failed to parse passportData:', err);
-        passportData = [];
+        console.warn("Failed to parse passportData:", err)
+        passportData = []
       }
     }
 
     // Parse documentsMetadata (for naming uploaded files)
-    const documentsMetadata = JSON.parse(req.body.documentsMetadata || '[]');
+    const documentsMetadata = JSON.parse(req.body.documentsMetadata || "[]")
 
-    const documents = {};
-
+    const documents = {}
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        // Expected format: documents[<docId>][front/back]
-        const match = file.fieldname.match(/^documents\[(.+?)\]\[(front|back)\]$/);
-        if (!match) continue;
+        // Expected format: documents[<travellerIndex>][<docId>][front/back]
+        const match = file.fieldname.match(/^documents\[(\d+)\]\[(.+?)\]\[(front|back)\]$/)
+        if (!match) continue
 
-        const docId = match[1];
-        const side = match[2]; // 'front' or 'back'
-        const meta = documentsMetadata.find(m => m.id === docId);
-        const fileName = meta ? meta.name : file.originalname;
+        const travellerIndex = match[1]
+        const docId = match[2]
+        const side = match[3] // 'front' or 'back'
 
-        if (!documents[docId]) {
-          documents[docId] = {};
+        // Find metadata for this traveller and document
+        const travellerMeta = documentsMetadata.find((m) => m.travellerIndex === Number.parseInt(travellerIndex))
+        const docMeta = travellerMeta?.documents?.find((d) => d.id === docId)
+        const fileName = docMeta ? docMeta.name : file.originalname
+
+        // Create nested structure: documents[travellerIndex][docId][side]
+        const documentKey = `${travellerIndex}_${docId}`
+        if (!documents[documentKey]) {
+          documents[documentKey] = {}
         }
 
-        documents[docId][side] = {
+        documents[documentKey][side] = {
           url: file.path,
           fileName,
-        };
+        }
       }
     } else {
-      console.log('No files received to process.');
+      console.log("No files received to process.")
     }
 
-    // Create new visa application
+    // ✅ Log the new fields
+    console.log("🔧 Processing Mode:", processingMode)
+    console.log("👤 Employee ID:", employeeId)
+
+    // Create new visa application with new fields
     const visaApplication = new VisaApplication({
       visaId,
       travellers,
@@ -61,19 +77,33 @@ const createVisaApplication = async (req, res) => {
       documents,
       paymentId,
       passportData,
-    });
+      processingMode, // ✅ Save processing mode
+      employeeId, // ✅ Save employee ID
+    })
 
-    const savedVisaApplication = await visaApplication.save();
+    const savedVisaApplication = await visaApplication.save()
+
+    console.log("✅ Visa Application Saved with Processing Info:", {
+      id: savedVisaApplication._id,
+      processingMode: savedVisaApplication.processingMode,
+      employeeId: savedVisaApplication.employeeId,
+    })
 
     res.status(201).json({
-      message: 'Visa application created successfully.',
+      message: "Visa application created successfully.",
       visaApplication: savedVisaApplication,
-    });
+    })
   } catch (error) {
-    console.error('Error in createVisaApplication:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("❌ Error in createVisaApplication:", error)
+    res.status(500).json({
+      error: "Internal server error",
+      details: error.message,
+    })
   }
-};
+}
+
+
+
 
 
 

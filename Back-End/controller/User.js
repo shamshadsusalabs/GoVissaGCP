@@ -140,3 +140,25 @@ exports.logoutUser = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+
+exports.checkUserExistence = async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  if (!phoneNumber) {
+    return res.status(400).json({ message: "Phone number is required" });
+  }
+
+  try {
+    const user = await User.findOne({ phoneNumber });
+
+    if (user) {
+      return res.status(200).json({ exists: true });
+    } else {
+      return res.status(200).json({ exists: false });
+    }
+  } catch (error) {
+    console.error("❌ Error checking user existence:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};

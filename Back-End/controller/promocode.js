@@ -71,3 +71,23 @@ exports.validatePromoCode = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// Increment Usage Count
+exports.incrementPromoCodeUsage = async (req, res) => {
+  try {
+    const { code } = req.body;
+    const promo = await PromoCode.findOne({ code: code.toUpperCase(), isActive: true });
+
+    if (!promo) return res.status(404).json({ error: 'Promo code not found' });
+
+    const now = new Date();
+    if (promo.usedCount >= promo.maxUsage) return res.status(400).json({ error: 'Usage limit reached' });
+    if (now < promo.validFrom || now > promo.validUntil) return res.status(400).json({ error: 'Promo code is not valid at this time' });
+
+    promo.usedCount += 1;
+    await promo.save();
+
+    res.status(200).json({ message: 'Promo code usage incremented', promo });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

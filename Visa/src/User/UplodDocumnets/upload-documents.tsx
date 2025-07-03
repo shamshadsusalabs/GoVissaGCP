@@ -3,20 +3,28 @@
 import { useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { Users, FileText, CheckCircle, Clock, ArrowRight } from "lucide-react"
+
 import DocumentUploader from "./document-uploader"
 import DocumentReview from "./document-review"
-import type { Document, PassportData, TravellerData } from "./document-types"
+import ProcessingModeModal from "./processing-mode-modal"
+import type { Document, PassportData, TravellerData, OCRResponse } from "./document-types"
 
 export default function UploadDocuments() {
   const params = useParams()
   const visaId = params?.visaId as string
   const travellersCount = Number.parseInt(params?.travellers as string) || 1
   const paymentId = params?.paymentId as string
-   const country = params?.country  as string
+  const country = params?.country as string
+
   const [documents, setDocuments] = useState<Document[]>([])
   const [currentStep, setCurrentStep] = useState(0)
   const [currentTraveller, setCurrentTraveller] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+
+  // New state for processing mode
+  const [showProcessingModal, setShowProcessingModal] = useState(true)
+  const [processingMode, setProcessingMode] = useState<"online" | "offline" | null>(null)
+  const [employeeId, setEmployeeId] = useState<string>("")
 
   // Store data for all travellers
   const [travellersData, setTravellersData] = useState<TravellerData[]>(
@@ -36,6 +44,14 @@ export default function UploadDocuments() {
 
   // Get current traveller's data
   const currentTravellerData = travellersData[currentTraveller]
+
+  // Handle processing mode selection
+  const handleProcessingModeSelect = (mode: "online" | "offline", empId?: string) => {
+    setProcessingMode(mode)
+    setEmployeeId(empId || "")
+    setShowProcessingModal(false)
+    console.log("🔧 Processing Mode Selected:", { mode, employeeId: empId })
+  }
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -58,10 +74,10 @@ export default function UploadDocuments() {
       }
     }
 
-    if (visaId) {
+    if (visaId && !showProcessingModal) {
       fetchDocuments()
     }
-  }, [visaId])
+  }, [visaId, showProcessingModal])
 
   const updateCurrentTravellerData = (updates: Partial<TravellerData>) => {
     setTravellersData((prev) =>
@@ -91,59 +107,81 @@ export default function UploadDocuments() {
       try {
         setIsLoading(true)
         const formData = new FormData()
-        formData.append("files", file)
+        formData.append("file", file)
 
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 30000)
-
-        const response = await fetch("https://govissagcp-872569311567.asia-south2.run.app/upload", {
+        const response = await fetch("http://localhost:8000/extract", {
           method: "POST",
           body: formData,
-          signal: controller.signal,
         })
-
-        clearTimeout(timeoutId)
 
         if (!response.ok) {
           throw new Error(`OCR service responded with status: ${response.status}`)
         }
 
-        const data = await response.json()
-        console.log("🤖 OCR Data Received:", data)
-        updateCurrentTravellerData({ ocrData: data, ocrError: null })
+        const ocrResponse: OCRResponse = await response.json()
+        console.log("🤖 OCR Data Received:", ocrResponse)
+
+        const defaultPassportData: PassportData = {
+          passport_number: ocrResponse.data.passport_number || "",
+          surname: ocrResponse.data.surname || "",
+          given_names: ocrResponse.data.given_names || "",
+          date_of_birth: ocrResponse.data.date_of_birth || "",
+          date_of_issue: ocrResponse.data.date_of_issue || "",
+          date_of_expiry: ocrResponse.data.date_of_expiry || "",
+          place_of_birth: ocrResponse.data.place_of_birth || "",
+          place_of_issue: ocrResponse.data.place_of_issue || "",
+          nationality: ocrResponse.data.nationality || "",
+          sex: ocrResponse.data.sex || "",
+          father_name: ocrResponse.data.father_name || "",
+          mother_name: ocrResponse.data.mother_name || "",
+          spouse_name: ocrResponse.data.spouse_name || "",
+          address: ocrResponse.data.address || "",
+          file_number: ocrResponse.data.file_number || "",
+        }
+
+        const processedOcrData: OCRResponse = {
+          ...ocrResponse,
+          data: defaultPassportData,
+        }
+
+        updateCurrentTravellerData({ ocrData: processedOcrData, ocrError: null })
       } catch (error) {
         console.error("Error processing OCR:", error)
+        let errorMessage = "OCR processing failed. You can continue and fill the passport details manually."
 
-        let errorMessage = "An unexpected error occurred during OCR processing."
         if (error instanceof Error) {
-          if (error.name === "AbortError") {
-            errorMessage = "OCR processing timed out. Please try again."
-          } else if (error.message.includes("Failed to fetch")) {
-            errorMessage = "Unable to connect to OCR service. Please check if the service is running and try again."
+          if (error.message.includes("Failed to fetch")) {
+            errorMessage = "Unable to connect to OCR service. Please continue and fill the passport details manually."
           } else {
-            errorMessage = `OCR processing failed: ${error.message}`
+            errorMessage = `OCR processing failed: ${error.message}. Please continue and fill the passport details manually.`
           }
         }
 
-        const emptyData = {
-          extracted_text: "",
-          passport_data: {
-            dateOfExpiry: "",
-            dateOfIssue: "",
-            dob: "",
-            fileNumber: "",
-            givenName: "",
-            nationality: "",
-            passportNumber: "",
-            placeOfBirth: "",
-            placeOfIssue: "",
-            sex: "",
+        const emptyOcrData: OCRResponse = {
+          success: false,
+          filename: file.name,
+          data: {
+            passport_number: "",
             surname: "",
+            given_names: "",
+            date_of_birth: "",
+            date_of_issue: "",
+            date_of_expiry: "",
+            place_of_birth: "",
+            place_of_issue: "",
+            nationality: "",
+            sex: "",
+            father_name: "",
+            mother_name: "",
+            spouse_name: "",
+            address: "",
+            file_number: "",
           },
+          timestamp: new Date().toISOString(),
         }
 
         updateCurrentTravellerData({
-          ocrData: emptyData,
+          ocrData: emptyOcrData,
           ocrError: errorMessage,
         })
       } finally {
@@ -158,7 +196,7 @@ export default function UploadDocuments() {
       ocrData: currentTravellerData.ocrData
         ? {
             ...currentTravellerData.ocrData,
-            passport_data: data,
+            data: data,
           }
         : null,
     })
@@ -166,7 +204,6 @@ export default function UploadDocuments() {
 
   const handleNext = () => {
     const currentDoc = documents[currentStep]
-
     if (currentDoc.requiresBothSides && currentSide === "front") {
       setCurrentSide("back")
       return
@@ -176,14 +213,11 @@ export default function UploadDocuments() {
       setCurrentStep(currentStep + 1)
       setCurrentSide("front")
     } else {
-      // Completed current traveller's documents
       if (currentTraveller < travellersCount - 1) {
-        // Move to next traveller
         setCurrentTraveller(currentTraveller + 1)
         setCurrentStep(0)
         setCurrentSide("front")
       } else {
-        // All travellers completed, show review
         setShowReview(true)
       }
     }
@@ -191,7 +225,6 @@ export default function UploadDocuments() {
 
   const handlePrevious = () => {
     const currentDoc = documents[currentStep]
-
     if (currentDoc.requiresBothSides && currentSide === "back") {
       setCurrentSide("front")
       return
@@ -201,7 +234,6 @@ export default function UploadDocuments() {
       setCurrentStep(currentStep - 1)
       setCurrentSide(documents[currentStep - 1].requiresBothSides ? "back" : "front")
     } else if (currentTraveller > 0) {
-      // Go back to previous traveller's last document
       setCurrentTraveller(currentTraveller - 1)
       setCurrentStep(documents.length - 1)
       setCurrentSide(documents[documents.length - 1].requiresBothSides ? "back" : "front")
@@ -221,7 +253,6 @@ export default function UploadDocuments() {
 
     updateCurrentTravellerData({ uploadedFiles: updatedFiles })
 
-    // Clear OCR data if removing passport front side
     if (documents[currentStep].name.toLowerCase() === "passport" && side === "front") {
       updateCurrentTravellerData({ ocrData: null, ocrError: null })
     }
@@ -234,10 +265,9 @@ export default function UploadDocuments() {
     try {
       const formData = new FormData()
 
-      // Get user data from localStorage
       const userString = localStorage.getItem("user")
-      let userEmail = "abc@gmail.com" // default fallback
-      let userPhone = "7070357583" // default fallback
+      let userEmail = "abc@gmail.com"
+      let userPhone = "7070357583"
 
       if (userString) {
         try {
@@ -249,13 +279,24 @@ export default function UploadDocuments() {
         }
       }
 
-      // Add visa ID and basic info
+      // Add basic info
       formData.append("visaId", visaId)
       formData.append("travellers", travellersCount.toString())
       formData.append("email", userEmail)
       formData.append("phone", userPhone)
-       formData.append("country", country)
+      formData.append("country", country)
       formData.append("paymentId", paymentId)
+
+      // ✅ Add processing mode and employee ID
+      if (processingMode) {
+        formData.append("processingMode", processingMode)
+        console.log("📋 Processing Mode:", processingMode)
+      }
+
+      if (employeeId) {
+        formData.append("employeeId", employeeId)
+        console.log("👤 Employee ID:", employeeId)
+      }
 
       console.log("🚀 Data to be submitted:")
       console.log("visaId:", visaId)
@@ -263,31 +304,55 @@ export default function UploadDocuments() {
       console.log("email:", userEmail)
       console.log("phone:", userPhone)
       console.log("paymentId:", paymentId)
+      console.log("processingMode:", processingMode)
+      console.log("employeeId:", employeeId)
 
       // Add passport data for ALL travellers
-      const allPassportData: { travellerIndex: number; passportNumber: string; surname: string; givenName: string; nationality: string; dob: string; placeOfBirth: string; sex: string; dateOfIssue: string; dateOfExpiry: string; placeOfIssue: string; fileNumber: string }[] = []
+      const allPassportData: Array<{
+        travellerIndex: number
+        passport_number: string
+        surname: string
+        given_names: string
+        nationality: string
+        date_of_birth: string
+        place_of_birth: string
+        sex: string
+        date_of_issue: string
+        date_of_expiry: string
+        place_of_issue: string
+        file_number: string
+        father_name: string
+        mother_name: string
+        spouse_name: string
+        address: string
+      }> = []
+
       travellersData.forEach((travellerData, index) => {
-        if (travellerData?.ocrData?.passport_data) {
+        if (travellerData?.ocrData?.data) {
           const passportData = {
             travellerIndex: index,
-            passportNumber: travellerData.ocrData.passport_data.passportNumber || "",
-            surname: travellerData.ocrData.passport_data.surname || "",
-            givenName: travellerData.ocrData.passport_data.givenName || "",
-            nationality: travellerData.ocrData.passport_data.nationality || "",
-            dob: travellerData.ocrData.passport_data.dob || "",
-            placeOfBirth: travellerData.ocrData.passport_data.placeOfBirth || "",
-            sex: travellerData.ocrData.passport_data.sex || "",
-            dateOfIssue: travellerData.ocrData.passport_data.dateOfIssue || "",
-            dateOfExpiry: travellerData.ocrData.passport_data.dateOfExpiry || "",
-            placeOfIssue: travellerData.ocrData.passport_data.placeOfIssue || "",
-            fileNumber: travellerData.ocrData.passport_data.fileNumber || "",
+            passport_number: travellerData.ocrData.data.passport_number || "",
+            surname: travellerData.ocrData.data.surname || "",
+            given_names: travellerData.ocrData.data.given_names || "",
+            nationality: travellerData.ocrData.data.nationality || "",
+            date_of_birth: travellerData.ocrData.data.date_of_birth || "",
+            place_of_birth: travellerData.ocrData.data.place_of_birth || "",
+            sex: travellerData.ocrData.data.sex || "",
+            date_of_issue: travellerData.ocrData.data.date_of_issue || "",
+            date_of_expiry: travellerData.ocrData.data.date_of_expiry || "",
+            place_of_issue: travellerData.ocrData.data.place_of_birth || "",
+            file_number: travellerData.ocrData.data.file_number || "",
+            father_name: travellerData.ocrData.data.father_name || "",
+            mother_name: travellerData.ocrData.data.mother_name || "",
+            spouse_name: travellerData.ocrData.data.spouse_name || "",
+            address: travellerData.ocrData.data.address || "",
           }
+
           allPassportData.push(passportData)
           console.log(`passportData[${index}]:`, passportData)
         }
       })
 
-      // Send passport data as array for all travellers
       formData.append("passportData", JSON.stringify(allPassportData))
 
       // Add documents for ALL travellers
@@ -348,6 +413,11 @@ export default function UploadDocuments() {
     }
   }
 
+  // Show processing mode modal first
+  if (showProcessingModal) {
+    return <ProcessingModeModal isOpen={showProcessingModal} onClose={handleProcessingModeSelect} />
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -399,11 +469,25 @@ export default function UploadDocuments() {
             </span>{" "}
             has been submitted successfully.
           </p>
+
+          {/* Show processing mode info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-blue-800">
+              <span className="font-semibold">Processing Mode:</span>{" "}
+              {processingMode === "online" ? "Online" : "Offline"}
+            </p>
+            {employeeId && (
+              <p className="text-sm text-blue-800 mt-1">
+                <span className="font-semibold">Employee ID:</span> {employeeId}
+              </p>
+            )}
+          </div>
+
           <p className="text-sm text-gray-500 mb-8">
             You will receive a confirmation email shortly with your application reference number.
           </p>
+
           <div className="space-y-3">
-           
             <button
               onClick={() => window.history.back()}
               className="w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium"
@@ -448,7 +532,7 @@ export default function UploadDocuments() {
                     ocrData: traveller.ocrData
                       ? {
                           ...traveller.ocrData,
-                          passport_data: data,
+                          data: data,
                         }
                       : null,
                   }
@@ -469,6 +553,7 @@ export default function UploadDocuments() {
   const progress = ((currentStep + 1) / documents.length) * 100
   const overallProgress =
     ((currentTraveller * documents.length + currentStep + 1) / (travellersCount * documents.length)) * 100
+
   const requiresBothSides = currentDocument.requiresBothSides
   const currentUploads = currentTravellerData.uploadedFiles[currentDocument.id] || {}
   const hasUploadedFile = !!currentUploads[currentSide] || !!currentUploads.front
@@ -484,6 +569,17 @@ export default function UploadDocuments() {
               <p className="text-gray-600 mt-1">
                 Traveller {currentTraveller + 1} of {travellersCount} • {currentDocument.name}
               </p>
+              {/* Show processing mode info */}
+              <div className="flex items-center gap-4 mt-2">
+                <span
+                  className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    processingMode === "online" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {processingMode === "online" ? "Online Processing" : "Offline Processing"}
+                </span>
+                {employeeId && <span className="text-xs text-gray-500">Employee: {employeeId}</span>}
+              </div>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Users className="w-4 h-4" />
@@ -528,8 +624,6 @@ export default function UploadDocuments() {
               {Array.from({ length: travellersCount }, (_, index) => {
                 const isCompleted = index < currentTraveller
                 const isCurrent = index === currentTraveller
-               
-
                 return (
                   <div
                     key={index}
@@ -610,6 +704,7 @@ export default function UploadDocuments() {
             >
               ← Previous
             </button>
+
             <button
               onClick={handleNext}
               disabled={!hasUploadedFile}

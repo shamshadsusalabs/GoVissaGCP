@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 left-0 z-50 w-full bg-[#4A54F1] py-4 overflow-hidden">
+    <nav className="fixed top-0 left-0 z-50 w-full bg-white py-4 overflow-hidden">
       <div className="max-w-screen-xl mx-auto px-6 flex items-center justify-between">
         {/* Left: Image Logo */}
         <Link to="/">
