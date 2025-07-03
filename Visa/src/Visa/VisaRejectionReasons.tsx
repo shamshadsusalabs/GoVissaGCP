@@ -44,7 +44,7 @@ const VisaRejectionReasons: React.FC = () => {
   useEffect(() => {
     const fetchRejectionReasons = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/configurations/rejections/${id}`);
+        const response = await fetch(`https://govissa-872569311567.asia-south2.run.app/api/configurations/rejections/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch rejection reasons');
         }

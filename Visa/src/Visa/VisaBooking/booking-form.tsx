@@ -68,7 +68,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setOtpLoading(true)
     setOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/send-otp", {
+      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/User/send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,7 +100,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setOtpLoading(true)
     setOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/verify-otp", {
+      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/User/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -170,7 +170,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
       // Increment promo code usage if applied
       if (appliedPromoCode) {
-        await fetch("http://localhost:5000/api/promocode/incrementUsage", {
+        await fetch("https://govissa-872569311567.asia-south2.run.app/api/promocode/incrementUsage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -181,7 +181,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         })
       }
 
-      const response = await fetch("http://localhost:5000/api/payments/create-order", {
+      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -220,7 +220,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         order_id: data.id,
         handler: async (response: any) => {
           try {
-            const verifyResponse = await fetch("http://localhost:5000/api/payments/verify-payment", {
+            const verifyResponse = await fetch("https://govissa-872569311567.asia-south2.run.app/api/payments/verify-payment", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -297,7 +297,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
       // Increment promo code usage if applied
       if (appliedPromoCode) {
-        await fetch("http://localhost:5000/api/promocode/incrementUsage", {
+        await fetch("https://govissa-872569311567.asia-south2.run.app/api/promocode/incrementUsage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -309,7 +309,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       }
 
       // Use the same create-order API but with offline flag
-      const response = await fetch("http://localhost:5000/api/payments/create-order", {
+      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

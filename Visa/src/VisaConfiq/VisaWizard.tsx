@@ -174,7 +174,7 @@ const VisaWizard: React.FC = () => {
     }
 
     // Send form data to backend
-    const response = await fetch('http://localhost:5000/api/configurations/add', {
+    const response = await fetch('https://govissa-872569311567.asia-south2.run.app/api/configurations/add', {
       method: 'POST',
       body: formData,
     });
