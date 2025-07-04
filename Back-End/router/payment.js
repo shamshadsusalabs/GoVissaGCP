@@ -5,5 +5,5 @@ const { verifyAccessToken } = require('../middileware/authMiddleware');
 router.post("/create-order", createOrder)
 router.post("/verify-payment", verifyPayment)
 router.post("/webhook", webhook)
-router.get("/by-phone/:phone",verifyAccessToken, getPaymentsByPhone);
+router.get("/by-phone/:phone", getPaymentsByPhone);
 module.exports = router

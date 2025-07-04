@@ -263,6 +263,32 @@ const getVisaStatusByPaymentId = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+const getVisaStatusById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: '_id is required in params.' });
+    }
+
+    const visa = await VisaApplication.findById(id)
+      .select('statusHistory')
+      .lean()
+      .exec();
+
+    if (!visa) {
+      return res.status(404).json({ error: 'Visa application not found.' });
+    }
+
+    res.status(200).json({
+      message: `Status history for _id ${id} fetched successfully.`,
+      statusHistory: visa.statusHistory || [],
+    });
+  } catch (error) {
+    console.error('Error fetching visa status history by _id:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 
 const getPaymentByPaymentId = async (req, res) => {
@@ -389,5 +415,5 @@ const getLatestVisaApplications = async (req, res) => {
 
 
 module.exports = { createVisaApplication , getAllVisaApplications,updateVisaStatus,getVisaApplicationById,
-  getVisaApplicationsByPhone,getVisaApplicationStats, getLatestVisaApplications,
+  getVisaApplicationsByPhone,getVisaApplicationStats, getLatestVisaApplications,getVisaStatusById,
   getVisaStatusByPaymentId,getPaymentByPaymentId,getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById};

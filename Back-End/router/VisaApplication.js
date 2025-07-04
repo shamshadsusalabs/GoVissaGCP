@@ -3,7 +3,7 @@ const router = express.Router();
 const parser = require('../middileware/Uplod');
 const { verifyAccessToken } = require('../middileware/authMiddleware');
 const { createVisaApplication,getAllVisaApplications,updateVisaStatus ,
-    getVisaApplicationById,getVisaApplicationsByPhone,
+    getVisaApplicationById,getVisaApplicationsByPhone,getVisaStatusById,
     getVisaStatusByPaymentId,getPaymentByPaymentId,getVisaApplicationStats,getLatestVisaApplications,
     getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById} = require('../controller/VisaApplication');
 
@@ -30,6 +30,8 @@ router.get('/rejected/:phone',verifyAccessToken, getRejectedByPhone);
 router.get('/approved/:phone',verifyAccessToken, getApprovedByPhone);
 
 router.get('/by-phone/:phone',verifyAccessToken, getVisasByPhone);
+router.get('/visa/status/:id', getVisaStatusById);
+
 
 router.get('/status-history/:id',verifyAccessToken, getStatusHistoryById);
 

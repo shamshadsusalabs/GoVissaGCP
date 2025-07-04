@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "GoVisaa",
+    "slug": "GoVisaa",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/Govisaa.png",
+    "scheme": "govisaa",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/Govisaa.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/Govisaa.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/Govisaa.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
