@@ -4,7 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_BASE_URL = "http://10.36.75.99:5000/api/User";
+const API_BASE_URL = "https://govissa-872569311567.asia-south2.run.app/api/User";
 
 export default function LoginScreen() {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
