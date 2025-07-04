@@ -1,0 +1,24 @@
+workflows:
+  expo-android:
+    name: Expo Android Build
+    max_build_duration: 60
+    environment:
+      vars:
+        EXPO_TOKEN: Encrypted_Expo_Token
+      node: 18
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Install dependencies
+        script: yarn install
+      - name: Install Expo CLI
+        script: npm install -g expo-cli
+      - name: Create build
+        script: expo build:android --non-interactive --no-wait
+    artifacts:
+      - dist/**/*.apk
+      - dist/**/*.aab
