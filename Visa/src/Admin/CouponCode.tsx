@@ -182,7 +182,7 @@ const CouponCode: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {promo.discountType === 'percentage' 
                       ? `${promo.discountValue}%` 
-                      : `$${promo.discountValue}`}
+                      : `${promo.discountValue}`}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {promo.usedCount} / {promo.maxUsage}

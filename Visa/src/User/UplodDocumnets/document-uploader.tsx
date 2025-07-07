@@ -22,6 +22,7 @@ interface DocumentUploaderProps {
   ocrError: string | null
   handlePassportDataChange: (data: PassportData) => void
   travellerNumber: number
+  passportDataSaved?: boolean // ✅ Add this prop
 }
 
 export default function DocumentUploader({
@@ -35,6 +36,7 @@ export default function DocumentUploader({
   ocrError,
   handlePassportDataChange,
   travellerNumber,
+  passportDataSaved = false, // ✅ Add this prop with default value
 }: DocumentUploaderProps) {
   const [dragActive, setDragActive] = useState(false)
   const [showCamera, setShowCamera] = useState(false)
@@ -277,7 +279,11 @@ export default function DocumentUploader({
 
               {/* Right side - Passport Form */}
               <div className="order-1 xl:order-2">
-                <PassportDataForm initialData={ocrData.data} onDataChange={handlePassportDataChange} />
+                <PassportDataForm
+                  initialData={ocrData.data}
+                  onDataChange={handlePassportDataChange}
+                  passportDataSaved={passportDataSaved} // ✅ Pass the saved status
+                />
               </div>
             </div>
           </div>

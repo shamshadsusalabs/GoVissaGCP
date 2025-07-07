@@ -221,15 +221,14 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
                 <label className="block text-sm font-medium text-gray-700 mb-1">Visa Fee</label>
                 <div className="flex">
                   <select
-                    name="currency"
-                    value={newVisaType.currency}
-                    onChange={handleChange}
-                    className="border-r-0 rounded-r-none"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="GBP">GBP</option>
-                  </select>
+  name="currency"
+  value={newVisaType.currency}
+  onChange={handleChange}
+  className="border-r-0 rounded-r-none"
+>
+  <option value="INR">INR</option>
+</select>
+
                   <input
                     type="number"
                     name="visaFee"

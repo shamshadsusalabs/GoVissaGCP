@@ -40,4 +40,5 @@ export interface TravellerData {
   uploadedFiles: Record<string, { front?: File; back?: File; frontPreview?: string; backPreview?: string }>
   ocrData: OCRResponse | null
   ocrError: string | null
+  passportDataSaved: boolean // ✅ Add this field to track if passport data is saved
 }

@@ -3,7 +3,6 @@
 import { useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { Users, FileText, CheckCircle, Clock, ArrowRight } from "lucide-react"
-
 import DocumentUploader from "./document-uploader"
 import DocumentReview from "./document-review"
 import ProcessingModeModal from "./processing-mode-modal"
@@ -33,6 +32,7 @@ export default function UploadDocuments() {
       uploadedFiles: {},
       ocrData: null,
       ocrError: null,
+      passportDataSaved: false, // ✅ Add this to track if passport data is saved
     })),
   )
 
@@ -56,7 +56,9 @@ export default function UploadDocuments() {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await fetch(`https://govissa-872569311567.asia-south2.run.app/api/configurations/documents/${visaId}/documents-only`)
+        const response = await fetch(
+          `https://govissa-872569311567.asia-south2.run.app/api/configurations/documents/${visaId}/documents-only`,
+        )
         const data = await response.json()
         if (data.success) {
           const docsWithSides = data.documents.map((doc: Document) => ({
@@ -104,18 +106,50 @@ export default function UploadDocuments() {
 
     // Check if this is passport front side
     if (currentDoc.name.toLowerCase() === "passport" && currentSide === "front") {
+      // ✅ Reset passport data saved status when new passport is uploaded
+      updateCurrentTravellerData({ passportDataSaved: false })
+
       try {
         setIsLoading(true)
         const formData = new FormData()
         formData.append("file", file)
 
-        const response = await fetch("http://localhost:8000/extract", {
-          method: "POST",
-          body: formData,
-        })
+        // Try localhost first, then fallback to other possible URLs
+        const ocrUrls = [
+          "http://localhost:8080/extract",
+          "http://127.0.0.1:8080/extract",
+          "https://your-ocr-service.com/extract", // Replace with your actual OCR service URL
+        ]
 
-        if (!response.ok) {
-          throw new Error(`OCR service responded with status: ${response.status}`)
+        let response: Response | null = null
+        let lastError: Error | null = null
+
+        for (const url of ocrUrls) {
+          try {
+            console.log(`🔍 Trying OCR service at: ${url}`)
+            response = await fetch(url, {
+              method: "POST",
+              body: formData,
+            })
+
+            if (response.ok) {
+              console.log(`✅ OCR service connected at: ${url}`)
+              break
+            } else {
+              console.log(`❌ OCR service at ${url} returned status: ${response.status}`)
+              response = null
+            }
+          } catch (error) {
+            console.log(`❌ Failed to connect to OCR service at ${url}:`, error)
+            lastError = error as Error
+            response = null
+          }
+        }
+
+        if (!response) {
+          throw new Error(
+            `Unable to connect to OCR service. Please ensure the OCR service is running. Last error: ${lastError?.message}`,
+          )
         }
 
         const ocrResponse: OCRResponse = await response.json()
@@ -190,8 +224,9 @@ export default function UploadDocuments() {
     }
   }
 
+  // ✅ Updated passport data change handler to mark as saved
   const handlePassportDataChange = (data: PassportData) => {
-    console.log("🔄 Passport Data Changed:", data)
+    console.log("🔄 Passport Data Changed and Saved:", data)
     updateCurrentTravellerData({
       ocrData: currentTravellerData.ocrData
         ? {
@@ -199,6 +234,7 @@ export default function UploadDocuments() {
             data: data,
           }
         : null,
+      passportDataSaved: true, // ✅ Mark as saved when data is submitted
     })
   }
 
@@ -253,8 +289,9 @@ export default function UploadDocuments() {
 
     updateCurrentTravellerData({ uploadedFiles: updatedFiles })
 
+    // ✅ Reset passport data saved status when passport file is removed
     if (documents[currentStep].name.toLowerCase() === "passport" && side === "front") {
-      updateCurrentTravellerData({ ocrData: null, ocrError: null })
+      updateCurrentTravellerData({ ocrData: null, ocrError: null, passportDataSaved: false })
     }
   }
 
@@ -264,7 +301,6 @@ export default function UploadDocuments() {
 
     try {
       const formData = new FormData()
-
       const userString = localStorage.getItem("user")
       let userEmail = "abc@gmail.com"
       let userPhone = "7070357583"
@@ -292,7 +328,6 @@ export default function UploadDocuments() {
         formData.append("processingMode", processingMode)
         console.log("📋 Processing Mode:", processingMode)
       }
-
       if (employeeId) {
         formData.append("employeeId", employeeId)
         console.log("👤 Employee ID:", employeeId)
@@ -347,7 +382,6 @@ export default function UploadDocuments() {
             spouse_name: travellerData.ocrData.data.spouse_name || "",
             address: travellerData.ocrData.data.address || "",
           }
-
           allPassportData.push(passportData)
           console.log(`passportData[${index}]:`, passportData)
         }
@@ -403,7 +437,6 @@ export default function UploadDocuments() {
 
       const result = await response.json()
       console.log("✅ Visa application submitted successfully:", result)
-
       setSubmitSuccess(true)
     } catch (error) {
       console.error("❌ Error submitting visa application:", error)
@@ -469,7 +502,6 @@ export default function UploadDocuments() {
             </span>{" "}
             has been submitted successfully.
           </p>
-
           {/* Show processing mode info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <p className="text-sm text-blue-800">
@@ -482,11 +514,9 @@ export default function UploadDocuments() {
               </p>
             )}
           </div>
-
           <p className="text-sm text-gray-500 mb-8">
             You will receive a confirmation email shortly with your application reference number.
           </p>
-
           <div className="space-y-3">
             <button
               onClick={() => window.history.back()}
@@ -516,7 +546,6 @@ export default function UploadDocuments() {
               delete updatedFiles[docId]
             }
           }
-
           setTravellersData((prev) =>
             prev.map((traveller, index) =>
               index === travellerIndex ? { ...traveller, uploadedFiles: updatedFiles } : traveller,
@@ -557,6 +586,17 @@ export default function UploadDocuments() {
   const requiresBothSides = currentDocument.requiresBothSides
   const currentUploads = currentTravellerData.uploadedFiles[currentDocument.id] || {}
   const hasUploadedFile = !!currentUploads[currentSide] || !!currentUploads.front
+
+  // ✅ Enhanced logic for Next button - check both file upload and passport data saved
+  const isPassportDocument = currentDocument.name.toLowerCase() === "passport"
+  const isPassportFrontSide = isPassportDocument && currentSide === "front"
+  const hasPassportData = currentTravellerData.ocrData !== null
+  const isPassportDataSaved = currentTravellerData.passportDataSaved
+
+  // Next button should be enabled when:
+  // 1. File is uploaded AND
+  // 2. If it's passport front side with data, passport data must be saved
+  const canProceedNext = hasUploadedFile && (!isPassportFrontSide || !hasPassportData || isPassportDataSaved)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -692,6 +732,7 @@ export default function UploadDocuments() {
           ocrError={currentTravellerData.ocrError}
           handlePassportDataChange={handlePassportDataChange}
           travellerNumber={currentTraveller + 1}
+          passportDataSaved={currentTravellerData.passportDataSaved} // ✅ Pass the saved status
         />
 
         {/* Action buttons */}
@@ -705,23 +746,37 @@ export default function UploadDocuments() {
               ← Previous
             </button>
 
-            <button
-              onClick={handleNext}
-              disabled={!hasUploadedFile}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg flex items-center justify-center"
-            >
-              {currentTraveller === travellersCount - 1 && currentStep === documents.length - 1 ? (
-                <>
-                  Review All Documents
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
+            {/* ✅ Enhanced Next button with better validation */}
+            <div className="flex flex-col items-end">
+              <button
+                onClick={handleNext}
+                disabled={!canProceedNext}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg flex items-center justify-center"
+              >
+                {currentTraveller === travellersCount - 1 && currentStep === documents.length - 1 ? (
+                  <>
+                    Review All Documents
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </button>
+
+              {/* ✅ Show helpful message when Next is disabled */}
+              {!canProceedNext && (
+                <p className="text-xs text-red-600 mt-2 text-right">
+                  {!hasUploadedFile
+                    ? "Please upload the document first"
+                    : isPassportFrontSide && hasPassportData && !isPassportDataSaved
+                      ? "Please save passport details before proceeding"
+                      : ""}
+                </p>
               )}
-            </button>
+            </div>
           </div>
         </div>
       </div>
