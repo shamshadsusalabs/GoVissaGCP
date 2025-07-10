@@ -9,6 +9,7 @@ import AdminProtectedRoute from "./AdminProtectedRoute";
 import EmployeeProtectedRoute from "./EmployeeProtectedRoute";
 import ManagerProtectedRouter from "./ManagerProtectedRouter";
 
+
 // Lazy load Visa-related components
 const Navbar = lazy(() => import('./Visa/Navbar'));
 const DetailsNavbar = lazy(() => import('./Visa/DetailsNavbar'));
@@ -18,9 +19,13 @@ const Banner = lazy(() => import('./Visa/Banner'));
 const VisaBookingCard = lazy(() => import('./Visa/VisaBooking/visa-booking-card'));
 const VisasOnTime = lazy(() => import('./Visa/VisasOnTime'));
 const AtlysNews = lazy(() => import('./Visa/AtlysNews'));
+const Faq = lazy(() => import('./Visa/Faq'));
 const Footer = lazy(() => import('./Visa/Footer'));
 const VisaRequirements = lazy(() => import('./Visa/VisaRequirements'));
 const VisaProcess = lazy(() => import('./Visa/VisaProcess'));
+const PrivacyPolicy = lazy(() => import('./Visa/PrivacyPolicy'));
+const CookiesPolicy = lazy(() => import('./Visa/CookiesPolicy'));
+const TermsAndConditions = lazy(() => import('./Visa/TermsAndConditions'));
 const VisaRejectionReasons = lazy(() => import('./Visa/VisaRejectionReasons'));
 const VisaWizard = lazy(() => import('./VisaConfiq/VisaWizard'));
 
@@ -76,6 +81,7 @@ function AppRoutes() {
               <VisaDestinations />
               <VisasOnTime />
               <AtlysNews />
+                <Faq />
               <Footer />
             </>
           }
@@ -108,6 +114,9 @@ function AppRoutes() {
             />
           }
         />
+         <Route path="/PrivacyPolicy" element={<  PrivacyPolicy />} />
+          <Route path="/CookiesPolicy" element={<  CookiesPolicy />} />
+           <Route path="/TermsAndConditions" element={<  TermsAndConditions />} />
 
         {/* Protected User Dashboard */}
         <Route
