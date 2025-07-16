@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useCallback, useEffect } from "react"
 import { FaUpload, FaTrash, FaArrowRight, FaArrowLeft, FaExclamationTriangle } from "react-icons/fa"
-import Dropzone from "react-dropzone"
+import { useDropzone } from "react-dropzone"
 
 interface ImageData {
   preview: string
@@ -15,9 +15,18 @@ interface ImageUploadProps {
   updateImages: (images: ImageData[]) => void
   nextStep: () => void
   prevStep: () => void
+  existingImages?: string[]
+  isUpdateMode?: boolean
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextStep, prevStep }) => {
+const ImageUpload: React.FC<ImageUploadProps> = ({
+  images,
+  updateImages,
+  nextStep,
+  prevStep,
+  existingImages = [],
+  isUpdateMode = false,
+}) => {
   const [uploading, setUploading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
 
@@ -26,19 +35,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const ALLOWED_FORMATS = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
-  // Validate individual file - moved outside useCallback to fix dependency issue
+  // Validate individual file
   const validateFile = useCallback(
     (file: File): string | null => {
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
         return `${file.name} is too large. Maximum size allowed is 5MB.`
       }
-
       // Check file format
       if (!ALLOWED_FORMATS.includes(file.type.toLowerCase())) {
         return `${file.name} has unsupported format. Only JPEG, JPG, PNG, and WEBP are allowed.`
       }
-
       return null
     },
     [MAX_FILE_SIZE, ALLOWED_FORMATS],
@@ -49,7 +56,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
     (acceptedFiles: File[], rejectedFiles: any[]) => {
       setUploading(true)
       setErrors([])
-
       const newErrors: string[] = []
       const validFiles: File[] = []
 
@@ -98,7 +104,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
       if (newErrors.length > 0) {
         setErrors(newErrors)
       }
-
       setUploading(false)
     },
     [images, updateImages, validateFile],
@@ -111,7 +116,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
       URL.revokeObjectURL(newImages[index].preview)
       newImages.splice(index, 1)
       updateImages(newImages)
-
       // Clear errors when removing images
       if (errors.length > 0) {
         setErrors([])
@@ -132,6 +136,18 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
     }
   }, [images])
 
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+    onDrop,
+    accept: {
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/webp": [".webp"],
+    },
+    maxFiles: 5 - images.length,
+    maxSize: MAX_FILE_SIZE,
+    disabled: images.length >= 5 || uploading,
+  })
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     nextStep()
@@ -140,7 +156,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">Upload Country Images</h2>
-
       <form onSubmit={handleSubmit}>
         {/* File Requirements Info */}
         <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -172,62 +187,72 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
           </div>
         )}
 
+        {/* Existing Images (for update mode) */}
+        {isUpdateMode && existingImages.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-3 text-gray-700">Existing Images ({existingImages.length})</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+              {existingImages.map((imageUrl, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={imageUrl || "/placeholder.svg"}
+                    alt={`Existing image ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                  />
+                  <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                    Existing
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Note: Existing images will be preserved. You can add new images below.
+            </p>
+          </div>
+        )}
+
+        {/* Upload Area */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Upload up to 5 images of the country (flags, landmarks, etc.)
           </label>
-
-          <Dropzone
-            onDrop={onDrop}
-            accept={{
-              "image/jpeg": [".jpg", ".jpeg"],
-              "image/png": [".png"],
-              "image/webp": [".webp"],
-            }}
-            maxFiles={5 - images.length}
-            maxSize={MAX_FILE_SIZE}
-            disabled={images.length >= 5 || uploading}
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              images.length >= 5 || uploading
+                ? "border-gray-300 bg-gray-100 cursor-not-allowed"
+                : isDragReject
+                  ? "border-red-300 bg-red-50"
+                  : isDragActive
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-blue-300 hover:border-blue-500"
+            }`}
           >
-            {({ getRootProps, getInputProps, isDragActive, isDragReject }) => (
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                  images.length >= 5 || uploading
-                    ? "border-gray-300 bg-gray-100 cursor-not-allowed"
-                    : isDragReject
-                      ? "border-red-300 bg-red-50"
-                      : isDragActive
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-blue-300 hover:border-blue-500"
-                }`}
-              >
-                <input {...getInputProps()} />
-                {uploading ? (
-                  <div className="text-blue-600">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    Uploading...
-                  </div>
-                ) : (
-                  <>
-                    <FaUpload className={`mx-auto text-3xl mb-2 ${isDragReject ? "text-red-400" : "text-gray-400"}`} />
-                    <p className={`text-sm ${isDragReject ? "text-red-600" : "text-gray-600"}`}>
-                      {images.length >= 5
-                        ? "Maximum 5 images reached"
-                        : isDragReject
-                          ? "Some files are not supported"
-                          : isDragActive
-                            ? "Drop the images here..."
-                            : "Drag & drop images here, or click to select"}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {images.length >= 5 ? "" : `${5 - images.length} more can be added`}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-2">JPEG, JPG, PNG, WEBP • Max 5MB each</p>
-                  </>
-                )}
+            <input {...getInputProps()} />
+            {uploading ? (
+              <div className="text-blue-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                Uploading...
               </div>
+            ) : (
+              <>
+                <FaUpload className={`mx-auto text-3xl mb-2 ${isDragReject ? "text-red-400" : "text-gray-400"}`} />
+                <p className={`text-sm ${isDragReject ? "text-red-600" : "text-gray-600"}`}>
+                  {images.length >= 5
+                    ? "Maximum 5 images reached"
+                    : isDragReject
+                      ? "Some files are not supported"
+                      : isDragActive
+                        ? "Drop the images here..."
+                        : "Drag & drop images here, or click to select"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {images.length >= 5 ? "" : `${5 - images.length} more can be added`}
+                </p>
+                <p className="text-xs text-gray-400 mt-2">JPEG, JPG, PNG, WEBP • Max 5MB each</p>
+              </>
             )}
-          </Dropzone>
+          </div>
         </div>
 
         {/* Uploaded Images Display */}
@@ -273,7 +298,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ images, updateImages, nextSte
           <button
             type="submit"
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-            disabled={images.length === 0}
+            disabled={images.length === 0 && !isUpdateMode && existingImages.length === 0}
           >
             Next <FaArrowRight className="ml-2" />
           </button>

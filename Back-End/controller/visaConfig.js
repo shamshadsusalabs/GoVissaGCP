@@ -1,5 +1,5 @@
 const VisaSubmission = require('../shcema/VisaConfig');
-const { cloudinary } = require('../Cloudinary');
+
 
 
 
@@ -296,5 +296,67 @@ exports.getVisaTypeCounts = async (req, res) => {
   } catch (error) {
     console.error("Error fetching visa type counts:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+
+exports.getVisaSubmissionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const visaSubmission = await VisaSubmission.findById(id);
+
+    if (!visaSubmission) {
+      return res.status(404).json({ success: false, message: 'Visa Submission not found' });
+    }
+
+    res.status(200).json({ success: true, data: visaSubmission });
+  } catch (error) {
+    console.error("Get VisaSubmission Error:", error);
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
+  }
+};
+exports.updateVisaSubmissionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      continent,
+      countryDetails,
+      visaTypes,
+      documents,
+      eligibility,
+      rejectionReasons
+    } = req.body;
+
+    let updatedFields = {
+      continent,
+      eligibility,
+    };
+
+    // Parse JSON fields if provided
+    if (countryDetails) updatedFields.countryDetails = JSON.parse(countryDetails);
+    if (visaTypes) updatedFields.visaTypes = JSON.parse(visaTypes);
+    if (documents) updatedFields.documents = JSON.parse(documents);
+    if (rejectionReasons) updatedFields.rejectionReasons = JSON.parse(rejectionReasons);
+
+    // If new images are uploaded, add them
+    if (req.files && req.files.length > 0) {
+      const imageUrls = req.files.map(file => file.path);
+      updatedFields.images = imageUrls;
+    }
+
+    const updatedVisa = await VisaSubmission.findByIdAndUpdate(id, updatedFields, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!updatedVisa) {
+      return res.status(404).json({ success: false, message: 'Visa Submission not found' });
+    }
+
+    res.status(200).json({ success: true, data: updatedVisa });
+  } catch (error) {
+    console.error("Update VisaSubmission Error:", error);
+    res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 };

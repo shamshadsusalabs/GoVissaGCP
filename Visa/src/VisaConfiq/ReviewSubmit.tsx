@@ -1,7 +1,16 @@
 "use client"
-
 import type React from "react"
-import { FaArrowLeft, FaCheck, FaGlobe, FaFileAlt, FaImages, FaTimesCircle, FaSpinner } from "react-icons/fa"
+import {
+  FaArrowLeft,
+  FaCheck,
+  FaGlobe,
+  FaFileAlt,
+  FaImages,
+  FaTimesCircle,
+  FaSpinner,
+  FaEdit,
+  FaSave,
+} from "react-icons/fa"
 
 interface ImageData {
   preview: string
@@ -25,18 +34,45 @@ interface ReviewSubmitProps {
   }
   prevStep: () => void
   onSubmit: () => void
+  onCancel: () => void
   isSubmitting?: boolean
+  isUpdateMode?: boolean
 }
 
-const ReviewSubmit: React.FC<ReviewSubmitProps> = ({ config, prevStep, onSubmit, isSubmitting = false }) => {
+const ReviewSubmit: React.FC<ReviewSubmitProps> = ({
+  config,
+  prevStep,
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+  isUpdateMode = false,
+}) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit()
   }
 
+  const handleCancel = (e: React.FormEvent) => {
+    e.preventDefault()
+    onCancel()
+  }
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Review & Submit</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        {isUpdateMode ? "Review Changes & Update" : "Review & Submit"}
+      </h2>
+
+      {isUpdateMode && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center">
+            <FaEdit className="text-blue-600 mr-2" />
+            <p className="text-blue-800 font-medium">
+              You are updating an existing visa configuration. Review your changes below.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="mb-8">
         <div className="flex items-center mb-4">
@@ -74,7 +110,6 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({ config, prevStep, onSubmit,
           <FaFileAlt className="text-blue-500 mr-2" />
           <h3 className="text-xl font-medium">Visa Configuration</h3>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-gray-500">Visa Types</p>
@@ -132,6 +167,7 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({ config, prevStep, onSubmit,
         <div className="space-x-4">
           <button
             type="button"
+            onClick={handleCancel}
             disabled={isSubmitting}
             className="flex items-center px-6 py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
@@ -141,15 +177,21 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({ config, prevStep, onSubmit,
             type="submit"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors"
+            className={`flex items-center px-6 py-3 rounded-lg text-white transition-colors disabled:cursor-not-allowed ${
+              isUpdateMode
+                ? "bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400"
+                : "bg-green-600 hover:bg-green-700 disabled:bg-green-400"
+            }`}
           >
             {isSubmitting ? (
               <>
-                <FaSpinner className="mr-2 animate-spin" /> Submitting...
+                <FaSpinner className="mr-2 animate-spin" />
+                {isUpdateMode ? "Updating..." : "Submitting..."}
               </>
             ) : (
               <>
-                <FaCheck className="mr-2" /> Submit Configuration
+                {isUpdateMode ? <FaSave className="mr-2" /> : <FaCheck className="mr-2" />}
+                {isUpdateMode ? "Update Configuration" : "Submit Configuration"}
               </>
             )}
           </button>

@@ -154,6 +154,7 @@ function AppRoutes() {
           <Route path="DashboardPage" element={<DashboardPage />} />
           <Route path="VisaConfigList" element={<VisaConfigList />} />
           <Route path="visa-config-form" element={<VisaWizard />} />
+            <Route path="visa-config-form-update/:id" element={<VisaWizard />} />
           <Route path="AllVisaApplication" element={<AllVisaApplication />} />
           <Route path="VisaFullDeatils/:id" element={<VisaFullDetails />} />
           <Route path="Employee" element={<Employee />} />

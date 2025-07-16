@@ -1,15 +1,13 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
-const morgan = require('morgan');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 // const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
+const cors = require('cors');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
-
+const multer = require('multer');
 const visaConfigRoutes = require('./router/visaConfiq');
 const admin = require('./router/admin');
  const VisaApplication = require('./router/VisaApplication');
@@ -22,10 +20,7 @@ const admin = require('./router/admin');
 
 
 const app = express();
-app.use(cookieParser());
 
-
-app.use(hpp());
 // 1) GLOBAL MIDDLEWARES
 
 // Enable CORS
@@ -64,26 +59,13 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+// Body parser, reading data from body into req.body
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(cookieParser());
 
 
-
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    return res.status(400).json({
-      success: false,
-      message: err.message
-    });
-  }
-  res.status(500).json({ success: false, message: 'Internal Server Error' });
-});
-
+app.use(hpp());
 
 
 
@@ -110,7 +92,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
 
+
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+  res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
 
 // 5) START SERVER
 const port = process.env.PORT || 5000;
@@ -118,8 +118,12 @@ const server = app.listen(port, () => {
   console.log(`App running on port ${port}...`);
 });
 
-app.use(express.json());
-
+// Handle unhandled promise rejections
 
 
 module.exports = app;
+
+
+
+
+

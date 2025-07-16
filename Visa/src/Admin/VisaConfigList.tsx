@@ -24,6 +24,8 @@ import {
   CircularProgress
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import { useNavigate } from 'react-router-dom';
 
 interface CountryDetails {
   code: string;
@@ -81,6 +83,7 @@ interface VisaConfiguration {
 }
 
 const VisaConfigList: React.FC = () => {
+  const navigate = useNavigate();
   const [configurations, setConfigurations] = useState<VisaConfiguration[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [page, setPage] = useState<number>(0);
@@ -141,6 +144,10 @@ const VisaConfigList: React.FC = () => {
       setLoading(false);
       setConfigToDelete(null);
     }
+  };
+
+  const handleUpdate = (id: string) => {
+    navigate(`/dashboard/visa-config-form-update/${id}`);
   };
 
   const handleChangePage = (_event: unknown, newPage: number) => {
@@ -241,6 +248,13 @@ const VisaConfigList: React.FC = () => {
                         ))}
                       </TableCell>
                       <TableCell>
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleUpdate(config._id)}
+                          sx={{ mr: 1 }}
+                        >
+                          <EditIcon />
+                        </IconButton>
                         <IconButton
                           color="error"
                           onClick={() => {

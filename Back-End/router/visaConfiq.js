@@ -38,7 +38,15 @@ router.put('/:id', upload.array('images'), visaController.updateVisaSubmission);
 router.delete('/:id', visaController.deleteVisaSubmission);
 
 router.get('/documents/:id/documents-only', visaController.getOnlyVisaDocuments);
+router.get('/getById/:id',  visaController.getVisaSubmissionById);
 
+// Update by ID
+router.put(
+  '/update/:id',
+  verifyAccessToken,
+  upload.array('images', 5), // Optional image update
+  visaController.updateVisaSubmissionById
+);
 router.get('/counts/types',verifyAccessToken, visaController.getVisaTypeCounts);
 
 module.exports = router;

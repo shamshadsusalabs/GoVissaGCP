@@ -24,6 +24,7 @@ exports.signup = async (req, res) => {
 
 // Login
 exports.login = async (req, res) => {
+  console.log(req.body)
   try {
     const { email, password } = req.body;
     const admin = await Admin.findOne({ email });
