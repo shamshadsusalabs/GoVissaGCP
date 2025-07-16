@@ -1,21 +1,28 @@
 const VisaSubmission = require('../shcema/VisaConfig');
 const { cloudinary } = require('../Cloudinary');
 
-// Create Visa Submission
+
+
 exports.createVisaSubmission = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'No files uploaded' });
     }
 
-    const { continent, countryDetails, visaTypes, documents, eligibility, rejectionReasons } = req.body;
-    
-    // Cloudinary upload responses contain 'secure_url' for HTTPS
-    const imageUrls = req.files.map(file => file.path); // or file.secure_url
+    const {
+      continent,
+      countryDetails,
+      visaTypes,
+      documents,
+      eligibility,
+      rejectionReasons
+    } = req.body;
+
+    const imageUrls = req.files.map(file => file.path); // Cloudinary gives 'path' as the HTTPS secure_url
 
     const newVisaSubmission = new VisaSubmission({
       continent,
-      countryDetails: JSON.parse(countryDetails), // if sent as string
+      countryDetails: JSON.parse(countryDetails),
       visaTypes: JSON.parse(visaTypes),
       documents: JSON.parse(documents),
       eligibility,
@@ -26,13 +33,14 @@ exports.createVisaSubmission = async (req, res) => {
     await newVisaSubmission.save();
     res.status(201).json({ success: true, data: newVisaSubmission });
   } catch (error) {
-    console.error("Create Error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || 'Server Error' 
+    console.error("Create VisaSubmission Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server Error'
     });
   }
 };
+
 
 // Get All Visa Submissions
 exports.getAllVisaCountriesSummary = async (req, res) => {
@@ -218,16 +226,12 @@ exports.updateVisaSubmission = async (req, res) => {
   }
 };
 
-// Delete Visa Submission
+// Delete Visa Submission (No Cloudinary cleanup)
 exports.deleteVisaSubmission = async (req, res) => {
   try {
     const submission = await VisaSubmission.findById(req.params.id);
-    if (!submission) return res.status(404).json({ message: 'Visa submission not found' });
-
-    // Optional: delete images from Cloudinary
-    for (const imageUrl of submission.images) {
-      const publicId = imageUrl.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(`visa_uploads/${publicId}`);
+    if (!submission) {
+      return res.status(404).json({ message: 'Visa submission not found' });
     }
 
     await submission.deleteOne();
@@ -237,6 +241,7 @@ exports.deleteVisaSubmission = async (req, res) => {
     res.status(500).json({ message: 'Failed to delete visa submission' });
   }
 };
+
 
 
 // Get Documents Only by Visa ID

@@ -57,7 +57,7 @@ export default function UploadDocuments() {
     const fetchDocuments = async () => {
       try {
         const response = await fetch(
-          `https://govissa-872569311567.asia-south2.run.app/api/configurations/documents/${visaId}/documents-only`,
+          `http://localhost:5000/api/configurations/documents/${visaId}/documents-only`,
         )
         const data = await response.json()
         if (data.success) {
@@ -425,7 +425,7 @@ export default function UploadDocuments() {
 
       console.log("🚀 Submitting visa application for", travellersCount, "travellers")
 
-      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/VisaApplication/apply-visa", {
+      const response = await fetch("http://localhost:5000/api/VisaApplication/apply-visa", {
         method: "POST",
         body: formData,
       })

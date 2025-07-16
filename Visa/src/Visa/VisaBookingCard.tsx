@@ -68,7 +68,7 @@ const VisaBookingCard = () => {
           throw new Error("Configuration ID not found")
         }
 
-        const response = await fetch(`https://govissa-872569311567.asia-south2.run.app/api/configurations/details/${id}`)
+        const response = await fetch(`http://localhost:5000/api/configurations/details/${id}`)
 
         if (!response.ok) {
           throw new Error(`Failed to fetch visa data: ${response.statusText}`)
@@ -149,7 +149,7 @@ const VisaBookingCard = () => {
     setOtpError("")
 
     try {
-      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/User/send-otp", {
+      const response = await fetch("http://localhost:5000/api/User/send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -184,7 +184,7 @@ const VisaBookingCard = () => {
     setOtpError("")
 
     try {
-      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/User/verify-otp", {
+      const response = await fetch("http://localhost:5000/api/User/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -239,7 +239,7 @@ const VisaBookingCard = () => {
 
   const fetchPromoCodes = async () => {
     try {
-      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/promocode/getAll")
+      const response = await fetch("http://localhost:5000/api/promocode/getAll")
       if (response.ok) {
         const data = await response.json()
         setPromoCodes(data)
@@ -324,7 +324,7 @@ const VisaBookingCard = () => {
       const finalAmount = originalAmount - discountAmount
       const amount = Math.round(finalAmount * 100)
 
-      const response = await fetch("https://govissa-872569311567.asia-south2.run.app/api/payments/create-order", {
+      const response = await fetch("http://localhost:5000/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -363,7 +363,7 @@ const VisaBookingCard = () => {
         order_id: data.id,
         handler: async (response: any) => {
           try {
-            const verifyResponse = await fetch("https://govissa-872569311567.asia-south2.run.app/api/payments/verify-payment", {
+            const verifyResponse = await fetch("http://localhost:5000/api/payments/verify-payment", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

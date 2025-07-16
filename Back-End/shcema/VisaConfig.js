@@ -42,11 +42,11 @@ const CountryDetailsSchema = new mongoose.Schema({
 }, { _id: false });
 
 const VisaSubmissionSchema = new mongoose.Schema({
-  continent: { type: String, required: true },
-  countryDetails: { type: CountryDetailsSchema, required: true },
-  visaTypes: { type: [VisaTypeSchema], required: true },
-  documents: { type: [DocumentSchema], required: true },
-  eligibility: { type: String, required: true },
+  continent: { type: String, required: false },
+  countryDetails: { type: CountryDetailsSchema, required: false },
+  visaTypes: { type: [VisaTypeSchema], required: false },
+  documents: { type: [DocumentSchema], required: false },
+  eligibility: { type: String, required: false },
   images: { type: [String], required: false }, // Array of image URLs
   rejectionReasons: { type: [RejectionReasonSchema], required: false }
 }, { timestamps: true });

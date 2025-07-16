@@ -19,7 +19,7 @@ const AdminLayout = () => {
       localStorage.clear();
 
       // ✅ Step 2: Call logout API
-      await fetch('https://govissa-872569311567.asia-south2.run.app/api/admin/logout', {
+      await fetch('http://localhost:5000/api/admin/logout', {
         method: 'POST',
         credentials: 'include', // include cookies if used
         headers: {

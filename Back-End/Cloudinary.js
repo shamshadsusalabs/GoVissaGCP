@@ -1,8 +1,7 @@
-require('dotenv').config();
-
+// cloudinary.js
+const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const multer = require('multer');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -11,15 +10,24 @@ cloudinary.config({
 });
 
 const storage = new CloudinaryStorage({
-  cloudinary,
-  params: (req, file) => ({
-    folder: 'visa_uploads',
-    format: file.mimetype.split('/')[1], // फाइल फॉर्मेट ऑटो डिटेक्ट
-    public_id: `${Date.now()}-${file.originalname.split('.')[0]}`,
-    transformation: [{ width: 800, crop: "limit", quality: "auto" }]
-  }),
+  cloudinary: cloudinary,
+  params: {
+    folder: 'Visa_Images',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ quality: 'auto:best' }]
+  },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed (jpg, jpeg, png, webp)'), false);
+    }
+  }
+});
 
-module.exports = { upload, cloudinary };
+module.exports = { upload };

@@ -4,8 +4,9 @@ const visaController = require('../controller/visaConfig');
 const { upload } = require('../Cloudinary');
 const { verifyAccessToken } = require('../middileware/authMiddleware');
 // CREATE Visa Submission (with image upload)
-router.post('/add', verifyAccessToken,
-  upload.array('images', 5), // अधिकतम 5 इमेज
+router.post('/add',
+  verifyAccessToken,
+  upload.array('images', 5), // Max 5 images
   (req, res, next) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'Please upload at least one image' });

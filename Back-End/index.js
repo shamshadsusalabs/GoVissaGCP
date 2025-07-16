@@ -9,7 +9,7 @@ const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
-const connectDB = require('./dbConnection/mongooseConnect');
+
 const visaConfigRoutes = require('./router/visaConfiq');
 const admin = require('./router/admin');
  const VisaApplication = require('./router/VisaApplication');
@@ -20,9 +20,12 @@ const admin = require('./router/admin');
      const employee = require('./router/employee');
         const manager = require('./router/manager');
 
-connectDB();
-const app = express();
 
+const app = express();
+app.use(cookieParser());
+
+
+app.use(hpp());
 // 1) GLOBAL MIDDLEWARES
 
 // Enable CORS
@@ -61,13 +64,26 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
-// Body parser, reading data from body into req.body
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-app.use(cookieParser());
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 
-app.use(hpp());
+
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+  res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
+
 
 
 
@@ -102,22 +118,8 @@ const server = app.listen(port, () => {
   console.log(`App running on port ${port}...`);
 });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', err => {
-  console.error('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.error(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
-});
+app.use(express.json());
 
-// Handle uncaught exceptions
-process.on('uncaughtException', err => {
-  console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  console.error(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
-});
+
 
 module.exports = app;
