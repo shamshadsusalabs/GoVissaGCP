@@ -92,10 +92,10 @@ function AppRoutes() {
           path="/visa-details/:id"
           element={
             <>
-              <DetailsNavbar />
-              <Banner />
+               <DetailsNavbar />
+              <Banner /> 
               <VisaBookingCard />
-              <VisaRequirements />
+               <VisaRequirements />
               <VisaProcess />
               <VisaRejectionReasons />
               <Footer />

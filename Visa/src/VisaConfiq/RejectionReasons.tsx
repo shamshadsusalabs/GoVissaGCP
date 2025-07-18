@@ -1,76 +1,92 @@
-import React, { useState } from 'react';
-import { FaPlus, FaTrash, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+"use client"
+
+import type React from "react"
+import { useState } from "react"
+import { FaPlus, FaTrash, FaArrowRight, FaArrowLeft, FaEdit, FaSave, FaTimes } from "react-icons/fa"
 
 interface RejectionReason {
-  id: string;
-  reason: string;
-  description: string;
-  frequency: 'Rare' | 'Occasional' | 'Common';
+  id: string
+  reason: string
+  description: string
+  frequency: "Rare" | "Occasional" | "Common"
 }
 
 interface RejectionReasonsProps {
-  reasons: RejectionReason[];
-  updateReasons: (reasons: RejectionReason[]) => void;
-  nextStep: () => void;
-  prevStep: () => void;
+  reasons: RejectionReason[]
+  updateReasons: (reasons: RejectionReason[]) => void
+  nextStep: () => void
+  prevStep: () => void
 }
 
-const RejectionReasons: React.FC<RejectionReasonsProps> = ({ 
-  reasons, 
-  updateReasons, 
-  nextStep, 
-  prevStep 
-}) => {
-  const [newReason, setNewReason] = useState<Omit<RejectionReason, 'id'>>({
-    reason: '',
-    description: '',
-    frequency: 'Occasional'
-  });
-  const [showForm, setShowForm] = useState(false);
+const RejectionReasons: React.FC<RejectionReasonsProps> = ({ reasons, updateReasons, nextStep, prevStep }) => {
+  // State to hold the reason currently being added or edited
+  const [currentReason, setCurrentReason] = useState<RejectionReason | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewReason(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+    const { name, value } = e.target
+    setCurrentReason((prev) => {
+      if (!prev) return null // Should not happen if form is open
+      return {
+        ...prev,
+        [name]: value,
+      }
+    })
+  }
 
-  const addReason = () => {
-    if (newReason.reason.trim()) {
+  const handleAddOrUpdateReason = () => {
+    if (!currentReason || !currentReason.reason.trim()) {
+      return // Prevent adding empty reasons
+    }
+
+    if (currentReason.id) {
+      // Update existing reason
+      updateReasons(reasons.map((r) => (r.id === currentReason.id ? { ...currentReason } : r)))
+    } else {
+      // Add new reason
       updateReasons([
         ...reasons,
         {
-          ...newReason,
-          id: Date.now().toString()
-        }
-      ]);
-      setNewReason({
-        reason: '',
-        description: '',
-        frequency: 'Occasional'
-      });
-      setShowForm(false);
+          ...currentReason,
+          id: Date.now().toString(), // Generate a unique ID for new reasons
+        },
+      ])
     }
-  };
+    // Reset form state
+    setCurrentReason(null)
+  }
 
-  const removeReason = (id: string) => {
-    updateReasons(reasons.filter(r => r.id !== id));
-  };
+  const handleEditReason = (id: string) => {
+    const reasonToEdit = reasons.find((r) => r.id === id)
+    if (reasonToEdit) {
+      setCurrentReason(reasonToEdit)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setCurrentReason(null)
+  }
+
+  const handleRemoveReason = (id: string) => {
+    updateReasons(reasons.filter((r) => r.id !== id))
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    nextStep();
-  };
+    e.preventDefault()
+    nextStep()
+  }
 
   const getFrequencyColor = (frequency: string) => {
     switch (frequency) {
-      case 'Common': return 'bg-red-100 text-red-800';
-      case 'Occasional': return 'bg-yellow-100 text-yellow-800';
-      case 'Rare': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "Common":
+        return "bg-red-100 text-red-800"
+      case "Occasional":
+        return "bg-yellow-100 text-yellow-800"
+      case "Rare":
+        return "bg-green-100 text-green-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
-  };
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -88,35 +104,43 @@ const RejectionReasons: React.FC<RejectionReasonsProps> = ({
                     </span>
                     <button
                       type="button"
-                      onClick={() => removeReason(reason.id)}
+                      onClick={() => handleEditReason(reason.id)}
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Edit reason"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveReason(reason.id)}
                       className="text-red-500 hover:text-red-700"
+                      title="Remove reason"
                     >
                       <FaTrash />
                     </button>
                   </div>
                 </div>
-                {reason.description && (
-                  <p className="text-sm text-gray-600">{reason.description}</p>
-                )}
+                {reason.description && <p className="text-sm text-gray-600">{reason.description}</p>}
               </div>
             ))}
           </div>
         ) : (
-          <div className="mb-6 text-gray-500 text-center py-4">
-            No rejection reasons added yet
-          </div>
+          <div className="mb-6 text-gray-500 text-center py-4">No rejection reasons added yet</div>
         )}
 
-        {showForm && (
+        {/* Form for adding/editing reasons */}
+        {currentReason ? (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-medium mb-4">Add Rejection Reason</h3>
+            <h3 className="text-lg font-medium mb-4">
+              {currentReason.id ? "Edit Rejection Reason" : "Add Rejection Reason"}
+            </h3>
             <div className="grid grid-cols-1 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
                 <input
                   type="text"
                   name="reason"
-                  value={newReason.reason}
+                  value={currentReason.reason}
                   onChange={handleChange}
                   required
                   className="w-full p-2 border border-gray-300 rounded-md"
@@ -127,7 +151,7 @@ const RejectionReasons: React.FC<RejectionReasonsProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
                   name="description"
-                  value={newReason.description}
+                  value={currentReason.description}
                   onChange={handleChange}
                   rows={3}
                   className="w-full p-2 border border-gray-300 rounded-md"
@@ -138,7 +162,7 @@ const RejectionReasons: React.FC<RejectionReasonsProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
                 <select
                   name="frequency"
-                  value={newReason.frequency}
+                  value={currentReason.frequency}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 >
@@ -151,26 +175,39 @@ const RejectionReasons: React.FC<RejectionReasonsProps> = ({
             <div className="flex justify-end space-x-2">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={handleCancelEdit}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
               >
-                Cancel
+                <FaTimes className="mr-2" /> Cancel
               </button>
               <button
                 type="button"
-                onClick={addReason}
+                onClick={handleAddOrUpdateReason}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md"
               >
-                Add Reason
+                {currentReason.id ? (
+                  <>
+                    <FaSave className="mr-2" /> Save Changes
+                  </>
+                ) : (
+                  <>
+                    <FaPlus className="mr-2" /> Add Reason
+                  </>
+                )}
               </button>
             </div>
           </div>
-        )}
-
-        {!showForm && (
+        ) : (
           <button
             type="button"
-            onClick={() => setShowForm(true)}
+            onClick={() =>
+              setCurrentReason({
+                id: "", // Temporary ID for new item
+                reason: "",
+                description: "",
+                frequency: "Occasional",
+              })
+            }
             className="mb-6 flex items-center px-4 py-2 bg-green-600 text-white rounded-md"
           >
             <FaPlus className="mr-2" /> Add Rejection Reason
@@ -185,16 +222,13 @@ const RejectionReasons: React.FC<RejectionReasonsProps> = ({
           >
             <FaArrowLeft className="mr-2" /> Back
           </button>
-          <button
-            type="submit"
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md"
-          >
+          <button type="submit" className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md">
             Next <FaArrowRight className="ml-2" />
           </button>
         </div>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default RejectionReasons;
+export default RejectionReasons

@@ -1,27 +1,21 @@
-import React from 'react';
-import { FaArrowRight } from 'react-icons/fa';
+"use client"
+
+import type React from "react"
+import { FaArrowRight } from "react-icons/fa"
 
 interface ContinentSelectionProps {
-  continent: string;
-  setContinent: (continent: string) => void;
-  nextStep: () => void;
+  continent: string
+  setContinent: (continent: string) => void
+  nextStep: () => void
 }
 
-const continents = [
-  'Africa',
-  'Antarctica',
-  'Asia',
-  'Europe',
-  'North America',
-  'Oceania',
-  'South America'
-];
+const continents = ["Africa", "Antarctica", "Asia", "Europe", "North America", "Oceania", "South America"]
 
 const ContinentSelection: React.FC<ContinentSelectionProps> = ({ continent, setContinent, nextStep }) => {
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    nextStep();
-  };
+    e.preventDefault()
+    nextStep()
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -48,14 +42,14 @@ const ContinentSelection: React.FC<ContinentSelectionProps> = ({ continent, setC
           <button
             type="submit"
             disabled={!continent}
-            className={`flex items-center px-4 py-2 rounded-md ${continent ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+            className={`flex items-center px-4 py-2 rounded-md ${continent ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
           >
             Next <FaArrowRight className="ml-2" />
           </button>
         </div>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default ContinentSelection;
+export default ContinentSelection

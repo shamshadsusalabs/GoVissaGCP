@@ -1,21 +1,36 @@
-const express = require('express');
-const router = express.Router();
-const visaController = require('../controller/visaConfig');
-const { upload } = require('../Cloudinary');
-const { verifyAccessToken } = require('../middileware/authMiddleware');
-// CREATE Visa Submission (with image upload)
-router.post('/add',
-  verifyAccessToken,
-  upload.array('images', 5), // Max 5 images
-  (req, res, next) => {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'Please upload at least one image' });
-    }
-    next();
-  },
-  visaController.createVisaSubmission
-);
+const express = require("express")
+const router = express.Router()
+const visaController = require("../controller/visaConfig")
+const { upload } = require("../Cloudinary")
+const { verifyAccessToken } = require("../middileware/authMiddleware")
 
+// New step-by-step routes
+router.post("/save-step", verifyAccessToken, visaController.saveStep)
+router.post("/save-images", verifyAccessToken, upload.single("images"), visaController.saveImages)
+router.post(
+  "/save-document-samples",
+  verifyAccessToken,
+  upload.array("samples", 10),
+  visaController.saveDocumentSamples,
+)
+router.post("/remove-document-sample", verifyAccessToken, visaController.removeDocumentSample)
+router.post("/complete", verifyAccessToken, visaController.completeConfiguration)
+
+// Legacy routes for backward compatibility
+router.post(
+  "/add",
+  verifyAccessToken,
+  upload.single("images"),
+  (req, res, next) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "Please upload one image file" })
+    }
+    next()
+  },
+  visaController.createVisaSubmission,
+)
+
+router.put("/update/:id", verifyAccessToken, upload.single("images"), visaController.updateVisaSubmissionById);
 router.get('/GetAll',verifyAccessToken, visaController.getAllVisaSubmissions);
 // GET all visa submissions
 router.get('/visa-summaries', visaController.getAllVisaCountriesSummary);
@@ -41,12 +56,8 @@ router.get('/documents/:id/documents-only', visaController.getOnlyVisaDocuments)
 router.get('/getById/:id',  visaController.getVisaSubmissionById);
 
 // Update by ID
-router.put(
-  '/update/:id',
-  verifyAccessToken,
-  upload.array('images', 5), // Optional image update
-  visaController.updateVisaSubmissionById
-);
+
+
 router.get('/counts/types',verifyAccessToken, visaController.getVisaTypeCounts);
 
 module.exports = router;

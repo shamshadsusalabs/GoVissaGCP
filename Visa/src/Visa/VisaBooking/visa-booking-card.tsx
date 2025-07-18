@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import VisaDetailsCard from "./visa-details-card"
@@ -16,7 +17,7 @@ interface VisaType {
   processingMethod: string
   visaFee: number
   serviceFee: number
-  currency: "INR"
+  currency: "INR" | "USD" // Keep for data, display will be '₹'
   validity: string
   entries: string
   stayDuration: string
@@ -36,6 +37,7 @@ const VisaBookingCard = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [visaData, setVisaData] = useState<VisaConfiguration | null>(null)
+  const [selectedVisaType, setSelectedVisaType] = useState<VisaType | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [travellers, setTravellers] = useState(1)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -47,36 +49,35 @@ const VisaBookingCard = () => {
         if (!id) {
           throw new Error("Configuration ID not found")
         }
-
         const response = await fetch(`http://localhost:5000/api/configurations/details/${id}`)
         if (!response.ok) {
           throw new Error(`Failed to fetch visa data: ${response.statusText}`)
         }
-
         const result = await response.json()
+
         if (
           !result ||
-          !result.visaTypes ||
-          !Array.isArray(result.visaTypes) ||
-          result.visaTypes.length === 0 ||
-          !result.visaTypes[0] ||
-          !result.visaTypes[0].visaFee
+          !result.data ||
+          !result.data.visaTypes ||
+          !Array.isArray(result.data.visaTypes) ||
+          result.data.visaTypes.length === 0
         ) {
-          throw new Error("Invalid visa configuration: missing required visa data")
+          throw new Error("No visa types found for this configuration.")
         }
 
         const transformedData = {
-          ...result,
-          country: result.countryDetails?.name || "N/A",
-          countryCode: result.countryDetails?.code || "N/A",
-          embassyLocation: result.countryDetails?.embassyLocation || "N/A",
-          visaTypes: result.visaTypes.map((visaType: any) => ({
+          ...result.data,
+          country: result.data.countryDetails?.name || "N/A",
+          countryCode: result.data.countryDetails?.code || "N/A",
+          embassyLocation: result.data.countryDetails?.embassyLocation || "N/A",
+          visaTypes: result.data.visaTypes.map((visaType: any) => ({
             ...visaType,
-            currency: "INR" as const,
+            currency: visaType.currency || "INR",
           })),
         }
-
         setVisaData(transformedData)
+        setSelectedVisaType(transformedData.visaTypes[0])
+
         const defaultDate = new Date()
         defaultDate.setDate(defaultDate.getDate() + 14)
         setSelectedDate(formatDate(defaultDate))
@@ -86,7 +87,6 @@ const VisaBookingCard = () => {
         setLoading(false)
       }
     }
-
     fetchVisaData()
   }, [id])
 
@@ -102,12 +102,10 @@ const VisaBookingCard = () => {
   const handleSelectDate = (date: Date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-
     if (date < today) {
       setError("Please select a future date")
       return
     }
-
     setSelectedDate(formatDate(date))
     setShowCalendar(false)
     setError(null)
@@ -118,35 +116,47 @@ const VisaBookingCard = () => {
   }
 
   if (loading) {
-    return <div className="text-center py-8">Loading visa information...</div>
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-gray-600 text-xl font-semibold">
+        Loading visa information...
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="text-center py-8 text-red-500">Error: {error}</div>
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-red-600 text-xl font-semibold">
+        Error: {error}
+      </div>
+    )
   }
 
-  if (!visaData || !visaData.visaTypes || visaData.visaTypes.length === 0 || !visaData.visaTypes[0]) {
-    return <div className="text-center py-8">No visa data available</div>
+  if (!visaData || !selectedVisaType) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-gray-600 text-xl font-semibold">
+        No visa data available or selected.
+      </div>
+    )
   }
 
   if (paymentSuccess) {
     return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md text-center">
-        <div className="text-green-500 text-6xl mb-4">✓</div>
-        <h2 className="text-2xl font-bold mb-4">Payment Successful!</h2>
-        <p className="mb-6">
+      <div className="max-w-md mx-auto p-8 bg-white rounded-2xl shadow-xl text-center my-12 border border-green-200">
+        <div className="text-green-500 text-7xl mb-6 animate-bounce">✓</div>
+        <h2 className="text-3xl font-extrabold mb-4 text-gray-800">Payment Successful!</h2>
+        <p className="mb-8 text-gray-600 leading-relaxed">
           Your visa application is being processed. Please check your email for further instructions.
         </p>
-        <div className="bg-blue-50 p-4 rounded-lg mb-6 text-left">
-          <h3 className="font-semibold mb-2">Next Steps:</h3>
-          <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li>Session be start Upload required documents within 48 hours</li>
-            <li>{"We'll notify you about your visa status"}</li>
+        <div className="bg-blue-50 p-6 rounded-xl mb-8 text-left border border-blue-200">
+          <h3 className="font-bold mb-3 text-blue-800 text-lg">Next Steps:</h3>
+          <ol className="list-decimal list-inside space-y-3 text-sm text-blue-700">
+            <li>Session will start. Upload required documents within 48 hours.</li>
+            <li>{"We'll notify you about your visa status."}</li>
           </ol>
         </div>
         <button
           onClick={() => navigate(`/user-dashboard/ApplyVisa`)}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1"
         >
           Upload Documents Now
         </button>
@@ -155,23 +165,26 @@ const VisaBookingCard = () => {
   }
 
   return (
-    <div className="mx-auto p-4 grid md:grid-cols-2 gap-8">
+    <div className="mx-auto p-4 grid md:grid-cols-2 gap-8 w-7xl my-8">
+      {" "}
+      {/* Increased max-w to 7xl */}
       <VisaDetailsCard
         visaData={visaData}
+        selectedVisaType={selectedVisaType}
+        setSelectedVisaType={setSelectedVisaType}
         selectedDate={selectedDate}
         setSelectedDate={setSelectedDate}
         setShowCalendar={setShowCalendar}
       />
-
       <BookingForm
         visaData={visaData}
+        selectedVisaType={selectedVisaType}
         selectedDate={selectedDate}
         travellers={travellers}
         handleTravellerChange={handleTravellerChange}
         setPaymentSuccess={setPaymentSuccess}
         navigate={navigate}
       />
-
       {showCalendar && (
         <CalendarModal
           selectedDate={selectedDate}

@@ -1,47 +1,298 @@
 const VisaSubmission = require('../shcema/VisaConfig');
 
 
-
-
-exports.createVisaSubmission = async (req, res) => {
+exports.saveStep = async (req, res) => {
   try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: 'No files uploaded' });
+    const { stepNumber, stepData, configId } = req.body
+
+    let visaConfig
+
+    if (configId) {
+      // Update existing configuration
+      visaConfig = await VisaSubmission.findById(configId)
+      if (!visaConfig) {
+        return res.status(404).json({ success: false, message: "Configuration not found" })
+      }
+    } else {
+      // Create new configuration
+      visaConfig = new VisaSubmission()
     }
 
-    const {
-      continent,
-      countryDetails,
-      visaTypes,
-      documents,
-      eligibility,
-      rejectionReasons
-    } = req.body;
+    // Update the specific step data
+    switch (stepNumber) {
+      case 1:
+        visaConfig.continent = stepData.continent
+        break
+      case 2:
+        visaConfig.countryDetails = stepData.countryDetails
+        break
+      case 3:
+        visaConfig.visaTypes = stepData.visaTypes
+        break
+      case 4:
+        visaConfig.documents = stepData.documents
+        break
+      case 5:
+        visaConfig.eligibility = stepData.eligibility
+        break
+      case 6:
+        visaConfig.rejectionReasons = stepData.rejectionReasons
+        break
+      case 7:
+        // Images will be handled separately
+        break
+    }
 
-    const imageUrls = req.files.map(file => file.path); // Cloudinary gives 'path' as the HTTPS secure_url
+    // Update step tracking
+    visaConfig.currentStep = Math.max(visaConfig.currentStep, stepNumber)
+    visaConfig.lastSavedAt = new Date()
 
+    await visaConfig.save()
+
+    res.status(200).json({
+      success: true,
+      data: visaConfig,
+      message: `Step ${stepNumber} saved successfully`,
+    })
+  } catch (error) {
+    console.error("Save step error:", error)
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+    })
+  }
+}
+
+// Save images for step 7
+exports.saveImages = async (req, res) => {
+  try {
+    const { configId } = req.body
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No image uploaded" })
+    }
+
+    const visaConfig = await VisaSubmission.findById(configId)
+    if (!visaConfig) {
+      return res.status(404).json({ success: false, message: "Configuration not found" })
+    }
+
+    const imageUrl = req.file.path
+    visaConfig.images = [imageUrl]
+    visaConfig.currentStep = Math.max(visaConfig.currentStep, 7)
+    visaConfig.lastSavedAt = new Date()
+
+    await visaConfig.save()
+
+    res.status(200).json({
+      success: true,
+      data: visaConfig,
+      message: "Images saved successfully",
+    })
+  } catch (error) {
+    console.error("Save images error:", error)
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+    })
+  }
+}
+
+// Save document sample images
+exports.saveDocumentSamples = async (req, res) => {
+  try {
+    const { configId, documentId } = req.body
+
+   
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "No sample images uploaded" })
+    }
+
+    const visaConfig = await VisaSubmission.findById(configId)
+    if (!visaConfig) {
+      return res.status(404).json({ success: false, message: "Configuration not found" })
+    }
+
+  
+
+    // Find the document and update its sample images
+    const documentIndex = visaConfig.documents.findIndex((doc) => doc.id === documentId)
+
+    console.log("Document search:", {
+      documentId,
+      documentIndex,
+      availableDocIds: visaConfig.documents.map((d) => d.id),
+    })
+
+    if (documentIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+        debug: {
+          searchingFor: documentId,
+          availableDocuments: visaConfig.documents.map((d) => ({ id: d.id, name: d.name })),
+        },
+      })
+    }
+
+    // Get uploaded image URLs
+    const sampleUrls = req.files.map((file) => file.path)
+
+    // Initialize sample array if it doesn't exist
+    if (!visaConfig.documents[documentIndex].sample) {
+      visaConfig.documents[documentIndex].sample = []
+    }
+
+    // Add new sample images to existing ones
+    visaConfig.documents[documentIndex].sample.push(...sampleUrls)
+
+    visaConfig.lastSavedAt = new Date()
+    await visaConfig.save()
+
+    console.log("Successfully saved samples:", sampleUrls)
+
+    res.status(200).json({
+      success: true,
+      data: visaConfig,
+      message: "Document sample images saved successfully",
+    })
+  } catch (error) {
+    console.error("Save document samples error:", error)
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+    })
+  }
+}
+
+// Remove document sample image
+exports.removeDocumentSample = async (req, res) => {
+  try {
+    const { configId, documentId, sampleUrl } = req.body
+
+    const visaConfig = await VisaSubmission.findById(configId)
+    if (!visaConfig) {
+      return res.status(404).json({ success: false, message: "Configuration not found" })
+    }
+
+    // Find the document and remove the sample image
+    const documentIndex = visaConfig.documents.findIndex((doc) => doc.id === documentId)
+    if (documentIndex === -1) {
+      return res.status(404).json({ success: false, message: "Document not found" })
+    }
+
+    if (visaConfig.documents[documentIndex].sample) {
+      visaConfig.documents[documentIndex].sample = visaConfig.documents[documentIndex].sample.filter(
+        (url) => url !== sampleUrl,
+      )
+    }
+
+    visaConfig.lastSavedAt = new Date()
+    await visaConfig.save()
+
+    res.status(200).json({
+      success: true,
+      data: visaConfig,
+      message: "Document sample image removed successfully",
+    })
+  } catch (error) {
+    console.error("Remove document sample error:", error)
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+    })
+  }
+}
+
+// Complete configuration (final submit)
+exports.completeConfiguration = async (req, res) => {
+  try {
+    const { configId } = req.body
+
+    const visaConfig = await VisaSubmission.findById(configId)
+    if (!visaConfig) {
+      return res.status(404).json({ success: false, message: "Configuration not found" })
+    }
+
+    visaConfig.isComplete = true
+    visaConfig.currentStep = 8
+    visaConfig.lastSavedAt = new Date()
+
+    await visaConfig.save()
+
+    res.status(200).json({
+      success: true,
+      data: visaConfig,
+      message: "Configuration completed successfully",
+    })
+  } catch (error) {
+    console.error("Complete configuration error:", error)
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+    })
+  }
+}
+
+// Legacy methods for backward compatibility
+exports.createVisaSubmission = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No image uploaded" })
+    }
+    const { continent, countryDetails, visaTypes, documents, eligibility, rejectionReasons } = req.body
+    const imageUrl = req.file.path
     const newVisaSubmission = new VisaSubmission({
       continent,
       countryDetails: JSON.parse(countryDetails),
       visaTypes: JSON.parse(visaTypes),
       documents: JSON.parse(documents),
       eligibility,
-      images: imageUrls,
-      rejectionReasons: JSON.parse(rejectionReasons)
-    });
-
-    await newVisaSubmission.save();
-    res.status(201).json({ success: true, data: newVisaSubmission });
+      images: [imageUrl],
+      rejectionReasons: JSON.parse(rejectionReasons),
+      isComplete: true,
+      currentStep: 8,
+    })
+    await newVisaSubmission.save()
+    res.status(201).json({ success: true, data: newVisaSubmission })
   } catch (error) {
-    console.error("Create VisaSubmission Error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Server Error'
-    });
+      message: error.message || "Server Error",
+    })
   }
-};
+}
 
-
+exports.updateVisaSubmissionById = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { continent, countryDetails, visaTypes, documents, eligibility, rejectionReasons } = req.body
+    const updatedFields = {
+      continent,
+      eligibility,
+      lastSavedAt: new Date(),
+    }
+    if (countryDetails) updatedFields.countryDetails = JSON.parse(countryDetails)
+    if (visaTypes) updatedFields.visaTypes = JSON.parse(visaTypes)
+    if (documents) updatedFields.documents = JSON.parse(documents)
+    if (rejectionReasons) updatedFields.rejectionReasons = JSON.parse(rejectionReasons)
+    if (req.file) {
+      updatedFields.images = [req.file.path]
+    }
+    const updatedVisa = await VisaSubmission.findByIdAndUpdate(id, updatedFields, {
+      new: true,
+      runValidators: true,
+    })
+    if (!updatedVisa) {
+      return res.status(404).json({ success: false, message: "Visa Submission not found" })
+    }
+    res.status(200).json({ success: true, data: updatedVisa })
+  } catch (error) {
+    console.error("Update VisaSubmission Error:", error)
+    res.status(500).json({ success: false, message: error.message || "Server Error" })
+  }
+}
 // Get All Visa Submissions
 exports.getAllVisaCountriesSummary = async (req, res) => {
   try {
@@ -130,28 +381,27 @@ exports.getCountryEssentialDetailsById = async (req, res) => {
 
     const countryName = visaData.countryDetails?.name || '';
 
-    // Sabhi document names le rahe hain
-    const documentNames = visaData.documents
-      ?.filter(doc => doc.name)
-      .map(doc => doc.name);
+    // name + description + sample URLs
+    const documentDetails = visaData.documents?.map(doc => ({
+      name: doc.name || '',
+      description: doc.description || '',
+      sample: doc.sample || [], // this will be an array of URLs
+    })) || [];
 
-    // Eligibility check karte hain:
-    // 1) documents ke kisi bhi object me eligibility hai kya?
+    // Eligibility check
     let eligibility = visaData.documents?.find(doc => doc.eligibility)?.eligibility;
 
-    // 2) agar documents me nahi, to root object me eligibility check karo
     if (!eligibility && visaData.eligibility) {
       eligibility = visaData.eligibility;
     }
 
-    // 3) phir bhi nahi mila to default message
     if (!eligibility) {
       eligibility = "Eligibility not specified";
     }
 
     return res.status(200).json({
       countryName,
-      documentNames,
+      documentDetails,
       eligibility,
     });
 
@@ -160,6 +410,9 @@ exports.getCountryEssentialDetailsById = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+
+
 
 
 exports.getVisaRejectionReasons = async (req, res) => {
@@ -315,48 +568,4 @@ exports.getVisaSubmissionById = async (req, res) => {
     res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 };
-exports.updateVisaSubmissionById = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const {
-      continent,
-      countryDetails,
-      visaTypes,
-      documents,
-      eligibility,
-      rejectionReasons
-    } = req.body;
-
-    let updatedFields = {
-      continent,
-      eligibility,
-    };
-
-    // Parse JSON fields if provided
-    if (countryDetails) updatedFields.countryDetails = JSON.parse(countryDetails);
-    if (visaTypes) updatedFields.visaTypes = JSON.parse(visaTypes);
-    if (documents) updatedFields.documents = JSON.parse(documents);
-    if (rejectionReasons) updatedFields.rejectionReasons = JSON.parse(rejectionReasons);
-
-    // If new images are uploaded, add them
-    if (req.files && req.files.length > 0) {
-      const imageUrls = req.files.map(file => file.path);
-      updatedFields.images = imageUrls;
-    }
-
-    const updatedVisa = await VisaSubmission.findByIdAndUpdate(id, updatedFields, {
-      new: true,
-      runValidators: true
-    });
-
-    if (!updatedVisa) {
-      return res.status(404).json({ success: false, message: 'Visa Submission not found' });
-    }
-
-    res.status(200).json({ success: true, data: updatedVisa });
-  } catch (error) {
-    console.error("Update VisaSubmission Error:", error);
-    res.status(500).json({ success: false, message: error.message || 'Server Error' });
-  }
-};

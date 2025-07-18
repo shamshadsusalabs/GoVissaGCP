@@ -1,4 +1,5 @@
 "use client"
+
 import type React from "react"
 import {
   FaArrowLeft,
@@ -62,7 +63,6 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">
         {isUpdateMode ? "Review Changes & Update" : "Review & Submit"}
       </h2>
-
       {isUpdateMode && (
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center">

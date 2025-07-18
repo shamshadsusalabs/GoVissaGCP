@@ -54,7 +54,7 @@ interface DocumentRequirement {
   name: string
   description: string
   isMandatory: boolean
-  example?: string
+  sample?: string[]
   format?: string
 }
 
@@ -75,6 +75,9 @@ const VisaWizard: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [currentConfigId, setCurrentConfigId] = useState<string | null>(configId || null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveMessage, setSaveMessage] = useState<string>("")
 
   const [config, setConfig] = useState<VisaConfiguration>({
     continent: "",
@@ -93,29 +96,22 @@ const VisaWizard: React.FC = () => {
 
   const [existingImages, setExistingImages] = useState<string[]>([])
 
-  // Function to determine where to navigate back
   const getBackNavigationPath = () => {
-    // Check if there's a state indicating where user came from
     const fromPath = location.state?.from
-
     if (fromPath) {
       return fromPath
     }
-
-    // Default navigation based on mode
     if (isUpdateMode) {
-      return "/dashboard/VisaConfigList" // Go to list if updating
+      return "/dashboard/VisaConfigList"
     } else {
-      return "/visa-config-form" // Go to form if creating new
+      return "/visa-config-form"
     }
   }
 
-  // Function to handle existing images from server
   const handleExistingImages = (imageUrls: string[]) => {
     setExistingImages(imageUrls)
   }
 
-  // Fetch existing configuration if in update mode
   useEffect(() => {
     if (isUpdateMode && configId) {
       fetchConfiguration(configId)
@@ -128,7 +124,6 @@ const VisaWizard: React.FC = () => {
 
     try {
       const response = await fetch(`http://localhost:5000/api/configurations/getById/${id}`)
-
       if (!response.ok) {
         throw new Error(`Failed to fetch configuration: ${response.status}`)
       }
@@ -136,10 +131,8 @@ const VisaWizard: React.FC = () => {
       const result = await response.json()
       console.log("📥 Fetched configuration:", result)
 
-      // Extract the actual data from the response
       const data = result.data || result
 
-      // Transform the fetched data to match our component structure
       const transformedConfig: VisaConfiguration = {
         continent: data.continent || "",
         countryDetails: {
@@ -172,7 +165,7 @@ const VisaWizard: React.FC = () => {
             name: doc.name || "",
             description: doc.description || "",
             isMandatory: doc.isMandatory || false,
-            example: doc.example || "",
+            sample: doc.sample || [],
             format: doc.format || "",
           })) || [],
         eligibility: data.eligibility || "",
@@ -183,16 +176,19 @@ const VisaWizard: React.FC = () => {
             description: reason.description || "",
             frequency: reason.frequency || "Occasional",
           })) || [],
-        images: [], // Images will be handled separately for update mode
+        images: [],
       }
 
-      // Add this line after setting the transformed config
       if (data.images && Array.isArray(data.images)) {
         handleExistingImages(data.images)
       }
 
       console.log("🔄 Transformed config:", transformedConfig)
       setConfig(transformedConfig)
+
+      if (data.currentStep) {
+        setStep(data.currentStep)
+      }
     } catch (error) {
       console.error("❌ Error fetching configuration:", error)
       setLoadError(error instanceof Error ? error.message : "Failed to load configuration")
@@ -201,7 +197,127 @@ const VisaWizard: React.FC = () => {
     }
   }
 
-  const nextStep = () => setStep(step + 1)
+  const saveStep = async (stepNumber: number, stepData: any) => {
+    if (stepNumber === 7) {
+      return await saveImages()
+    }
+
+    setIsSaving(true)
+    setSaveMessage("")
+
+    try {
+      const response = await fetch("http://localhost:5000/api/configurations/save-step", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          stepNumber,
+          stepData,
+          configId: currentConfigId,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save step: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (!currentConfigId && result.data._id) {
+        setCurrentConfigId(result.data._id)
+      }
+
+      setSaveMessage(`✅ Step ${stepNumber} saved successfully`)
+      setTimeout(() => setSaveMessage(""), 3000)
+
+      return result.data
+    } catch (error) {
+      console.error("❌ Error saving step:", error)
+      setSaveMessage(`❌ Failed to save step ${stepNumber}`)
+      setTimeout(() => setSaveMessage(""), 5000)
+      throw error
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const saveImages = async () => {
+    if (config.images.length === 0) {
+      return
+    }
+
+    setIsSaving(true)
+    setSaveMessage("")
+
+    try {
+      const formData = new FormData()
+      formData.append("configId", currentConfigId || "")
+      formData.append("images", config.images[0].file)
+
+      const response = await fetch("http://localhost:5000/api/configurations/save-images", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save images: ${response.status}`)
+      }
+
+      const result = await response.json()
+      setSaveMessage("✅ Images saved successfully")
+      setTimeout(() => setSaveMessage(""), 3000)
+
+      return result.data
+    } catch (error) {
+      console.error("❌ Error saving images:", error)
+      setSaveMessage("❌ Failed to save images")
+      setTimeout(() => setSaveMessage(""), 5000)
+      throw error
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const nextStep = async () => {
+    try {
+      let stepData = {}
+
+      switch (step) {
+        case 1:
+          stepData = { continent: config.continent }
+          break
+        case 2:
+          stepData = { countryDetails: config.countryDetails }
+          break
+        case 3:
+          stepData = { visaTypes: config.visaTypes }
+          break
+        case 4:
+          stepData = { documents: config.documents }
+          break
+        case 5:
+          stepData = { eligibility: config.eligibility }
+          break
+        case 6:
+          stepData = { rejectionReasons: config.rejectionReasons }
+          break
+        case 7:
+          await saveStep(7, {})
+          break
+      }
+
+      if (step < 7) {
+        await saveStep(step, stepData)
+      }
+
+      setStep(step + 1)
+    } catch (error) {
+      console.error("Error saving step:", error)
+      setStep(step + 1)
+    }
+  }
+
   const prevStep = () => setStep(step - 1)
 
   const updateConfig = (key: keyof VisaConfiguration, value: unknown) => {
@@ -211,9 +327,9 @@ const VisaWizard: React.FC = () => {
     }))
   }
 
-  // Reset wizard to first step
   const resetWizard = () => {
     setStep(1)
+    setCurrentConfigId(null)
     setConfig({
       continent: "",
       countryDetails: {
@@ -232,42 +348,20 @@ const VisaWizard: React.FC = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
+
     try {
-      const formData = new FormData()
-      const { images, continent, countryDetails, visaTypes, documents, eligibility, rejectionReasons } = config
-
-      // Append each field individually
-      formData.append("continent", continent)
-      formData.append("countryDetails", JSON.stringify(countryDetails))
-      formData.append("visaTypes", JSON.stringify(visaTypes))
-      formData.append("documents", JSON.stringify(documents))
-      formData.append("eligibility", eligibility)
-      formData.append("rejectionReasons", JSON.stringify(rejectionReasons))
-
-      // Append each image file
-      images.forEach((image) => {
-        formData.append("images", image.file)
-      })
-
-      console.log("📦 FormData being sent:")
-      for (const pair of formData.entries()) {
-        if (pair[1] instanceof File) {
-          console.log(`${pair[0]}:`, pair[1].name, pair[1].type)
-        } else {
-          console.log(`${pair[0]}:`, pair[1])
-        }
+      if (!currentConfigId) {
+        throw new Error("No configuration ID found")
       }
 
-      // Choose endpoint based on mode
-      const url = isUpdateMode
-        ? `http://localhost:5000/api/configurations/update/${configId}`
-        : "http://localhost:5000/api/configurations/add"
-
-      const method = isUpdateMode ? "PUT" : "POST"
-
-      const response = await fetch(url, {
-        method: method,
-        body: formData,
+      const response = await fetch("http://localhost:5000/api/configurations/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          configId: currentConfigId,
+        }),
       })
 
       if (!response.ok) {
@@ -277,15 +371,13 @@ const VisaWizard: React.FC = () => {
       const result = await response.json()
       console.log("✅ Success:", result)
 
-      // Show success message
       const action = isUpdateMode ? "updated" : "created"
       alert(`🎉 Visa configuration ${action} successfully!`)
 
-      // Navigate back based on mode
       if (isUpdateMode) {
-        navigate("/dashboard/VisaConfigList") // Navigate to list after update
+        navigate("/dashboard/VisaConfigList")
       } else {
-        resetWizard() // Reset for new creation
+        resetWizard()
       }
     } catch (error) {
       console.error("❌ Error:", error)
@@ -341,6 +433,7 @@ const VisaWizard: React.FC = () => {
             updateDocuments={(val) => updateConfig("documents", val)}
             nextStep={nextStep}
             prevStep={prevStep}
+            configId={currentConfigId} // Fixed: Now properly typed as string | null
           />
         )
       case 5:
@@ -394,7 +487,6 @@ const VisaWizard: React.FC = () => {
     }
   }
 
-  // Loading state for fetching existing configuration
   if (isLoading) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
@@ -409,7 +501,6 @@ const VisaWizard: React.FC = () => {
     )
   }
 
-  // Error state for failed fetch
   if (loadError) {
     return (
       <div className="container mx-auto p-4 max-w-4xl">
@@ -440,7 +531,6 @@ const VisaWizard: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      {/* Loading Overlay */}
       {isSubmitting && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-xl text-center">
@@ -449,6 +539,29 @@ const VisaWizard: React.FC = () => {
               {isUpdateMode ? "Updating Configuration..." : "Submitting Configuration..."}
             </h3>
             <p className="text-gray-600">Please wait while we process your visa configuration.</p>
+          </div>
+        </div>
+      )}
+
+      {(isSaving || saveMessage) && (
+        <div className="fixed top-4 right-4 z-40">
+          <div
+            className={`p-3 rounded-lg shadow-lg ${
+              saveMessage.includes("✅")
+                ? "bg-green-100 text-green-800"
+                : saveMessage.includes("❌")
+                  ? "bg-red-100 text-red-800"
+                  : "bg-blue-100 text-blue-800"
+            }`}
+          >
+            {isSaving ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                Saving...
+              </div>
+            ) : (
+              saveMessage
+            )}
           </div>
         </div>
       )}
@@ -462,19 +575,20 @@ const VisaWizard: React.FC = () => {
             Editing configuration for: <span className="font-semibold">{config.countryDetails.name}</span>
           </p>
         )}
+
         <div className="flex justify-center mb-8">
           <div className="steps flex overflow-x-auto py-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((stepNumber) => (
               <div key={stepNumber} className="step-item flex flex-col items-center mx-2">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors
-                   ${
-                     step === stepNumber
-                       ? "bg-blue-600 text-white"
-                       : step > stepNumber
-                         ? "bg-green-500 text-white"
-                         : "bg-gray-200 text-gray-700"
-                   }`}
+                    ${
+                      step === stepNumber
+                        ? "bg-blue-600 text-white"
+                        : step > stepNumber
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-200 text-gray-700"
+                    }`}
                 >
                   {stepNumber}
                 </div>
@@ -493,6 +607,7 @@ const VisaWizard: React.FC = () => {
           </div>
         </div>
       </div>
+
       {renderStep()}
     </div>
   )

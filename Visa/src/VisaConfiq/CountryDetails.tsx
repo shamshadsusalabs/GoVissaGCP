@@ -1,31 +1,33 @@
-import React from 'react';
-import { FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+"use client"
+
+import type React from "react"
+import { FaArrowRight, FaArrowLeft } from "react-icons/fa"
 
 interface CountryDetailsProps {
   details: {
-    name: string;
-    code: string;
-    embassyLocation: string;
-    generalRequirements: string;
-  };
-  updateDetails: (details: any) => void;
-  nextStep: () => void;
-  prevStep: () => void;
+    name: string
+    code: string
+    embassyLocation: string
+  
+  }
+  updateDetails: (details: any) => void
+  nextStep: () => void
+  prevStep: () => void
 }
 
 const CountryDetails: React.FC<CountryDetailsProps> = ({ details, updateDetails, nextStep, prevStep }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     updateDetails({
       ...details,
-      [name]: value
-    });
-  };
+      [name]: value,
+    })
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    nextStep();
-  };
+    e.preventDefault()
+    nextStep()
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -77,20 +79,7 @@ const CountryDetails: React.FC<CountryDetailsProps> = ({ details, updateDetails,
             />
           </div>
         </div>
-        <div className="mb-4">
-          <label htmlFor="generalRequirements" className="block text-sm font-medium text-gray-700 mb-1">
-            General Requirements
-          </label>
-          <textarea
-            id="generalRequirements"
-            name="generalRequirements"
-            value={details.generalRequirements}
-            onChange={handleChange}
-            rows={4}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter general requirements applicable to all visa types..."
-          />
-        </div>
+      
         <div className="flex justify-between">
           <button
             type="button"
@@ -102,14 +91,14 @@ const CountryDetails: React.FC<CountryDetailsProps> = ({ details, updateDetails,
           <button
             type="submit"
             disabled={!details.name}
-            className={`flex items-center px-4 py-2 rounded-md ${details.name ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+            className={`flex items-center px-4 py-2 rounded-md ${details.name ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
           >
             Next <FaArrowRight className="ml-2" />
           </button>
         </div>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default CountryDetails;
+export default CountryDetails

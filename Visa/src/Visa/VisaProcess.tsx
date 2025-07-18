@@ -1,5 +1,5 @@
 import React from "react";
-import { FaCircle, FaCheck } from "react-icons/fa";
+import {  FaCheck, FaInfoCircle } from "react-icons/fa";
 
 const steps = [
   {
@@ -44,60 +44,63 @@ const steps = [
 
 const VisaProcess: React.FC = () => {
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <h2 className="text-2xl font-semibold mb-8 border-b-2 inline-block border-blue-600">
-        Visa Application Process
-      </h2>
+    <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          Visa Application Process
+        </h2>
+        <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
+      </div>
 
       <div className="relative">
         {/* Vertical timeline line */}
-        <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-blue-200" />
+        <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-blue-100" />
 
         {steps.map((step, index) => (
-          <div key={index} className="relative pl-12 mb-8">
+          <div key={index} className="relative pl-16 mb-10 group">
             {/* Timeline dot */}
-            <div className="absolute left-0 top-1 w-8 h-8 flex items-center justify-center">
+            <div className="absolute left-0 top-1 w-10 h-10 flex items-center justify-center">
               {index === steps.length - 1 ? (
-                <div className="w-4 h-4 rounded-full bg-blue-600 border-2 border-white ring-2 ring-blue-300"></div>
+                <div className="w-5 h-5 rounded-full bg-blue-600 border-4 border-white ring-2 ring-blue-300 transform group-hover:scale-110 transition-transform"></div>
               ) : (
-                <FaCircle className="text-blue-600 text-xs" />
+                <div className="w-3 h-3 rounded-full bg-blue-600 transform group-hover:scale-125 transition-transform"></div>
               )}
             </div>
 
             {/* Step card */}
-            <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:border-blue-200">
               <div className="flex items-start">
                 <div className="flex-1">
-                  <span className="text-blue-600 font-medium text-sm">{step.step}</span>
-                  <h3 className="font-semibold text-lg mt-1">{step.title}</h3>
-                  <p className="text-gray-600 mt-2">{step.description}</p>
+                  <span className="text-blue-600 font-medium text-sm tracking-wider">{step.step}</span>
+                  <h3 className="font-semibold text-xl mt-1 text-gray-900">{step.title}</h3>
+                  <p className="text-gray-600 mt-3 leading-relaxed">{step.description}</p>
                 </div>
                 {index === steps.length - 1 && (
-                  <span className="ml-4 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                  <span className="ml-4 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full animate-pulse">
                     Current Step
                   </span>
                 )}
               </div>
 
               {step.subSteps && (
-                <div className="mt-4 space-y-3 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <div className="mt-6 space-y-4 bg-gray-50 rounded-lg p-4 border border-gray-200">
                   {step.subSteps.map((sub, idx) => (
-                    <div key={idx} className="flex items-start space-x-3">
+                    <div key={idx} className="flex items-start space-x-4">
                       {sub.completed ? (
-                        <div className="mt-1 p-1 bg-green-100 rounded-full">
+                        <div className="mt-1 p-1.5 bg-green-100 rounded-full flex-shrink-0">
                           <FaCheck className="text-green-600 text-xs" />
                         </div>
                       ) : (
-                        <div className="mt-1 w-2 h-2 rounded-full bg-blue-400"></div>
+                        <div className="mt-1.5 w-3 h-3 rounded-full bg-blue-400 flex-shrink-0 animate-pulse"></div>
                       )}
                       <div className="flex-1">
-                        <p className="text-sm text-gray-800">{sub.message}</p>
-                        <div className="flex items-center mt-1">
+                        <p className="text-sm font-medium text-gray-800">{sub.message}</p>
+                        <div className="flex items-center mt-2 space-x-3">
                           <span className="text-xs text-gray-500">{sub.time}</span>
-                          <span className={`ml-2 px-2 py-0.5 text-xs rounded ${
+                          <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                             sub.status === "COMPLETED" 
-                              ? "bg-green-100 text-green-700" 
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-blue-100 text-blue-800"
                           }`}>
                             {sub.status}
                           </span>
@@ -112,14 +115,31 @@ const VisaProcess: React.FC = () => {
         ))}
       </div>
 
-      <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
-        <h3 className="font-medium text-blue-800 mb-2">Important Notes:</h3>
-        <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-          <li>Ensure all documents are clear and valid before uploading</li>
-          <li>Processing times may vary based on immigration workload</li>
-          <li>You'll receive email notifications at each stage</li>
-          <li>Approval is subject to immigration authorities' discretion</li>
-        </ul>
+      <div className="mt-12 p-6 bg-blue-50 rounded-xl border border-blue-200">
+        <div className="flex items-start">
+          <FaInfoCircle className="text-blue-500 text-xl mt-0.5 mr-3 flex-shrink-0" />
+          <div>
+            <h3 className="font-semibold text-blue-800 mb-3 text-lg">Important Notes:</h3>
+            <ul className="space-y-2 text-gray-700">
+              <li className="flex items-start">
+                <span className="text-blue-500 mr-2">•</span>
+                <span>Ensure all documents are clear and valid before uploading</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-500 mr-2">•</span>
+                <span>Processing times may vary based on immigration workload</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-500 mr-2">•</span>
+                <span>You'll receive email notifications at each stage</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-500 mr-2">•</span>
+                <span>Approval is subject to immigration authorities' discretion</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

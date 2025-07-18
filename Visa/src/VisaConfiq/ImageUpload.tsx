@@ -81,11 +81,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         }
       })
 
-      // Check if adding these files would exceed the limit
-      if (images.length + validFiles.length > 5) {
-        newErrors.push(
-          `Cannot add ${validFiles.length} files. Maximum 5 images allowed (${5 - images.length} slots remaining).`,
-        )
+      // Only allow 1 image
+      if (validFiles.length > 1) {
+        newErrors.push("Only 1 image is allowed. Please upload a single image.")
         setErrors(newErrors)
         setUploading(false)
         return
@@ -97,7 +95,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           preview: URL.createObjectURL(file),
           file: file,
         }))
-        updateImages([...images, ...newImages])
+        updateImages(newImages) // Replace existing images with the new one
       }
 
       // Set errors if any
@@ -106,23 +104,20 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       }
       setUploading(false)
     },
-    [images, updateImages, validateFile],
+    [updateImages, validateFile],
   )
 
-  // Remove an image
-  const removeImage = useCallback(
-    (index: number) => {
-      const newImages = [...images]
-      URL.revokeObjectURL(newImages[index].preview)
-      newImages.splice(index, 1)
-      updateImages(newImages)
-      // Clear errors when removing images
-      if (errors.length > 0) {
-        setErrors([])
-      }
-    },
-    [images, updateImages, errors.length],
-  )
+  // Remove the image
+  const removeImage = useCallback(() => {
+    if (images.length > 0) {
+      URL.revokeObjectURL(images[0].preview)
+      updateImages([])
+    }
+    // Clear errors when removing image
+    if (errors.length > 0) {
+      setErrors([])
+    }
+  }, [images, updateImages, errors.length])
 
   // Clear all errors
   const clearErrors = useCallback(() => {
@@ -143,9 +138,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       "image/png": [".png"],
       "image/webp": [".webp"],
     },
-    maxFiles: 5 - images.length,
+    maxFiles: 1,
     maxSize: MAX_FILE_SIZE,
-    disabled: images.length >= 5 || uploading,
+    disabled: images.length >= 1 || uploading,
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -155,15 +150,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Upload Country Images</h2>
+      <h2 className="text-2xl font-semibold mb-6 text-gray-800">Upload Country Image</h2>
       <form onSubmit={handleSubmit}>
         {/* File Requirements Info */}
         <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h3 className="text-sm font-medium text-blue-800 mb-2">File Requirements:</h3>
           <ul className="text-sm text-blue-700 space-y-1">
-            <li>• Maximum file size: 5MB per image</li>
+            <li>• Maximum file size: 5MB</li>
             <li>• Supported formats: JPEG, JPG, PNG, WEBP</li>
-            <li>• Maximum 5 images allowed</li>
+            <li>• Only 1 image allowed</li>
           </ul>
         </div>
 
@@ -187,17 +182,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           </div>
         )}
 
-        {/* Existing Images (for update mode) */}
+        {/* Existing Image (for update mode) */}
         {isUpdateMode && existingImages.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-medium mb-3 text-gray-700">Existing Images ({existingImages.length})</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+            <h3 className="text-lg font-medium mb-3 text-gray-700">Existing Image</h3>
+            <div className="grid grid-cols-1 gap-4 mb-4">
               {existingImages.map((imageUrl, index) => (
                 <div key={index} className="relative">
                   <img
                     src={imageUrl || "/placeholder.svg"}
-                    alt={`Existing image ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    alt={`Existing image`}
+                    className="w-full h-64 object-contain rounded-lg border border-gray-200"
                   />
                   <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
                     Existing
@@ -205,21 +200,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                 </div>
               ))}
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Note: Existing images will be preserved. You can add new images below.
-            </p>
+            <p className="text-sm text-gray-600 mb-4">Note: Existing image will be replaced if you upload a new one.</p>
           </div>
         )}
 
         {/* Upload Area */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload up to 5 images of the country (flags, landmarks, etc.)
+            Upload an image of the country (flag, landmark, etc.)
           </label>
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              images.length >= 5 || uploading
+              images.length >= 1 || uploading
                 ? "border-gray-300 bg-gray-100 cursor-not-allowed"
                 : isDragReject
                   ? "border-red-300 bg-red-50"
@@ -238,40 +231,37 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               <>
                 <FaUpload className={`mx-auto text-3xl mb-2 ${isDragReject ? "text-red-400" : "text-gray-400"}`} />
                 <p className={`text-sm ${isDragReject ? "text-red-600" : "text-gray-600"}`}>
-                  {images.length >= 5
-                    ? "Maximum 5 images reached"
+                  {images.length >= 1
+                    ? "Image already uploaded"
                     : isDragReject
-                      ? "Some files are not supported"
+                      ? "File is not supported"
                       : isDragActive
-                        ? "Drop the images here..."
-                        : "Drag & drop images here, or click to select"}
+                        ? "Drop the image here..."
+                        : "Drag & drop image here, or click to select"}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {images.length >= 5 ? "" : `${5 - images.length} more can be added`}
-                </p>
-                <p className="text-xs text-gray-400 mt-2">JPEG, JPG, PNG, WEBP • Max 5MB each</p>
+                <p className="text-xs text-gray-400 mt-2">JPEG, JPG, PNG, WEBP • Max 5MB</p>
               </>
             )}
           </div>
         </div>
 
-        {/* Uploaded Images Display */}
+        {/* Uploaded Image Display */}
         {images.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-medium mb-3 text-gray-700">Uploaded Images ({images.length}/5)</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <h3 className="text-lg font-medium mb-3 text-gray-700">Uploaded Image</h3>
+            <div className="grid grid-cols-1 gap-4">
               {images.map((img, index) => (
-                <div key={index} className="relative group">
+                <div key={index} className="relative">
                   <img
                     src={img.preview || "/placeholder.svg"}
-                    alt={`Country image ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    alt={`Country image`}
+                    className="w-full h-64 object-contain rounded-lg border border-gray-200"
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 rounded-lg flex items-center justify-center">
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
-                      className="bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      onClick={removeImage}
+                      className="bg-red-500 text-white p-2 rounded-full opacity-0 hover:opacity-100 transition-opacity hover:bg-red-600"
                       title="Remove image"
                     >
                       <FaTrash size={12} />

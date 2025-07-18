@@ -33,7 +33,7 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
   totalAmount,
 }) => {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([])
-  const [selectedPromoCode, setSelectedPromoCode] = useState<string>("")
+  const [selectedPromoCodeCode, setSelectedPromoCodeCode] = useState<string>("")
   const [promoCodeError, setPromoCodeError] = useState("")
   const [promoCodeLoading, setPromoCodeLoading] = useState(false)
 
@@ -64,7 +64,6 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
           phoneNumber: phoneNumber,
         }),
       })
-
       if (response.ok) {
         const data = await response.json()
         return data.exists
@@ -77,41 +76,34 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
   }
 
   const handleApplyPromoCode = async () => {
-    if (!selectedPromoCode) {
+    if (!selectedPromoCodeCode) {
       setPromoCodeError("Please select a promo code")
       return
     }
-
     setPromoCodeLoading(true)
     setPromoCodeError("")
 
     try {
-      const promoCode = promoCodes.find((code) => code.code === selectedPromoCode)
+      const promoCode = promoCodes.find((code) => code.code === selectedPromoCodeCode)
       if (!promoCode) {
         setPromoCodeError("Invalid promo code")
         return
       }
-
       if (!promoCode.isActive) {
         setPromoCodeError("This promo code is not active")
         return
       }
-
       const currentDate = new Date()
       const validFrom = new Date(promoCode.validFrom)
       const validUntil = new Date(promoCode.validUntil)
-
       if (currentDate < validFrom || currentDate > validUntil) {
         setPromoCodeError("This promo code has expired")
         return
       }
-
       if (promoCode.usedCount >= promoCode.maxUsage) {
         setPromoCodeError("This promo code has reached its usage limit")
         return
       }
-
-      // Special check for WELCOME codes
       if (promoCode.code.toUpperCase().includes("WELCOME")) {
         const userExists = await checkUserExists(phoneNumber)
         if (userExists) {
@@ -120,21 +112,17 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
         }
       }
 
-      // Calculate discount
       let discount = 0
       if (promoCode.discountType === "percentage") {
         discount = (totalAmount * promoCode.discountValue) / 100
       } else if (promoCode.discountType === "fixed") {
         discount = promoCode.discountValue
       }
-
-      // Ensure discount doesn't exceed total amount
       discount = Math.min(discount, totalAmount)
 
       setAppliedPromoCode(promoCode)
       setDiscountAmount(discount)
       setPromoCodeError("")
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setPromoCodeError("Failed to apply promo code")
     } finally {
@@ -145,91 +133,93 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
   const handleRemovePromoCode = () => {
     setAppliedPromoCode(null)
     setDiscountAmount(0)
-    setSelectedPromoCode("")
+    setSelectedPromoCodeCode("")
     setPromoCodeError("")
   }
 
   const getPromoCodeDisplayText = (code: PromoCode) => {
     const discountText =
       code.discountType === "percentage" ? `${code.discountValue}% OFF` : `₹${code.discountValue} OFF`
-
     const usageText = `${code.usedCount}/${code.maxUsage} used`
     const expiryDate = new Date(code.validUntil).toLocaleDateString()
-
     return `${code.code} - ${discountText} (${usageText}, expires ${expiryDate})`
   }
 
   const getAvailablePromoCodes = () => {
     return promoCodes.filter((code) => {
       if (!code.isActive) return false
-
       const currentDate = new Date()
       const validFrom = new Date(code.validFrom)
       const validUntil = new Date(code.validUntil)
-
       if (currentDate < validFrom || currentDate > validUntil) return false
       if (code.usedCount >= code.maxUsage) return false
-
       return true
     })
   }
 
   return (
     <div className="space-y-4">
-      <h5 className="font-medium text-gray-700">Promo Code</h5>
+      <h5 className="font-bold text-xl text-gray-800">Promo Code</h5>
       {!appliedPromoCode ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Select Promo Code</label>
-            <select
-              value={selectedPromoCode}
-              onChange={(e) => setSelectedPromoCode(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Choose a promo code</option>
-              {getAvailablePromoCodes().map((code) => (
-                <option key={code._id} value={code.code}>
-                  {getPromoCodeDisplayText(code)}
-                </option>
-              ))}
-            </select>
+            <label htmlFor="promo-code-select" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Promo Code
+            </label>
+            <div className="relative">
+              <select
+                id="promo-code-select"
+                value={selectedPromoCodeCode}
+                onChange={(e) => setSelectedPromoCodeCode(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 bg-white text-gray-800 transition-all duration-200"
+              >
+                <option value="">Choose a promo code</option>
+                {getAvailablePromoCodes().map((code) => (
+                  <option key={code._id} value={code.code}>
+                    {getPromoCodeDisplayText(code)}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                <svg className="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                </svg>
+              </div>
+            </div>
             {getAvailablePromoCodes().length === 0 && (
-              <p className="text-sm text-gray-500 mt-1">No promo codes available at the moment</p>
+              <p className="text-sm text-gray-500 mt-2">No promo codes available at the moment</p>
             )}
           </div>
-
           <button
             type="button"
             onClick={handleApplyPromoCode}
-            disabled={!selectedPromoCode || promoCodeLoading || !phoneNumber}
-            className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!selectedPromoCodeCode || promoCodeLoading || !phoneNumber}
+            className="w-full px-5 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200 ease-in-out"
           >
             {promoCodeLoading ? "Applying..." : "Apply Promo Code"}
           </button>
-
-          {!phoneNumber && <p className="text-xs text-orange-600">Please enter phone number to apply promo codes</p>}
-
-          {promoCodeError && <div className="text-red-500 text-sm">{promoCodeError}</div>}
+          {!phoneNumber && (
+            <p className="text-xs text-orange-600 font-medium mt-2">Please enter phone number to apply promo codes</p>
+          )}
+          {promoCodeError && <div className="text-red-500 text-sm font-medium mt-2">{promoCodeError}</div>}
         </div>
       ) : (
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-green-800">{appliedPromoCode.code}</p>
-              <p className="text-sm text-green-600">
-                {appliedPromoCode.discountValue}
-                {appliedPromoCode.discountType === "percentage" ? "%" : "₹"} discount applied
-              </p>
-              <p className="text-sm text-green-600">You saved ₹{discountAmount.toFixed(2)}</p>
-            </div>
-            <button
-              type="button"
-              onClick={handleRemovePromoCode}
-              className="text-red-500 hover:text-red-700 text-sm font-medium"
-            >
-              Remove
-            </button>
+        <div className="bg-green-50 p-5 rounded-xl border border-green-200 flex items-center justify-between">
+          <div>
+            <p className="font-bold text-lg text-green-800">{appliedPromoCode.code}</p>
+            <p className="text-sm text-green-700">
+              {appliedPromoCode.discountValue}
+              {appliedPromoCode.discountType === "percentage" ? "%" : "₹"} discount applied
+            </p>
+            <p className="text-sm text-green-700 font-semibold mt-1">You saved ₹{discountAmount.toFixed(2)}</p>
           </div>
+          <button
+            type="button"
+            onClick={handleRemovePromoCode}
+            className="text-red-500 hover:text-red-700 text-sm font-semibold transition-colors duration-200"
+          >
+            Remove
+          </button>
         </div>
       )}
     </div>

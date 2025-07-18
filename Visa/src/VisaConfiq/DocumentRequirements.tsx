@@ -1,79 +1,311 @@
-import React, { useState } from 'react';
-import { FaPlus, FaTrash, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
+"use client"
+import type React from "react"
+import { useState, useCallback, useEffect } from "react"
+import { FaPlus, FaTrash, FaArrowRight, FaArrowLeft, FaEdit, FaSave, FaTimes, FaUpload } from "react-icons/fa"
+import { useDropzone } from "react-dropzone"
 
 interface DocumentRequirement {
-  id: string;
-  name: string;
-  description: string;
-  isMandatory: boolean;
-  example?: string;
-  format?: string;
+  id: string
+  name: string
+  description: string
+  isMandatory: boolean
+  sample?: string[]
+  format?: string
 }
 
 interface DocumentRequirementsProps {
-  documents: DocumentRequirement[];
-  updateDocuments: (documents: DocumentRequirement[]) => void;
-  nextStep: () => void;
-  prevStep: () => void;
+  documents: DocumentRequirement[]
+  updateDocuments: (documents: DocumentRequirement[]) => void
+  nextStep: () => void
+  prevStep: () => void
+  configId?: string | null // Updated to accept null
 }
 
-const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({ 
-  documents, 
-  updateDocuments, 
-  nextStep, 
-  prevStep 
+const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
+  documents,
+  updateDocuments,
+  nextStep,
+  prevStep,
+  configId,
 }) => {
-  const [newDocument, setNewDocument] = useState<Omit<DocumentRequirement, 'id'>>({
-    name: '',
-    description: '',
-    isMandatory: true,
-    example: '',
-    format: ''
-  });
-  const [showForm, setShowForm] = useState(false);
+  const [currentDocument, setCurrentDocument] = useState<DocumentRequirement | null>(null)
+  const [uploadingDocId, setUploadingDocId] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string>("")
+
+  // Auto-save documents when they change
+  useEffect(() => {
+    if (configId && documents.length > 0) {
+      saveDocumentsStep()
+    }
+  }, [documents, configId])
+
+  const saveDocumentsStep = async () => {
+    if (!configId) return
+    try {
+      const response = await fetch("http://localhost:5000/api/configurations/save-step", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          stepNumber: 4,
+          stepData: { documents },
+          configId: configId,
+        }),
+      })
+      if (!response.ok) {
+        console.error("Failed to save documents step")
+      }
+    } catch (error) {
+      console.error("Error saving documents step:", error)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    const checked = (e.target as HTMLInputElement).checked;
-    
-    setNewDocument(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+    const { name, value, type } = e.target as HTMLInputElement
+    const checked = (e.target as HTMLInputElement).checked
+    setCurrentDocument((prev) => {
+      if (!prev) return null
+      return {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }
+    })
+  }
 
-  const addDocument = () => {
-    if (newDocument.name.trim()) {
-      updateDocuments([
-        ...documents,
-        {
-          ...newDocument,
-          id: Date.now().toString()
-        }
-      ]);
-      setNewDocument({
-        name: '',
-        description: '',
-        isMandatory: true,
-        example: '',
-        format: ''
-      });
-      setShowForm(false);
+  const handleAddOrUpdateDocument = async () => {
+    if (!currentDocument || !currentDocument.name.trim()) {
+      return
     }
-  };
 
-  const removeDocument = (id: string) => {
-    updateDocuments(documents.filter(doc => doc.id !== id));
-  };
+    let updatedDocuments
+    if (currentDocument.id) {
+      updatedDocuments = documents.map((doc) => (doc.id === currentDocument.id ? { ...currentDocument } : doc))
+    } else {
+      const newDoc = {
+        ...currentDocument,
+        id: Date.now().toString(),
+      }
+      updatedDocuments = [...documents, newDoc]
+    }
+
+    updateDocuments(updatedDocuments)
+    setCurrentDocument(null)
+  }
+
+  const handleEditDocument = (id: string) => {
+    const docToEdit = documents.find((doc) => doc.id === id)
+    if (docToEdit) {
+      setCurrentDocument(docToEdit)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setCurrentDocument(null)
+  }
+
+  const handleRemoveDocument = (id: string) => {
+    updateDocuments(documents.filter((doc) => doc.id !== id))
+  }
+
+  // Handle sample image upload
+  const uploadSampleImages = async (documentId: string, files: File[]) => {
+    if (!configId) {
+      setUploadError("Please save the document first before uploading samples")
+      return
+    }
+
+    // Check if document exists in the current documents array
+    const documentExists = documents.find((doc) => doc.id === documentId)
+    if (!documentExists) {
+      setUploadError("Document not found. Please save the document first.")
+      return
+    }
+
+    setUploadingDocId(documentId)
+    setUploadError("")
+
+    try {
+      const formData = new FormData()
+      formData.append("configId", configId)
+      formData.append("documentId", documentId)
+      files.forEach((file) => {
+        formData.append("samples", file)
+      })
+
+      console.log("Uploading samples for document:", documentId, "Config:", configId)
+
+      const response = await fetch("http://localhost:5000/api/configurations/save-document-samples", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`Failed to upload samples: ${response.status} - ${errorData.message}`)
+      }
+
+      const result = await response.json()
+
+      // Update local state with new sample URLs
+      const updatedDocuments = documents.map((doc) => {
+        if (doc.id === documentId) {
+          const updatedDoc = result.data.documents.find((d: any) => d.id === documentId)
+          return updatedDoc ? { ...doc, sample: updatedDoc.sample } : doc
+        }
+        return doc
+      })
+
+      updateDocuments(updatedDocuments)
+    } catch (error) {
+      console.error("Error uploading samples:", error)
+      // Fixed: Properly handle unknown error type
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      setUploadError(`Failed to upload sample images: ${errorMessage}`)
+    } finally {
+      setUploadingDocId(null)
+    }
+  }
+
+  // Handle sample image removal
+  const removeSampleImage = async (documentId: string, sampleUrl: string) => {
+    if (!configId) return
+
+    try {
+      const response = await fetch("http://localhost:5000/api/configurations/remove-document-sample", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          configId,
+          documentId,
+          sampleUrl,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to remove sample: ${response.status}`)
+      }
+
+      // Update local state
+      const updatedDocuments = documents.map((doc) => {
+        if (doc.id === documentId) {
+          return {
+            ...doc,
+            sample: doc.sample?.filter((url) => url !== sampleUrl) || [],
+          }
+        }
+        return doc
+      })
+
+      updateDocuments(updatedDocuments)
+    } catch (error) {
+      console.error("Error removing sample:", error)
+      setUploadError("Failed to remove sample image")
+    }
+  }
+
+  const SampleImageUpload: React.FC<{ documentId: string; samples: string[] }> = ({ documentId, samples }) => {
+    const onDrop = useCallback(
+      (acceptedFiles: File[]) => {
+        if (acceptedFiles.length > 0) {
+          uploadSampleImages(documentId, acceptedFiles)
+        }
+      },
+      [documentId],
+    )
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+      onDrop,
+      accept: {
+        "image/jpeg": [".jpg", ".jpeg"],
+        "image/png": [".png"],
+        "image/webp": [".webp"],
+      },
+      maxFiles: 5,
+      maxSize: 5 * 1024 * 1024, // 5MB
+    })
+
+    return (
+      <div className="mt-3">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Sample Images (Optional)</label>
+        {/* Upload Area */}
+        <div
+          {...getRootProps()}
+          className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+            uploadingDocId === documentId
+              ? "border-gray-300 bg-gray-100 cursor-not-allowed"
+              : isDragActive
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-300 hover:border-blue-400"
+          }`}
+        >
+          <input {...getInputProps()} />
+          {uploadingDocId === documentId ? (
+            <div className="text-blue-600">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              Uploading...
+            </div>
+          ) : (
+            <>
+              <FaUpload className="mx-auto text-2xl mb-2 text-gray-400" />
+              <p className="text-sm text-gray-600">
+                {isDragActive ? "Drop sample images here..." : "Drag & drop sample images, or click to select"}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">JPEG, PNG, WEBP • Max 5MB each • Up to 5 images</p>
+            </>
+          )}
+        </div>
+
+        {/* Display uploaded samples */}
+        {samples && samples.length > 0 && (
+          <div className="mt-3">
+            <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Samples:</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {samples.map((sampleUrl, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={sampleUrl || "/placeholder.svg"}
+                    alt={`Sample ${index + 1}`}
+                    className="w-full h-20 object-cover rounded border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeSampleImage(documentId, sampleUrl)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove sample"
+                  >
+                    <FaTrash size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {uploadError && <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded">{uploadError}</div>}
+      </div>
+    )
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    nextStep();
-  };
+    e.preventDefault()
+    nextStep()
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">Document Requirements</h2>
+
+      {!configId && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm text-yellow-800">
+            ⚠️ Please save your configuration first to enable sample image uploads.
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         {documents.length > 0 ? (
           <div className="mb-6 space-y-4">
@@ -83,53 +315,61 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
                   <h3 className="font-medium">
                     {doc.name}
                     {doc.isMandatory && (
-                      <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
-                        Mandatory
-                      </span>
+                      <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Mandatory</span>
                     )}
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => removeDocument(doc.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <FaTrash />
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEditDocument(doc.id)}
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Edit document"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDocument(doc.id)}
+                      className="text-red-500 hover:text-red-700"
+                      title="Remove document"
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
                 </div>
-                {doc.description && (
-                  <p className="text-sm text-gray-600 mb-2">{doc.description}</p>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  {doc.example && (
-                    <div>
-                      <span className="text-gray-500">Example:</span> {doc.example}
-                    </div>
-                  )}
+                {doc.description && <p className="text-sm text-gray-600 mb-2">{doc.description}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">
                   {doc.format && (
                     <div>
                       <span className="text-gray-500">Format:</span> {doc.format}
                     </div>
                   )}
+                  {doc.sample && doc.sample.length > 0 && (
+                    <div>
+                      <span className="text-gray-500">Samples:</span> {doc.sample.length} image(s)
+                    </div>
+                  )}
                 </div>
+                {/* Sample Image Upload Component - Only show if configId exists */}
+                {configId && <SampleImageUpload documentId={doc.id} samples={doc.sample || []} />}
               </div>
             ))}
           </div>
         ) : (
-          <div className="mb-6 text-gray-500 text-center py-4">
-            No documents added yet
-          </div>
+          <div className="mb-6 text-gray-500 text-center py-4">No documents added yet</div>
         )}
 
-        {showForm && (
+        {/* Form for adding/editing documents */}
+        {currentDocument ? (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-medium mb-4">Add New Document</h3>
+            <h3 className="text-lg font-medium mb-4">{currentDocument.id ? "Edit Document" : "Add New Document"}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
                 <input
                   type="text"
                   name="name"
-                  value={newDocument.name}
+                  value={currentDocument.name}
                   onChange={handleChange}
                   required
                   className="w-full p-2 border border-gray-300 rounded-md"
@@ -139,19 +379,9 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
                   name="description"
-                  value={newDocument.description}
+                  value={currentDocument.description}
                   onChange={handleChange}
                   rows={2}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Example</label>
-                <input
-                  type="text"
-                  name="example"
-                  value={newDocument.example}
-                  onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
               </div>
@@ -160,7 +390,7 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
                 <input
                   type="text"
                   name="format"
-                  value={newDocument.format}
+                  value={currentDocument.format}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
@@ -169,7 +399,7 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
                 <input
                   type="checkbox"
                   name="isMandatory"
-                  checked={newDocument.isMandatory}
+                  checked={currentDocument.isMandatory}
                   onChange={handleChange}
                   className="mr-2"
                 />
@@ -179,26 +409,41 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
             <div className="flex justify-end space-x-2">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={handleCancelEdit}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
               >
-                Cancel
+                <FaTimes className="mr-2" /> Cancel
               </button>
               <button
                 type="button"
-                onClick={addDocument}
+                onClick={handleAddOrUpdateDocument}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md"
               >
-                Add Document
+                {currentDocument.id ? (
+                  <>
+                    <FaSave className="mr-2" /> Save Changes
+                  </>
+                ) : (
+                  <>
+                    <FaPlus className="mr-2" /> Add Document
+                  </>
+                )}
               </button>
             </div>
           </div>
-        )}
-
-        {!showForm && (
+        ) : (
           <button
             type="button"
-            onClick={() => setShowForm(true)}
+            onClick={() =>
+              setCurrentDocument({
+                id: "",
+                name: "",
+                description: "",
+                isMandatory: true,
+                sample: [],
+                format: "",
+              })
+            }
             className="mb-6 flex items-center px-4 py-2 bg-green-600 text-white rounded-md"
           >
             <FaPlus className="mr-2" /> Add Document
@@ -209,20 +454,17 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
           <button
             type="button"
             onClick={prevStep}
-            className="flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
+            className="flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
           >
             <FaArrowLeft className="mr-2" /> Back
           </button>
-          <button
-            type="submit"
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md"
-          >
+          <button type="submit" className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md">
             Next <FaArrowRight className="ml-2" />
           </button>
         </div>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default DocumentRequirements;
+export default DocumentRequirements

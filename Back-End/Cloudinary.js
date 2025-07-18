@@ -1,4 +1,3 @@
-// cloudinary.js
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -19,8 +18,8 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB per file
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Optional: 5MB size limit
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
