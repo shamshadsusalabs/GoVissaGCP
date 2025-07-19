@@ -22,7 +22,7 @@ interface VisaConfiguration {
     name: string
     code: string
     embassyLocation: string
-    generalRequirements: string
+    applicationTips: string
   }
   visaTypes: VisaType[]
   documents: DocumentRequirement[]
@@ -85,7 +85,7 @@ const VisaWizard: React.FC = () => {
       name: "",
       code: "",
       embassyLocation: "",
-      generalRequirements: "",
+       applicationTips: "",
     },
     visaTypes: [],
     documents: [],
@@ -139,7 +139,7 @@ const VisaWizard: React.FC = () => {
           name: data.countryDetails?.name || data.name || "",
           code: data.countryDetails?.code || data.code || "",
           embassyLocation: data.countryDetails?.embassyLocation || data.embassyLocation || "",
-          generalRequirements: data.countryDetails?.generalRequirements || data.generalRequirements || "",
+           applicationTips: data.countryDetails?.applicationTips || data.applicationTips || "",
         },
         visaTypes:
           data.visaTypes?.map((vt: any) => ({
@@ -336,7 +336,7 @@ const VisaWizard: React.FC = () => {
         name: "",
         code: "",
         embassyLocation: "",
-        generalRequirements: "",
+         applicationTips: "",
       },
       visaTypes: [],
       documents: [],

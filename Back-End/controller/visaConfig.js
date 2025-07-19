@@ -296,12 +296,15 @@ exports.updateVisaSubmissionById = async (req, res) => {
 // Get All Visa Submissions
 exports.getAllVisaCountriesSummary = async (req, res) => {
   try {
-    const visaSummaries = await VisaSubmission.find({}, {
-      '_id': 1,
-      'countryDetails.name': 1,
-      'images': 1,
-      'visaTypes': 1
-    });
+    const visaSummaries = await VisaSubmission.find(
+      { isComplete: true }, // ✅ Only fetch documents where isComplete is true
+      {
+        '_id': 1,
+        'countryDetails.name': 1,
+        'images': 1,
+        'visaTypes': 1
+      }
+    );
 
     const formattedData = visaSummaries.map(entry => {
       const firstVisa = entry.visaTypes?.[0] || {};
@@ -325,6 +328,7 @@ exports.getAllVisaCountriesSummary = async (req, res) => {
     res.status(500).json({ success: false, message: error.message || 'Server Error' });
   }
 };
+
 
 
 exports.getVisaImagesById = async (req, res) => {
@@ -380,6 +384,7 @@ exports.getCountryEssentialDetailsById = async (req, res) => {
     }
 
     const countryName = visaData.countryDetails?.name || '';
+    const applicationTips = visaData.countryDetails?.applicationTips || '';
 
     // name + description + sample URLs
     const documentDetails = visaData.documents?.map(doc => ({
@@ -401,6 +406,7 @@ exports.getCountryEssentialDetailsById = async (req, res) => {
 
     return res.status(200).json({
       countryName,
+      applicationTips,
       documentDetails,
       eligibility,
     });
@@ -410,6 +416,7 @@ exports.getCountryEssentialDetailsById = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
 
 

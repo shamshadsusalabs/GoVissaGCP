@@ -25,7 +25,7 @@ interface ReviewSubmitProps {
       name: string
       code: string
       embassyLocation: string
-      generalRequirements: string
+     applicationTips: string
     }
     visaTypes: unknown[]
     documents: unknown[]
@@ -97,10 +97,10 @@ const ReviewSubmit: React.FC<ReviewSubmitProps> = ({
             <p className="font-medium">{config.continent}</p>
           </div>
         </div>
-        {config.countryDetails.generalRequirements && (
+        {config.countryDetails.applicationTips && (
           <div className="mb-4">
-            <p className="text-sm text-gray-500">General Requirements</p>
-            <p className="whitespace-pre-line">{config.countryDetails.generalRequirements}</p>
+            <p className="text-sm text-gray-500">Application Tips</p>
+            <p className="whitespace-pre-line">{config.countryDetails.applicationTips}</p>
           </div>
         )}
       </div>

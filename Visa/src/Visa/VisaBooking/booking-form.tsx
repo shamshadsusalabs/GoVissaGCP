@@ -46,7 +46,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   travellers,
   handleTravellerChange,
   setPaymentSuccess,
-  navigate,
+  
 }) => {
   const [contactInfo, setContactInfo] = useState({
     email: "",

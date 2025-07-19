@@ -8,7 +8,7 @@ interface CountryDetailsProps {
     name: string
     code: string
     embassyLocation: string
-  
+    applicationTips: string;
   }
   updateDetails: (details: any) => void
   nextStep: () => void
@@ -79,7 +79,20 @@ const CountryDetails: React.FC<CountryDetailsProps> = ({ details, updateDetails,
             />
           </div>
         </div>
-      
+       <div className="mb-4">
+          <label htmlFor="applicationTips" className="block text-sm font-medium text-gray-700 mb-1">
+            Application Tips
+          </label>
+          <textarea
+            id="applicationTips"
+            name="applicationTips"
+            value={details.applicationTips}
+            onChange={handleChange}
+            rows={4}
+            className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter Tips Visa..."
+          />
+        </div>
         <div className="flex justify-between">
           <button
             type="button"

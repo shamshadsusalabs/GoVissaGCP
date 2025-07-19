@@ -11,6 +11,7 @@ interface CountryData {
   countryName: string;
   documentDetails: DocumentDetail[];
   eligibility: string;
+  applicationTips?: string; // Added optional applicationTips field
 }
 
 const DOCUMENT_ICONS: Record<string, string> = {
@@ -44,6 +45,14 @@ const DEFAULT_SAMPLES: Record<string, string[]> = {
     'https://res.cloudinary.com/dhy1ot6lf/image/upload/v1752826640/Visa_Images/p93jrrg4vrgb5ryfsiza.webp'
   ],
 };
+
+// Default application tips as fallback
+const DEFAULT_TIPS = [
+  "Submit all documents at least 3 months before your planned travel date",
+  "Ensure all documents are translated to English and notarized",
+  "Passport must be valid for at least 6 months from date of entry",
+  "Double-check for any document updates on the official embassy website"
+];
 
 const VisaRequirements = () => {
   const { id: countryId } = useParams<{ id: string }>();
@@ -152,6 +161,18 @@ const VisaRequirements = () => {
     );
   }
 
+  // Get tips to display - use dynamic if available, otherwise default
+  const getApplicationTips = () => {
+    if (countryData.applicationTips) {
+      return countryData.applicationTips
+        .split('\n')
+        .filter(tip => tip.trim() !== '');
+    }
+    return DEFAULT_TIPS;
+  };
+
+  const applicationTips = getApplicationTips();
+
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <div className="text-center mb-8 mt-4">
@@ -165,46 +186,46 @@ const VisaRequirements = () => {
       </div>
 
       {/* Eligibility section */}
-    <div className="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-2xl shadow-sm mb-10 border border-indigo-100 relative overflow-hidden">
-  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-200 rounded-full -m-16 opacity-20"></div>
-  <div className="relative z-10">
-    <div className="flex items-start gap-4">
-      <div className="flex-shrink-0 bg-white p-2.5 rounded-lg shadow-sm border border-indigo-100">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div className="flex-grow">
-        <h3 className="text-lg font-semibold text-indigo-800 mb-3">Eligibility Requirements</h3>
-        <div className="bg-white p-4 rounded-lg border border-indigo-50">
-          <ul className="space-y-3">
-            {countryData.eligibility
-              .split('\n\n')
-              .filter(point => point.trim())
-              .map((point, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-gray-700 leading-relaxed">{point}</span>
-                </li>
-              ))}
-          </ul>
-          <div className="mt-4 pt-4 border-t border-indigo-100">
-            <p className="text-sm text-indigo-700 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-2xl shadow-sm mb-10 border border-indigo-100 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-200 rounded-full -m-16 opacity-20"></div>
+        <div className="relative z-10">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 bg-white p-2.5 rounded-lg shadow-sm border border-indigo-100">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Requirements are subject to change - always verify with official sources
-            </p>
+            </div>
+            <div className="flex-grow">
+              <h3 className="text-lg font-semibold text-indigo-800 mb-3">Eligibility Requirements</h3>
+              <div className="bg-white p-4 rounded-lg border border-indigo-50">
+                <ul className="space-y-3">
+                  {countryData.eligibility
+                    .split('\n\n')
+                    .filter(point => point.trim())
+                    .map((point, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="text-gray-700 leading-relaxed">{point}</span>
+                      </li>
+                    ))}
+                </ul>
+                <div className="mt-4 pt-4 border-t border-indigo-100">
+                  <p className="text-sm text-indigo-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Requirements are subject to change - always verify with official sources
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
 
       {/* Documents section */}
       <div className="mb-10">
@@ -299,30 +320,14 @@ const VisaRequirements = () => {
           <h3 className="font-medium text-gray-800 text-lg">Application Tips</h3>
         </div>
         <ul className="space-y-3 text-gray-700 pl-2">
-          <li className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
-              <span className="text-indigo-600 text-xs font-bold">1</span>
-            </div>
-            <span>Submit all documents at least 3 months before your planned travel date</span>
-          </li>
-          <li className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
-              <span className="text-indigo-600 text-xs font-bold">2</span>
-            </div>
-            <span>Ensure all documents are translated to English and notarized</span>
-          </li>
-          <li className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
-              <span className="text-indigo-600 text-xs font-bold">3</span>
-            </div>
-            <span>Passport must be valid for at least 6 months from date of entry</span>
-          </li>
-          <li className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
-              <span className="text-indigo-600 text-xs font-bold">4</span>
-            </div>
-            <span>Double-check for any document updates on the official embassy website</span>
-          </li>
+          {applicationTips.map((tip, index) => (
+            <li key={index} className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center mt-0.5">
+                <span className="text-indigo-600 text-xs font-bold">{index + 1}</span>
+              </div>
+              <span>{tip}</span>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
