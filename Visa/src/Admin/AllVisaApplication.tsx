@@ -1,0 +1,885 @@
+"use client"
+
+import type React from "react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { Search, Eye, Edit, Users, CreditCard, Calendar, Phone, Mail, FileText, UserPlus, X } from "lucide-react"
+
+interface Document {
+  url: string
+  fileName: string
+}
+
+interface PassportData {
+  travellerIndex: number
+  passportNumber: string
+  surname: string
+  givenName: string
+  nationality: string
+  dob: string
+  placeOfBirth: string
+  sex: string
+  dateOfIssue: string
+  dateOfExpiry: string
+  placeOfIssue: string
+  fileNumber: string
+}
+
+interface StatusEntry {
+  label: string
+  date: string
+}
+
+interface VisaApplication {
+  _id: string
+  visaId: string
+  country: string
+  paymentId: string
+  travellers: string
+  email: string
+  phone: string
+  documents: { [key: string]: Document }
+  passportData: PassportData[]
+  createdAt: string
+  updatedAt: string
+  __v: number
+  statusHistory?: StatusEntry[]
+}
+
+interface Employee {
+  _id: string
+  name: string
+  phoneNumber: string
+  email: string
+  isVerified: boolean
+  visaIds: string[]
+  points: number
+  createdAt: string
+  updatedAt: string
+  __v: number
+}
+
+interface ApiResponse {
+  message: string
+  data: VisaApplication[]
+}
+
+interface EmployeeApiResponse {
+  message: string
+  data: Employee[]
+}
+
+const AllVisaApplication: React.FC = () => {
+  const navigate = useNavigate()
+  const [applications, setApplications] = useState<VisaApplication[]>([])
+  const [filteredApplications, setFilteredApplications] = useState<VisaApplication[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState("")
+  const [page, setPage] = useState(1)
+  const [rowsPerPage] = useState(5)
+  const [openStatusDialog, setOpenStatusDialog] = useState(false)
+  const [openAssignDialog, setOpenAssignDialog] = useState(false)
+  const [newStatus, setNewStatus] = useState("")
+  const [selectedApp, setSelectedApp] = useState<VisaApplication | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [employeesLoading, setEmployeesLoading] = useState(false)
+  const [error, setError] = useState("")
+  
+  // ✅ NEW: Payment approval states
+  const [openPaymentApprovalDialog, setOpenPaymentApprovalDialog] = useState(false)
+  const [pendingPayments, setPendingPayments] = useState<any[]>([])
+  const [selectedPayment, setSelectedPayment] = useState<any>(null)
+  const [approvalNotes, setApprovalNotes] = useState("")
+  const [approvalLoading, setApprovalLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/VisaApplication/GetAll")
+        const data: ApiResponse = await response.json()
+        setApplications(data.data)
+        setFilteredApplications(data.data)
+        setLoading(false)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        setError("Failed to fetch visa applications")
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const fetchEmployees = async () => {
+    try {
+      setEmployeesLoading(true)
+      const response = await fetch("http://localhost:5000/api/employee/getAll")
+      const data: EmployeeApiResponse = await response.json()
+      setEmployees(data.data)
+      setFilteredEmployees(data.data)
+    } catch (err) {
+      console.error("Error fetching employees:", err)
+    } finally {
+      setEmployeesLoading(false)
+    }
+  }
+
+  // ✅ NEW: Fetch pending payments
+  const fetchPendingPayments = async () => {
+    try {
+      const token = localStorage.getItem("accessToken")
+      const response = await fetch("http://localhost:5000/api/payments/pending-approvals", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+      const data = await response.json()
+      if (data.success) {
+        setPendingPayments(data.data)
+      }
+    } catch (err) {
+      console.error("Error fetching pending payments:", err)
+    }
+  }
+
+  // ✅ NEW: Handle payment approval
+  const handlePaymentApproval = async () => {
+    if (!selectedPayment || !approvalNotes.trim()) {
+      setError("Please provide approval notes")
+      return
+    }
+
+    try {
+      setApprovalLoading(true)
+      const token = localStorage.getItem("accessToken")
+      const adminId = localStorage.getItem("adminId") || "admin"
+
+      const response = await fetch("http://localhost:5000/api/payments/approve-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId: selectedPayment.orderId,
+          adminId: adminId,
+          notes: approvalNotes,
+          paymentType: selectedPayment.paymentType
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setOpenPaymentApprovalDialog(false)
+        setSelectedPayment(null)
+        setApprovalNotes("")
+        fetchPendingPayments() // Refresh the list
+        setError("")
+      } else {
+        setError(data.message || "Payment approval failed")
+      }
+    } catch (err) {
+      console.error("Error approving payment:", err)
+      setError("Payment approval failed. Please try again.")
+    } finally {
+      setApprovalLoading(false)
+    }
+  }
+
+  // ✅ NEW: Open payment approval dialog
+  const openPaymentApprovalModal = (payment: any) => {
+    setSelectedPayment(payment)
+    setOpenPaymentApprovalDialog(true)
+  }
+
+  useEffect(() => {
+    const filtered = applications.filter(
+      (app) =>
+        app.visaId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.phone.includes(searchTerm) ||
+        app.paymentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.country.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    setFilteredApplications(filtered)
+  }, [searchTerm, applications])
+
+  useEffect(() => {
+    const filtered = employees.filter(
+      (employee) =>
+        employee.name.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
+        employee.email.toLowerCase().includes(employeeSearchTerm.toLowerCase()),
+    )
+    setFilteredEmployees(filtered)
+  }, [employeeSearchTerm, employees])
+
+  const getLastStatus = (app: VisaApplication) => {
+    if (app.statusHistory && app.statusHistory.length > 0) {
+      return app.statusHistory[app.statusHistory.length - 1].label
+    }
+    return "Pending"
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "approved":
+        return "bg-green-100 text-green-800 border-green-200"
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "processing":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "pending":
+        return "bg-gray-100 text-gray-800 border-gray-200"
+      default:
+        return "bg-blue-100 text-blue-800 border-blue-200"
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const handleViewDetails = (app: VisaApplication) => {
+    navigate(`/dashboard/VisaFullDeatils/${app._id}`)
+  }
+
+  const openStatusModal = (app: VisaApplication) => {
+    setSelectedApp(app)
+    const currentStatus = getLastStatus(app)
+    setNewStatus(currentStatus)
+    setOpenStatusDialog(true)
+  }
+
+  const openAssignModal = (app: VisaApplication) => {
+    setSelectedApp(app)
+    setOpenAssignDialog(true)
+    setEmployeeSearchTerm("")
+    if (employees.length === 0) {
+      fetchEmployees()
+    }
+  }
+
+  const handleStatusChange = async () => {
+    if (!selectedApp) return
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/VisaApplication/visa-status/${selectedApp._id}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label: newStatus }),
+        },
+      )
+
+      if (response.ok) {
+        setApplications((prev) =>
+          prev.map((app) =>
+            app._id === selectedApp._id
+              ? {
+                  ...app,
+                  statusHistory: [...(app.statusHistory || []), { label: newStatus, date: new Date().toISOString() }],
+                }
+              : app,
+          ),
+        )
+        setOpenStatusDialog(false)
+      } else {
+        console.error("Failed to update status")
+      }
+    } catch (err) {
+      console.error("Error updating status:", err)
+    }
+  }
+
+  const handleAssignEmployee = async (employeeId: string) => {
+    if (!selectedApp) return
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/employee/addVisaId/${employeeId}/add-visa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visaId: selectedApp.visaId }),
+      })
+
+      if (response.ok) {
+        // Update the employee's visaIds in local state
+        setEmployees((prev) =>
+          prev.map((emp) => (emp._id === employeeId ? { ...emp, visaIds: [...emp.visaIds, selectedApp.visaId] } : emp)),
+        )
+        setOpenAssignDialog(false)
+        // You might want to show a success message here
+        alert("Visa assigned successfully!")
+      } else {
+        console.error("Failed to assign visa")
+        alert("Failed to assign visa")
+      }
+    } catch (err) {
+      console.error("Error assigning visa:", err)
+      alert("Error assigning visa")
+    }
+  }
+
+  const paginatedData = filteredApplications.slice((page - 1) * rowsPerPage, page * rowsPerPage)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading visa applications...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center text-red-500 p-8">
+          <FileText className="w-16 h-16 mx-auto mb-4 text-red-400" />
+          <p className="text-xl font-semibold mb-2">Error Loading Data</p>
+          <p>{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Visa Applications</h1>
+        <div className="flex space-x-4">
+          <button
+            onClick={fetchEmployees}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Users className="w-4 h-4 mr-2 inline" />
+            Manage Employees
+          </button>
+          {/* ✅ NEW: Payment Approval Button */}
+          <button
+            onClick={fetchPendingPayments}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            <CreditCard className="w-4 h-4 mr-2 inline" />
+            Payment Approvals ({pendingPayments.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Search by Visa ID, Email, Phone, Payment ID, Country, or Application ID..."
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <FileText className="w-6 h-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Applications</p>
+              <p className="text-2xl font-bold text-gray-900">{applications.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <Users className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Travellers</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {applications.reduce((sum, app) => sum + Number.parseInt(app.travellers), 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center">
+            <div className="p-3 bg-yellow-100 rounded-lg">
+              <Calendar className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {applications.filter((app) => getLastStatus(app).toLowerCase() === "pending").length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="flex items-center">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <CreditCard className="w-6 h-6 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Processed</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {applications.filter((app) => getLastStatus(app).toLowerCase() !== "pending").length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Application
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Country
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contact
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Travellers
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {paginatedData.map((app) => (
+                <tr key={app._id} className="hover:bg-gray-50 transition-colors duration-200">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{app.visaId.substring(0, 8)}...</div>
+                      <div className="text-sm text-gray-500">ID: {app._id.substring(0, 8)}...</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{app.country}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="flex items-center text-sm text-gray-900">
+                        <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                        {app.email}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                        {app.phone}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <Users className="w-4 h-4 mr-2 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-900">{app.travellers}</span>
+                      <span className="text-sm text-gray-500 ml-1">
+                        traveller{Number.parseInt(app.travellers) > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <CreditCard className="w-4 h-4 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-900">
+  {app.paymentId ? app.paymentId : "offline"}
+</span>
+
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(getLastStatus(app))}`}
+                    >
+                      {getLastStatus(app)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(app.createdAt)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDetails(app)}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </button>
+                      <button
+                        onClick={() => openStatusModal(app)}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-purple-700 bg-purple-100 hover:bg-purple-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Status
+                      </button>
+                      <button
+                        onClick={() => openAssignModal(app)}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Assign
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-6 flex items-center justify-between">
+        <div className="text-sm text-gray-700">
+          Showing {(page - 1) * rowsPerPage + 1} to {Math.min(page * rowsPerPage, filteredApplications.length)} of{" "}
+          {filteredApplications.length} results
+        </div>
+        <div className="flex space-x-2">
+          {Array.from({ length: Math.ceil(filteredApplications.length / rowsPerPage) }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setPage(i + 1)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                page === i + 1
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Status Change Modal */}
+      {openStatusDialog && selectedApp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Change Application Status</h2>
+              <button
+                onClick={() => setOpenStatusDialog(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Status</label>
+                <input
+                  type="text"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                  placeholder="Enter new status"
+                />
+              </div>
+              <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                Current status: <strong className="text-gray-900">{getLastStatus(selectedApp)}</strong>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setOpenStatusDialog(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStatusChange}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              >
+                Update Status
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Employee Modal */}
+      {openAssignDialog && selectedApp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Assign Employee</h2>
+              <button
+                onClick={() => setOpenAssignDialog(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4">
+                <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg mb-4">
+                  Assigning visa: <strong className="text-gray-900">{selectedApp.visaId}</strong>
+                  <br />
+                  Country: <strong className="text-gray-900">{selectedApp.country}</strong>
+                </div>
+
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search employees by name or email..."
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={employeeSearchTerm}
+                    onChange={(e) => setEmployeeSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-64 overflow-y-auto">
+                {employeesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                  </div>
+                ) : filteredEmployees.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {employeeSearchTerm ? "No employees found matching your search" : "No employees available"}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredEmployees.map((employee) => (
+                      <div
+                        key={employee._id}
+                        onClick={() => handleAssignEmployee(employee._id)}
+                        className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">{employee.name}</div>
+                            <div className="text-sm text-gray-500">{employee.email}</div>
+                            <div className="text-sm text-gray-500">{employee.phoneNumber}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm text-gray-500">
+                              {employee.visaIds.length} visa{employee.visaIds.length !== 1 ? "s" : ""} assigned
+                            </div>
+                            <div className="text-sm text-gray-500">{employee.points} points</div>
+                            {employee.isVerified && <div className="text-xs text-green-600 font-medium">Verified</div>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setOpenAssignDialog(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Approval Dialog */}
+      {openPaymentApprovalDialog && selectedPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Approve Payment</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Order ID
+                </label>
+                <p className="text-sm text-gray-900 bg-gray-100 p-2 rounded">
+                  {selectedPayment.orderId}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Payment Type
+                </label>
+                <p className="text-sm text-gray-900 bg-gray-100 p-2 rounded capitalize">
+                  {selectedPayment.paymentType}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Amount
+                </label>
+                <p className="text-sm text-gray-900 bg-gray-100 p-2 rounded">
+                  ₹{(parseInt(selectedPayment.amount) / 100).toFixed(2)}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Customer Details
+                </label>
+                <div className="bg-gray-100 p-2 rounded space-y-1">
+                  <p className="text-sm text-gray-900">Email: {selectedPayment.email}</p>
+                  <p className="text-sm text-gray-900">Phone: {selectedPayment.phone}</p>
+                  <p className="text-sm text-gray-900">Country: {selectedPayment.country}</p>
+                </div>
+              </div>
+              
+              {selectedPayment.paymentType === "paylater" && selectedPayment.payLaterDetails && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Corporate Details
+                  </label>
+                  <div className="bg-gray-100 p-2 rounded space-y-1">
+                    <p className="text-sm text-gray-900">Company: {selectedPayment.payLaterDetails.corporateName}</p>
+                    <p className="text-sm text-gray-900">Email: {selectedPayment.payLaterDetails.corporateEmail}</p>
+                    <p className="text-sm text-gray-900">Phone: {selectedPayment.payLaterDetails.corporatePhone}</p>
+                    <p className="text-sm text-gray-900">Credit Limit: ₹{selectedPayment.payLaterDetails.creditLimit}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Approval Notes *
+                </label>
+                <textarea
+                  value={approvalNotes}
+                  onChange={(e) => setApprovalNotes(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  rows={3}
+                  placeholder="Enter approval notes..."
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button
+                onClick={() => {
+                  setOpenPaymentApprovalDialog(false)
+                  setSelectedPayment(null)
+                  setApprovalNotes("")
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaymentApproval}
+                disabled={approvalLoading || !approvalNotes.trim()}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {approvalLoading ? "Approving..." : "Approve Payment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Payment Approval List */}
+      {pendingPayments.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Pending Payment Approvals</h2>
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Order ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Payment Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {pendingPayments.map((payment) => (
+                    <tr key={payment.orderId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {payment.orderId}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
+                        {payment.paymentType}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ₹{(parseInt(payment.amount) / 100).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>
+                          <p className="font-medium">{payment.email}</p>
+                          <p className="text-gray-500">{payment.phone}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(payment.createdAt * 1000).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => openPaymentApprovalModal(payment)}
+                          className="text-orange-600 hover:text-orange-900 font-semibold"
+                        >
+                          Approve
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default AllVisaApplication
