@@ -30,28 +30,45 @@ exports.sendOtp = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const message = `Your OTP is ${otp}. Please do not share it with anyone.`;
+  const message = `[GoVisa] Dear User, Your One-Time Password (OTP) is ${otp}. This code is valid for 10 minutes. For security reasons, please do not share this OTP with anyone. KEHAR TRAVEL SERVICES PRIVATE LIMITED`;
 
-  const url = `http://msg.msgclub.net/rest/services/sendSMS/sendGroupSms?AUTH_KEY=${authKey}&message=${encodeURIComponent(
+  const url = `https://msg.icloudsms.com/rest/services/sendSMS/sendGroupSms?AUTH_KEY=${authKey}&message=${encodeURIComponent(
     message
-  )}&senderId=${senderId}&routeId=1&mobileNos=91${phoneNumber}&smsContentType=english`;
+  )}&senderId=KEHTRV&routeId=8&mobileNos=${phoneNumber}&smsContentType=english&entityid=1701175213872191155&tmid=1002408235216785541&templateid=1707175767888508970`;
 
   try {
+    console.log("🔗 SMS API URL:", url);
+    
     const response = await fetch(url);
     const result = await response.json();
 
     console.log("✅ SMS API Response:", result);
-    console.log("📲 OTP Sent to:", phoneNumber, "OTP:", otp);
+    console.log("📲 OTP Sent to: +91" + phoneNumber, "OTP:", otp);
 
-    otpStore[phoneNumber] = {
-      otp,
-      expiresAt: Date.now() + 5 * 60 * 1000,
-    };
+    // Check if the response indicates success
+    if (result.responseCode === '3001') {
+      otpStore[phoneNumber] = {
+        otp,
+        expiresAt: Date.now() + 5 * 60 * 1000,
+      };
 
-    return res.status(200).json({
-      message: "OTP sent successfully",
-      result,
-    });
+      return res.status(200).json({
+        message: "OTP sent successfully",
+        result,
+        debug: {
+          phoneNumber: "+91" + phoneNumber,
+          otp: otp, // Remove this in production
+          apiResponse: result
+        }
+      });
+    } else {
+      console.error("❌ SMS API Error Response:", result);
+      return res.status(400).json({ 
+        message: "Failed to send OTP", 
+        error: result.response || "Unknown error",
+        responseCode: result.responseCode
+      });
+    }
   } catch (error) {
     console.error("❌ Error sending OTP:", error);
     return res.status(500).json({ message: "Failed to send OTP" });

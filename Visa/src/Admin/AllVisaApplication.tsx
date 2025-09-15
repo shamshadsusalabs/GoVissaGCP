@@ -64,10 +64,6 @@ interface ApiResponse {
   data: VisaApplication[]
 }
 
-interface EmployeeApiResponse {
-  message: string
-  data: Employee[]
-}
 
 const AllVisaApplication: React.FC = () => {
   const navigate = useNavigate()
