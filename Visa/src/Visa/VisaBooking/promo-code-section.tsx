@@ -43,7 +43,7 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
 
   const fetchPromoCodes = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/promocode/getAll")
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/promocode/getAll")
       if (response.ok) {
         const data = await response.json()
         setPromoCodes(data)
@@ -55,7 +55,7 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
 
   const checkUserExists = async (phoneNumber: string): Promise<boolean> => {
     try {
-      const response = await fetch("http://localhost:5000/api/User/check-user", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/check-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

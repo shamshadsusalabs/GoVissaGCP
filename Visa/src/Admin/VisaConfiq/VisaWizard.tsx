@@ -123,7 +123,7 @@ const VisaWizard: React.FC = () => {
     setLoadError(null)
 
     try {
-      const response = await fetch(`http://localhost:5000/api/configurations/getById/${id}`)
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/configurations/getById/${id}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch configuration: ${response.status}`)
       }
@@ -206,7 +206,7 @@ const VisaWizard: React.FC = () => {
     setSaveMessage("")
 
     try {
-      const response = await fetch("http://localhost:5000/api/configurations/save-step", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/save-step", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -255,7 +255,7 @@ const VisaWizard: React.FC = () => {
       formData.append("configId", currentConfigId || "")
       formData.append("images", config.images[0].file)
 
-      const response = await fetch("http://localhost:5000/api/configurations/save-images", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/save-images", {
         method: "POST",
         body: formData,
       })
@@ -354,7 +354,7 @@ const VisaWizard: React.FC = () => {
         throw new Error("No configuration ID found")
       }
 
-      const response = await fetch("http://localhost:5000/api/configurations/complete", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/complete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

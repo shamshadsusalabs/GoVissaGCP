@@ -25,13 +25,9 @@ const app = express();
 
 // Enable CORS
 const allowedOrigins = [
-
-
- 
    'https://govisaa-83693.web.app',
    'http://localhost:5173',
-
- 
+   'http://localhost:3000'
 ];
 
 app.use(cors({
