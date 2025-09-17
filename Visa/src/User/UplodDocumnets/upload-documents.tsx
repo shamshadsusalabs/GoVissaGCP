@@ -57,13 +57,20 @@ export default function UploadDocuments() {
     const fetchDocuments = async () => {
       try {
         const response = await fetch(
-          `https://govisaa-872569311567.asia-south2.run.app/api/configurations/documents/${visaId}/documents-only`,
+          `http://localhost:5000/api/configurations/documents/${visaId}/documents-only`,
         )
         const data = await response.json()
         if (data.success) {
           const docsWithSides = data.documents.map((doc: Document) => ({
             ...doc,
-            requiresBothSides: ["passport", "aadhar card", "pan card", "driver license", "voter id"].includes(
+            requiresBothSides: [
+              "passport",
+              "valid passport",
+              "aadhar card",
+              "pan card",
+              "driver license",
+              "voter id",
+            ].includes(
               doc.name.toLowerCase(),
             ),
           }))
@@ -104,8 +111,14 @@ export default function UploadDocuments() {
 
     updateCurrentTravellerData({ uploadedFiles: updatedFiles })
 
+    // Helper to check passport-like names
+    const isPassportName = (name: string) => {
+      const n = name.trim().toLowerCase()
+      return n === "passport" || n === "valid passport"
+    }
+
     // Check if this is passport front side
-    if (currentDoc.name.toLowerCase() === "passport" && currentSide === "front") {
+    if (isPassportName(currentDoc.name) && currentSide === "front") {
       // ✅ Reset passport data saved status when new passport is uploaded
       updateCurrentTravellerData({ passportDataSaved: false })
 
@@ -116,9 +129,9 @@ export default function UploadDocuments() {
 
         // Try localhost first, then fallback to other possible URLs
         const ocrUrls = [
-          "http://localhost:8080/extract",
-          "http://127.0.0.1:8080/extract",
-          "https://your-ocr-service.com/extract", // Replace with your actual OCR service URL
+         
+          "https://govissagcp-ocr-872569311567.asia-south2.run.app/extract",
+ // Replace with your actual OCR service URL
         ]
 
         let response: Response | null = null
@@ -290,7 +303,7 @@ export default function UploadDocuments() {
     updateCurrentTravellerData({ uploadedFiles: updatedFiles })
 
     // ✅ Reset passport data saved status when passport file is removed
-    if (documents[currentStep].name.toLowerCase() === "passport" && side === "front") {
+    if ((() => { const n = documents[currentStep].name.trim().toLowerCase(); return n === "passport" || n === "valid passport" })() && side === "front") {
       updateCurrentTravellerData({ ocrData: null, ocrError: null, passportDataSaved: false })
     }
   }
@@ -425,7 +438,7 @@ export default function UploadDocuments() {
 
       console.log("🚀 Submitting visa application for", travellersCount, "travellers")
 
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/apply-visa", {
+      const response = await fetch("http://localhost:5000/api/VisaApplication/apply-visa", {
         method: "POST",
         body: formData,
       })
@@ -588,7 +601,10 @@ export default function UploadDocuments() {
   const hasUploadedFile = !!currentUploads[currentSide] || !!currentUploads.front
 
   // ✅ Enhanced logic for Next button - check both file upload and passport data saved
-  const isPassportDocument = currentDocument.name.toLowerCase() === "passport"
+  const isPassportDocument = (() => {
+    const n = currentDocument.name.trim().toLowerCase()
+    return n === "passport" || n === "valid passport"
+  })()
   const isPassportFrontSide = isPassportDocument && currentSide === "front"
   const hasPassportData = currentTravellerData.ocrData !== null
   const isPassportDataSaved = currentTravellerData.passportDataSaved

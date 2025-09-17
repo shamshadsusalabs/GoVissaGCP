@@ -23,7 +23,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         throw new Error('Please enter a valid 10-digit phone number');
       }
 
-      const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/User/send-otp', {
+      const response = await fetch('http://localhost:5000/api/User/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber }),
@@ -53,7 +53,7 @@ const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
         throw new Error('Please enter a valid 6-digit OTP');
       }
 
-      const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/User/verify-otp', {
+      const response = await fetch('http://localhost:5000/api/User/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber, otp }),

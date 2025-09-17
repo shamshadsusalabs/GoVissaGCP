@@ -52,7 +52,7 @@ const VisaRejectionReasons: React.FC = () => {
       try {
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 800));
-        const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/configurations/rejections/${id}`);
+        const response = await fetch(`http://localhost:5000/api/configurations/rejections/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch rejection reasons');
         }

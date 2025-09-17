@@ -13,12 +13,25 @@ from datetime import datetime
 
 app = FastAPI(title="Indian Passport OCR API")
 
+"""
+Configure CORS properly:
+- When allow_credentials=True, allow_origins cannot be ["*"] per the CORS spec.
+- Explicitly list the front-end origins that should be allowed (e.g., local dev and prod).
+"""
+origins = [
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:3000", 
+    "https://govisaa-83693.web.app" # Common React dev port
+    # Add your production frontend origin(s) below, e.g.:
+    # "https://your-frontend.example.com",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 # Initialize EasyOCR - English only

@@ -101,7 +101,7 @@ const VisaConfigList: React.FC = () => {
   const fetchConfigurations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/configurations/getAll');
+      const response = await fetch('http://localhost:5000/api/configurations/getAll');
       
       if (!response.ok) {
         throw new Error('Failed to fetch configurations');
@@ -127,7 +127,7 @@ const VisaConfigList: React.FC = () => {
     
     try {
       setLoading(true);
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/configurations/delete/${configToDelete}`, {
+      const response = await fetch(`http://localhost:5000/api/configurations/delete/${configToDelete}`, {
         method: 'DELETE'
       });
       

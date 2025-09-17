@@ -21,10 +21,11 @@ interface RecentApplication {
   email: string;
   phone: string;
   country: string;
-  passportData: {
-    givenName: string;
-    surname: string;
-  }[];
+  // Allow different shapes coming from backend
+  passportData: Array<
+    | { given_names?: string; surname?: string; lastName?: string; givenName?: string }
+    | Record<string, any>
+  >;
   statusHistory: {
     label: string;
   }[];
@@ -72,7 +73,7 @@ const DashboardPage: React.FC = () => {
       try {
         setLoading(true)
         // Fetch stats
-        const statsResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/stats")
+        const statsResponse = await fetch("http://localhost:5000/api/VisaApplication/stats")
         if (!statsResponse.ok) {
           throw new Error("Failed to fetch stats")
         }
@@ -80,7 +81,7 @@ const DashboardPage: React.FC = () => {
         setStats(statsData)
 
         // Fetch recent applications
-        const recentResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getLatest")
+        const recentResponse = await fetch("http://localhost:5000/api/VisaApplication/getLatest")
         if (!recentResponse.ok) {
           throw new Error("Failed to fetch recent applications")
         }
@@ -88,7 +89,7 @@ const DashboardPage: React.FC = () => {
         setRecentApplications(recentData.data)
 
         // Fetch visa type counts
-        const visaTypesResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/counts/types")
+        const visaTypesResponse = await fetch("http://localhost:5000/api/configurations/counts/types")
         if (!visaTypesResponse.ok) {
           throw new Error("Failed to fetch visa type counts")
         }
@@ -399,9 +400,19 @@ const DashboardPage: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {recentApplications.map((application) => {
                   const status = getLatestStatus(application.statusHistory)
-                  const fullName = `${application.passportData[0]?.givenName || ''} ${application.passportData[0]?.surname || ''}`.trim()
-                  const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase()
-                  
+                  const first = application.passportData?.[0] || {}
+                  const given = (first as any).given_names || (first as any).givenName || ""
+                  const sur = (first as any).surname || (first as any).lastName || ""
+                  const emailUser = application.email?.split('@')?.[0] || ""
+                  const fullName = `${given} ${sur}`.trim() || emailUser || "N/A"
+                  const initialsSource = fullName !== "N/A" ? fullName : (emailUser || "NA")
+                  const initials = initialsSource
+                    .split(' ')
+                    .filter(Boolean)
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+
                   return (
                     <tr key={application._id} className="hover:bg-gray-50 transition-colors duration-200">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -410,7 +421,8 @@ const DashboardPage: React.FC = () => {
                             {initials || 'NA'}
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{fullName || 'Unknown'}</div>
+                            <div className="text-sm font-medium text-gray-900">{fullName}</div>
+
                             <div className="text-sm text-gray-500">{application.email}</div>
                           </div>
                         </div>

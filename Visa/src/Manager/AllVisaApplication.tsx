@@ -90,7 +90,7 @@ const AllVisaApplication: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/GetAll")
+        const response = await fetch("http://localhost:5000/api/VisaApplication/GetAll")
         const data: ApiResponse = await response.json()
         setApplications(data.data)
         setFilteredApplications(data.data)
@@ -107,7 +107,7 @@ const AllVisaApplication: React.FC = () => {
   const fetchEmployees = async () => {
     setEmployeesLoading(true)
     try {
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/employee/getAll")
+      const response = await fetch("http://localhost:5000/api/employee/getAll")
       const data: EmployeeApiResponse = await response.json()
       setEmployees(data.data || data)
       setFilteredEmployees(data.data || data)
@@ -198,7 +198,7 @@ const AllVisaApplication: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/visa-status/${selectedApp._id}`,
+        `http://localhost:5000/api/VisaApplication/visa-status/${selectedApp._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -230,7 +230,7 @@ const AllVisaApplication: React.FC = () => {
     if (!selectedApp) return
 
     try {
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/addVisaId/${employeeId}/add-visa`, {
+      const response = await fetch(`http://localhost:5000/api/employee/addVisaId/${employeeId}/add-visa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visaId: selectedApp.visaId }),

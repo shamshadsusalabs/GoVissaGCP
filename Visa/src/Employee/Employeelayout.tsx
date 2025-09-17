@@ -10,7 +10,7 @@ const EmployeeLayout = () => {
     localStorage.clear();
 
     // ✅ Step 2: Call logout API
-    await fetch('https://govisaa-872569311567.asia-south2.run.app/api/employee/logout', {
+    await fetch('http://localhost:5000/api/employee/logout', {
       method: 'POST',
       credentials: 'include', // include cookies if used
       headers: {

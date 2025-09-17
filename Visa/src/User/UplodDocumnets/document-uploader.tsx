@@ -122,6 +122,7 @@ export default function DocumentUploader({
     const icons: Record<string, string> = {
       photo: "📷",
       passport: "🛂",
+      "valid passport": "🛂",
       "bank statement": "🏦",
       "aadhar card": "🆔",
       "pan card": "💳",
@@ -138,6 +139,12 @@ export default function DocumentUploader({
       "cover letter": "✉️",
     }
     return icons[docName.toLowerCase()] || "📄"
+  }
+
+  // Helper to detect passport-like document names
+  const isPassportName = (name: string) => {
+    const n = name.trim().toLowerCase()
+    return n === "passport" || n === "valid passport"
   }
 
   return (
@@ -220,7 +227,7 @@ export default function DocumentUploader({
 
         {/* Preview area - only show if not passport front side */}
         {(currentUploads[`${currentSide}Preview`] || currentUploads.frontPreview) &&
-          !(currentDocument.name.toLowerCase() === "passport" && currentSide === "front") && (
+          !(isPassportName(currentDocument.name) && currentSide === "front") && (
             <div className="mb-8 bg-gray-50 rounded-xl p-6 border border-gray-200">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -252,7 +259,7 @@ export default function DocumentUploader({
           )}
 
         {/* Passport data form and image side by side */}
-        {currentDocument.name.toLowerCase() === "passport" && currentSide === "front" && ocrData && (
+        {isPassportName(currentDocument.name) && currentSide === "front" && ocrData && (
           <div className="mb-8">
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Left side - Passport Image */}

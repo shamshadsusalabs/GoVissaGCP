@@ -10,7 +10,8 @@ const {
   checkUserExistence,
   sendEmailOtp,
   verifyEmailOtp,
-  loginOrSignupWithEmail
+  loginOrSignupWithEmail,
+  registerEmailForUser
 } = require("../controller/User");
 
 // Send OTP
@@ -22,6 +23,7 @@ router.post("/verify-otp", verifyOtp);
 // ✅ NEW: Email OTP routes
 router.post("/send-email-otp", sendEmailOtp);
 router.post("/verify-email-otp", verifyEmailOtp);
+router.post("/register-email", registerEmailForUser);
 
 // Direct login/signup (optional: if you use custom token validation flow)
 router.post("/login", loginOrSignupWithPhone);

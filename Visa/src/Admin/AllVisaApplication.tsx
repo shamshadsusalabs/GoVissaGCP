@@ -93,7 +93,7 @@ const AllVisaApplication: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/GetAll")
+        const response = await fetch("http://localhost:5000/api/VisaApplication/GetAll")
         const data: ApiResponse = await response.json()
         setApplications(data.data)
         setFilteredApplications(data.data)
@@ -111,7 +111,7 @@ const AllVisaApplication: React.FC = () => {
     try {
       setEmployeesLoading(true)
       console.log("🔄 Fetching employees...")
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/employee/getAll")
+      const response = await fetch("http://localhost:5000/api/employee/getAll")
       console.log("📡 Response status:", response.status)
       const data = await response.json()
       console.log("📊 Full API response:", data)
@@ -136,7 +136,7 @@ const AllVisaApplication: React.FC = () => {
   const fetchPendingPayments = async () => {
     try {
       const token = localStorage.getItem("accessToken")
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/pending-approvals", {
+      const response = await fetch("http://localhost:5000/api/payments/pending-approvals", {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -162,7 +162,7 @@ const AllVisaApplication: React.FC = () => {
       const token = localStorage.getItem("accessToken")
       const adminId = localStorage.getItem("adminId") || "admin"
 
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/approve-payment", {
+      const response = await fetch("http://localhost:5000/api/payments/approve-payment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -284,7 +284,7 @@ const AllVisaApplication: React.FC = () => {
 
     try {
       const response = await fetch(
-        `https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/visa-status/${selectedApp._id}`,
+        `http://localhost:5000/api/VisaApplication/visa-status/${selectedApp._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -313,26 +313,57 @@ const AllVisaApplication: React.FC = () => {
   }
 
   const handleAssignEmployee = async (employeeId: string) => {
-    if (!selectedApp) return
-
     try {
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/addVisaId/${employeeId}/add-visa`, {
+      if (!employeeId) {
+        alert("Employee ID is missing. Please try again.")
+        return
+      }
+      if (!selectedApp) {
+        alert("No application selected.")
+        return
+      }
+
+      // Some backends store visaIds as the visa configuration id, not the application _id
+      const payloadVisaId = selectedApp.visaId || selectedApp._id
+
+      console.log("👤 Assigning visa:", {
+        employeeId,
+        visaId: payloadVisaId,
+        appId: selectedApp._id,
+      })
+
+      const response = await fetch(`http://localhost:5000/api/employee/addVisaId/${employeeId}/add-visa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visaId: selectedApp.visaId }),
+        body: JSON.stringify({ visaId: payloadVisaId }),
       })
 
       if (response.ok) {
-        // Update the employee's visaIds in local state
+        // Update the employee's visaIds in local state (avoid duplicates)
         setEmployees((prev) =>
-          prev.map((emp) => (emp._id === employeeId ? { ...emp, visaIds: [...emp.visaIds, selectedApp.visaId] } : emp)),
+          prev.map((emp) =>
+            emp._id === employeeId && !emp.visaIds.includes(payloadVisaId)
+              ? { ...emp, visaIds: [...emp.visaIds, payloadVisaId] }
+              : emp,
+          ),
         )
         setOpenAssignDialog(false)
-        // You might want to show a success message here
         alert("Visa assigned successfully!")
       } else {
-        console.error("Failed to assign visa")
-        alert("Failed to assign visa")
+        // Surface backend error message for easier debugging
+        let message = "Failed to assign visa"
+        try {
+          const errJson = await response.json()
+          if (errJson?.message) message = errJson.message
+        } catch (_) {
+          // fallback to text if JSON parse fails
+          try {
+            const errText = await response.text()
+            if (errText) message = errText
+          } catch { /* ignore */ }
+        }
+        console.error("Failed to assign visa:", message)
+        alert(message)
       }
     } catch (err) {
       console.error("Error assigning visa:", err)
@@ -491,7 +522,9 @@ const AllVisaApplication: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedData.map((app) => (
+              {paginatedData.map((app) => {
+                const isAssigned = (employees || []).some(emp => emp.visaIds.includes(app.visaId))
+                return (
                 <tr key={app._id} className="hover:bg-gray-50 transition-colors duration-200">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -556,17 +589,23 @@ const AllVisaApplication: React.FC = () => {
                         <Edit className="w-4 h-4 mr-1" />
                         Status
                       </button>
-                      <button
-                        onClick={() => openAssignModal(app)}
-                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                      >
-                        <UserPlus className="w-4 h-4 mr-1" />
-                        Assign
-                      </button>
+                      {!isAssigned ? (
+                        <button
+                          onClick={() => openAssignModal(app)}
+                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-lg text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+                        >
+                          <UserPlus className="w-4 h-4 mr-1" />
+                          Assign
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-blue-700 bg-blue-100 border border-blue-200">
+                          Assigned
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -688,28 +727,42 @@ const AllVisaApplication: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {(filteredEmployees || []).map((employee) => (
-                      <div
-                        key={employee._id}
-                        onClick={() => handleAssignEmployee(employee._id)}
-                        className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium text-gray-900">{employee.name}</div>
-                            <div className="text-sm text-gray-500">{employee.email}</div>
-                            <div className="text-sm text-gray-500">{employee.phoneNumber}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm text-gray-500">
-                              {employee.visaIds.length} visa{employee.visaIds.length !== 1 ? "s" : ""} assigned
+                    {(filteredEmployees || []).map((employee) => {
+                      const alreadyAssigned = !!selectedApp && employee.visaIds.includes(selectedApp.visaId)
+                      return (
+                        <div
+                          key={employee._id}
+                          onClick={() => {
+                            if (alreadyAssigned) return
+                            handleAssignEmployee(employee._id)
+                          }}
+                          className={`p-4 border border-gray-200 rounded-lg transition-colors duration-200 ${
+                            alreadyAssigned
+                              ? "bg-gray-50 cursor-not-allowed opacity-60"
+                              : "hover:bg-gray-50 cursor-pointer"
+                          }`}
+                          title={alreadyAssigned ? "This visa is already assigned to the employee" : "Assign to this employee"}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium text-gray-900">{employee.name}</div>
+                              <div className="text-sm text-gray-500">{employee.email}</div>
+                              <div className="text-sm text-gray-500">{employee.phoneNumber}</div>
                             </div>
-                            <div className="text-sm text-gray-500">{employee.points} points</div>
-                            {employee.isVerified && <div className="text-xs text-green-600 font-medium">Verified</div>}
+                            <div className="text-right">
+                              <div className="text-sm text-gray-500">
+                                {employee.visaIds.length} visa{employee.visaIds.length !== 1 ? "s" : ""} assigned
+                              </div>
+                              <div className="text-sm text-gray-500">{employee.points} points</div>
+                              {employee.isVerified && <div className="text-xs text-green-600 font-medium">Verified</div>}
+                              {alreadyAssigned && (
+                                <div className="text-xs text-blue-600 font-medium mt-1">Already assigned</div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
