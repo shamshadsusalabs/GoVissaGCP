@@ -213,7 +213,7 @@ export default function VisaDashboard() {
     if (app.statusHistory && app.statusHistory.length > 0) {
       return app.statusHistory[app.statusHistory.length - 1].label
     }
-    return "Unknown"
+    return "Pending"
   }
 
   // Pagination logic

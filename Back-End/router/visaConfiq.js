@@ -30,6 +30,7 @@ router.post(
   visaController.createVisaSubmission,
 )
 
+
 router.put("/update/:id", verifyAccessToken, upload.single("images"), visaController.updateVisaSubmissionById);
 router.get('/GetAll',verifyAccessToken, visaController.getAllVisaSubmissions);
 // GET all visa submissions

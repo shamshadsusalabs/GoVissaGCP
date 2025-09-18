@@ -18,6 +18,7 @@ interface VisaType {
   validity: string
   entries: string
   stayDuration: string
+  expectedVisaDays?: number
 }
 
 interface VisaConfiguration {
@@ -46,6 +47,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
   handleTravellerChange,
   setPaymentSuccess,
 }) => {
+  
+  // Calculate expected decision date based on expectedVisaDays
+  const calculateExpectedDecisionDate = () => {
+    if (!selectedVisaType?.expectedVisaDays || selectedVisaType.expectedVisaDays <= 0) {
+      return null
+    }
+    
+    const today = new Date()
+    const expectedDays = selectedVisaType.expectedVisaDays
+    const expectedDate = new Date(today.getTime() + (expectedDays * 24 * 60 * 60 * 1000))
+    
+    return expectedDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
   const [contactInfo, setContactInfo] = useState({
     email: "",
     phone: "",
@@ -591,19 +610,21 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const subtotal = totalPerTraveler * travellers
   const total = (subtotal - discountAmount).toFixed(2)
 
-  return (
-    <div className="w-full rounded-2xl border border-gray-200 shadow-xl overflow-hidden bg-white">
-     <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 sm:p-6">
-  <p className="font-medium text-sm opacity-90">Expected visa decision by</p>
-  <h4 className="text-xl sm:text-2xl font-bold">{selectedDate}</h4>
-</div>
+      return (
+        <div className="w-full rounded-2xl border border-gray-200 shadow-xl overflow-hidden bg-white">
+         {selectedVisaType?.expectedVisaDays && selectedVisaType.expectedVisaDays > 0 && (
+           <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 sm:p-6">
+             <p className="font-medium text-sm opacity-90">Expected visa decision by</p>
+             <h4 className="text-xl sm:text-2xl font-bold">{calculateExpectedDecisionDate()}</h4>
+           </div>
+         )}
 
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-200 pb-4 sm:pb-6 gap-4">
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl text-gray-700">👥</span>
-            <span className="font-semibold text-lg text-gray-800">Travellers</span>
-          </div>
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-200 pb-4 sm:pb-6 gap-4">
+              <div className="flex items-center space-x-3">
+                <span className="text-2xl text-gray-700">👥</span>
+                <span className="font-semibold text-lg text-gray-800">Travellers</span>
+              </div>
           <div className="flex items-center space-x-4">
             <button
               onClick={() => handleTravellerChange(-1)}

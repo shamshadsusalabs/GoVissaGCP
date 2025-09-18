@@ -20,6 +20,7 @@ interface VisaType {
   validity: string
   entries: string
   stayDuration: string
+  expectedVisaDays?: number
 }
 
 interface VisaConfiguration {

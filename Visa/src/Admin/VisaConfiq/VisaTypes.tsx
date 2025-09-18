@@ -17,6 +17,7 @@ interface VisaType {
   validity: string
   entries: string
   stayDuration: string
+  expectedVisaDays: number
   interviewRequired: boolean
   biometricRequired: boolean
   notes: string
@@ -64,11 +65,15 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
       typeof currentVisaType.serviceFee === "string"
         ? Number.parseFloat(currentVisaType.serviceFee) || 0
         : currentVisaType.serviceFee
+    const expectedVisaDays =
+      typeof currentVisaType.expectedVisaDays === "string"
+        ? Number.parseInt(currentVisaType.expectedVisaDays) || 7
+        : currentVisaType.expectedVisaDays
 
     if (currentVisaType.id) {
       // Update existing visa type
       updateVisaTypes(
-        visaTypes.map((vt) => (vt.id === currentVisaType.id ? { ...currentVisaType, visaFee, serviceFee } : vt)),
+        visaTypes.map((vt) => (vt.id === currentVisaType.id ? { ...currentVisaType, visaFee, serviceFee, expectedVisaDays } : vt)),
       )
     } else {
       // Add new visa type
@@ -79,6 +84,7 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
           id: Date.now().toString(), // Generate a unique ID for new visa types
           visaFee,
           serviceFee,
+          expectedVisaDays,
         },
       ])
     }
@@ -143,7 +149,7 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                   <div>
                     <span className="text-gray-500">Processing:</span> {visaType.processingTime || "N/A"}
                   </div>
@@ -155,6 +161,9 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
                   </div>
                   <div>
                     <span className="text-gray-500">Entries:</span> {visaType.entries}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Expected Days:</span> {visaType.expectedVisaDays} days
                   </div>
                 </div>
               </div>
@@ -294,6 +303,19 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
                   className="w-full p-2 border border-gray-300 rounded-md"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Visa Days</label>
+                <input
+                  type="number"
+                  name="expectedVisaDays"
+                  value={currentVisaType.expectedVisaDays}
+                  onChange={handleChange}
+                  min="1"
+                  max="365"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="e.g., 7, 15, 30"
+                />
+              </div>
               <div className="flex items-center space-x-4">
                 <label className="flex items-center">
                   <input
@@ -369,6 +391,7 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
                 validity: "",
                 entries: "Single",
                 stayDuration: "",
+                expectedVisaDays: 7,
                 interviewRequired: false,
                 biometricRequired: false,
                 notes: "",

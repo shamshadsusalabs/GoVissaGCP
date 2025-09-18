@@ -16,6 +16,11 @@ const VisaTypeSchema = new mongoose.Schema(
     visaFee: Number,
     currency: String,
     serviceFee: Number,
+    expectedVisaDays: {
+      type: Number,
+      min: 1,
+      max: 365
+    },
     notes: String,
   },
   { _id: false },

@@ -16,7 +16,11 @@ window.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Re
   const shouldSkipAuth = (() => {
     try {
       // Skip auth for OCR Cloud Run domain to keep CORS simple
-      return urlString.includes('govissagcpocr-872569311567.asia-south2.run.app');
+      const isOcrDomain = urlString.includes('govissagcpocr-872569311567.asia-south2.run.app');
+      if (isOcrDomain) {
+        console.log('🔓 Skipping auth for OCR domain:', urlString);
+      }
+      return isOcrDomain;
     } catch {
       return false;
     }
@@ -24,6 +28,9 @@ window.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Re
 
   if (token && !shouldSkipAuth) {
     headers.set('Authorization', `Bearer ${token}`);
+    console.log('🔐 Adding auth header for:', urlString);
+  } else if (shouldSkipAuth) {
+    console.log('✅ No auth header for OCR domain');
   }
 
   const modifiedInit: RequestInit = { ...init, headers };

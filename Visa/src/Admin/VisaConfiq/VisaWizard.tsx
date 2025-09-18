@@ -44,6 +44,7 @@ interface VisaType {
   validity: string
   entries: string
   stayDuration: string
+  expectedVisaDays: number
   interviewRequired: boolean
   biometricRequired: boolean
   notes: string
@@ -155,6 +156,7 @@ const VisaWizard: React.FC = () => {
             validity: vt.validity || "",
             entries: vt.entries || "Single",
             stayDuration: vt.stayDuration || "",
+            expectedVisaDays: vt.expectedVisaDays || 7,
             interviewRequired: vt.interviewRequired || false,
             biometricRequired: vt.biometricRequired || false,
             notes: vt.notes || "",
@@ -186,9 +188,8 @@ const VisaWizard: React.FC = () => {
       console.log("🔄 Transformed config:", transformedConfig)
       setConfig(transformedConfig)
 
-      if (data.currentStep) {
-        setStep(data.currentStep)
-      }
+      // Always start from step 1 in update mode for better UX
+      setStep(1)
     } catch (error) {
       console.error("❌ Error fetching configuration:", error)
       setLoadError(error instanceof Error ? error.message : "Failed to load configuration")
@@ -581,18 +582,22 @@ const VisaWizard: React.FC = () => {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((stepNumber) => (
               <div key={stepNumber} className="step-item flex flex-col items-center mx-2">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors
+                  onClick={() => setStep(stepNumber)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:scale-105 hover:shadow-md
                     ${
                       step === stepNumber
                         ? "bg-blue-600 text-white"
                         : step > stepNumber
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-700"
+                          ? "bg-green-500 text-white hover:bg-green-600"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                 >
                   {stepNumber}
                 </div>
-                <div className="text-xs mt-2 text-gray-600 text-center capitalize">
+                <div 
+                  onClick={() => setStep(stepNumber)}
+                  className="text-xs mt-2 text-gray-600 text-center capitalize cursor-pointer hover:text-blue-600 transition-colors"
+                >
                   {stepNumber === 1 && "Continent"}
                   {stepNumber === 2 && "Country"}
                   {stepNumber === 3 && "Visa Types"}

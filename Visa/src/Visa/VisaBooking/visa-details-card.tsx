@@ -16,6 +16,7 @@ interface VisaType {
   validity: string
   entries: string
   stayDuration: string
+  expectedVisaDays?: number
 }
 
 interface VisaConfiguration {
@@ -43,7 +44,6 @@ const VisaDetailsCard: React.FC<VisaDetailsCardProps> = ({
  
   setShowCalendar,
 }) => {
-
 
 
 
@@ -224,6 +224,7 @@ const VisaDetailsCard: React.FC<VisaDetailsCardProps> = ({
             </div>
           </div>
         </div>
+
       </div>
     </div>
   )

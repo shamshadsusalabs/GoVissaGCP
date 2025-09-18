@@ -12,6 +12,7 @@ import {
   BarChart3,
   PieChart,
   Activity,
+  Download,
 } from "lucide-react"
 
 interface RecentApplication {
@@ -38,7 +39,6 @@ interface VisaTypeCount {
 }
 
 const DashboardPage: React.FC = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState("month")
   const [stats, setStats] = useState({
     totalApplications: 0,
     approved: 0,
@@ -49,6 +49,7 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([])
   const [visaTypeCounts, setVisaTypeCounts] = useState<VisaTypeCount[]>([])
+  const [allApplications, setAllApplications] = useState<RecentApplication[]>([])
 
   // Define monthlyData before it's used
   const monthlyData = [
@@ -86,7 +87,8 @@ const DashboardPage: React.FC = () => {
           throw new Error("Failed to fetch recent applications")
         }
         const recentData = await recentResponse.json()
-        setRecentApplications(recentData.data)
+        setRecentApplications(recentData.data.slice(0, 5)) // Limit to 5 records
+        setAllApplications(recentData.data) // Store all data for export
 
         // Fetch visa type counts
         const visaTypesResponse = await fetch("http://localhost:5000/api/configurations/counts/types")
@@ -206,6 +208,65 @@ const DashboardPage: React.FC = () => {
     return "Other"
   }
 
+  const exportToExcel = async () => {
+    try {
+      // Fetch ALL applications from API for export
+      // Try getAll first, if it fails, use getLatest without limit
+      let response = await fetch("http://localhost:5000/api/VisaApplication/getAll")
+      if (!response.ok) {
+        // Fallback to getLatest if getAll doesn't exist
+        response = await fetch("http://localhost:5000/api/VisaApplication/getLatest?limit=1000")
+        if (!response.ok) {
+          throw new Error("Failed to fetch applications")
+        }
+      }
+      const allData = await response.json()
+      const exportApplications = allData.data || allData
+      
+      // Create CSV content
+      const headers = ['Applicant Name', 'Email', 'Phone', 'Visa Type', 'Country', 'Date', 'Status']
+      const csvContent = [
+        headers.join(','),
+        ...exportApplications.map((application: RecentApplication) => {
+          const status = getLatestStatus(application.statusHistory)
+          const first = application.passportData?.[0] || {}
+          const given = (first as any).given_names || (first as any).givenName || ""
+          const sur = (first as any).surname || (first as any).lastName || ""
+          const emailUser = application.email?.split('@')?.[0] || ""
+          const fullName = `${given} ${sur}`.trim() || emailUser || "N/A"
+          const visaType = getVisaTypeFromId(application.visaId)
+          const date = new Date(application.createdAt).toLocaleDateString()
+          
+          return [
+            `"${fullName}"`,
+            `"${application.email}"`,
+            `"${application.phone}"`,
+            `"${visaType}"`,
+            `"${application.country}"`,
+            `"${date}"`,
+            `"${status.charAt(0).toUpperCase() + status.slice(1)}"`
+          ].join(',')
+        })
+      ].join('\n') // Fixed: Use actual newline character instead of \\n
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `visa_applications_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      console.log(`Exported ${exportApplications.length} applications to CSV`)
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      alert('Failed to export data. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6 flex items-center justify-center">
@@ -245,18 +306,6 @@ const DashboardPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
             <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your visa applications.</p>
-          </div>
-          <div className="mt-4 md:mt-0">
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-            >
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
-            </select>
           </div>
         </div>
 
@@ -373,7 +422,13 @@ const DashboardPage: React.FC = () => {
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">Latest visa application submissions</p>
               </div>
-              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">View All</button>
+              <button 
+                onClick={exportToExcel}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm font-medium"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Excel Export
+              </button>
             </div>
           </div>
           <div className="overflow-x-auto">

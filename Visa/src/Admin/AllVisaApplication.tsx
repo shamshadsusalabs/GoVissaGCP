@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Search, Eye, Edit, Users, CreditCard, Calendar, Phone, Mail, FileText, UserPlus, X } from "lucide-react"
+import { Search, Eye, Edit, Users, CreditCard, Calendar, Phone, Mail, FileText, UserPlus, X, Download } from "lucide-react"
 
 interface Document {
   url: string
@@ -98,6 +98,9 @@ const AllVisaApplication: React.FC = () => {
         setApplications(data.data)
         setFilteredApplications(data.data)
         setLoading(false)
+        
+        // Also fetch employees to show assignment status
+        fetchEmployees()
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         setError("Failed to fetch visa applications")
@@ -198,6 +201,73 @@ const AllVisaApplication: React.FC = () => {
   const openPaymentApprovalModal = (payment: any) => {
     setSelectedPayment(payment)
     setOpenPaymentApprovalDialog(true)
+  }
+
+  // ✅ NEW: Excel Export Function
+  const exportToExcel = async () => {
+    try {
+      // Use all applications data for export
+      const exportApplications = applications
+      
+      // Create CSV content
+      const headers = [
+        'Application ID', 
+        'Visa ID', 
+        'Country', 
+        'Email', 
+        'Phone', 
+        'Travellers', 
+        'Payment ID', 
+        'Status', 
+        'Created Date',
+        'Applicant Name',
+        'Passport Number',
+        'Nationality'
+      ]
+      
+      const csvContent = [
+        headers.join(','),
+        ...exportApplications.map((application) => {
+          const status = getLastStatus(application)
+          const firstPassport = application.passportData?.[0] || {}
+          const applicantName = `${firstPassport.givenName || ''} ${firstPassport.surname || ''}`.trim() || 'N/A'
+          const passportNumber = firstPassport.passportNumber || 'N/A'
+          const nationality = firstPassport.nationality || 'N/A'
+          const date = new Date(application.createdAt).toLocaleDateString()
+          
+          return [
+            `"${application._id}"`,
+            `"${application.visaId}"`,
+            `"${application.country}"`,
+            `"${application.email}"`,
+            `"${application.phone}"`,
+            `"${application.travellers}"`,
+            `"${application.paymentId && application.paymentId !== 'undefined' ? application.paymentId : 'offline'}"`,
+            `"${status}"`,
+            `"${date}"`,
+            `"${applicantName}"`,
+            `"${passportNumber}"`,
+            `"${nationality}"`
+          ].join(',')
+        })
+      ].join('\n')
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      const url = URL.createObjectURL(blob)
+      link.setAttribute('href', url)
+      link.setAttribute('download', `all_visa_applications_${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      console.log(`Exported ${exportApplications.length} visa applications to CSV`)
+    } catch (error) {
+      console.error('Error exporting to Excel:', error)
+      alert('Failed to export data. Please try again.')
+    }
   }
 
   useEffect(() => {
@@ -403,6 +473,13 @@ const AllVisaApplication: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900">Visa Applications</h1>
         <div className="flex space-x-4">
           <button
+            onClick={exportToExcel}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-4 h-4 mr-2 inline" />
+            Excel Export
+          </button>
+          <button
             onClick={fetchEmployees}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -523,7 +600,8 @@ const AllVisaApplication: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedData.map((app) => {
-                const isAssigned = (employees || []).some(emp => emp.visaIds.includes(app.visaId))
+                const assignedEmployee = (employees || []).find(emp => emp.visaIds.includes(app.visaId))
+                const isAssigned = !!assignedEmployee
                 return (
                 <tr key={app._id} className="hover:bg-gray-50 transition-colors duration-200">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -560,7 +638,7 @@ const AllVisaApplication: React.FC = () => {
                     <div className="flex items-center">
                       <CreditCard className="w-4 h-4 mr-2 text-gray-400" />
                     <span className="text-sm text-gray-900">
-  {app.paymentId ? app.paymentId : "offline"}
+  {app.paymentId && app.paymentId !== "undefined" ? app.paymentId : "offline"}
 </span>
 
                     </div>
@@ -599,7 +677,8 @@ const AllVisaApplication: React.FC = () => {
                         </button>
                       ) : (
                         <span className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium text-blue-700 bg-blue-100 border border-blue-200">
-                          Assigned
+                          <Users className="w-4 h-4 mr-1" />
+                          {assignedEmployee?.name || 'Assigned'}
                         </span>
                       )}
                     </div>
