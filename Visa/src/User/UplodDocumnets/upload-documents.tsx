@@ -129,10 +129,19 @@ export default function UploadDocuments() {
 
         // Try localhost first, then fallback to other possible URLs
         const ocrUrls = [
-         
-          "https://govissagcp-ocr-872569311567.asia-south2.run.app/extract",
- // Replace with your actual OCR service URL
+          "https://govissagcpocr-872569311567.asia-south2.run.app/extract",
+          // Replace with your actual OCR service URL
         ]
+
+        // Warm-up helper: call /warmup for the base URL before OCR POST to reduce cold-start latency
+        const warmupIfPossible = async (extractUrl: string) => {
+          try {
+            const base = extractUrl.replace(/\/extract$/, '')
+            await fetch(`${base}/warmup`, { method: 'GET', mode: 'cors', credentials: 'omit' })
+          } catch (_) {
+            // ignore warm-up failures
+          }
+        }
 
         let response: Response | null = null
         let lastError: Error | null = null
@@ -140,15 +149,34 @@ export default function UploadDocuments() {
         for (const url of ocrUrls) {
           try {
             console.log(`🔍 Trying OCR service at: ${url}`)
+            await warmupIfPossible(url)
             response = await fetch(url, {
               method: "POST",
               body: formData,
+              mode: 'cors',
+              credentials: 'omit',
             })
 
             if (response.ok) {
               console.log(`✅ OCR service connected at: ${url}`)
               break
             } else {
+              // Simple one-time retry on 5xx (e.g., cold start)
+              if (response.status >= 500) {
+                console.log(`↻ Retrying after 800ms due to ${response.status}`)
+                await new Promise(r => setTimeout(r, 800))
+                await warmupIfPossible(url)
+                response = await fetch(url, {
+                  method: 'POST',
+                  body: formData,
+                  mode: 'cors',
+                  credentials: 'omit',
+                })
+                if (response.ok) {
+                  console.log(`✅ OCR service connected on retry at: ${url}`)
+                  break
+                }
+              }
               console.log(`❌ OCR service at ${url} returned status: ${response.status}`)
               response = null
             }

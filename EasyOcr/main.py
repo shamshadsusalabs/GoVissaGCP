@@ -42,6 +42,29 @@ except:
     reader = easyocr.Reader(['en'], gpu=False)
     print("✅ CPU mode")
 
+"""
+Warm-up EasyOCR at startup to minimize cold-start latency causing 503s on first POST /extract.
+This runs a tiny OCR on a blank image so the models are loaded before handling user traffic.
+"""
+@app.on_event("startup")
+async def warmup_ocr():
+    try:
+        dummy = np.zeros((50, 200), dtype=np.uint8)
+        _ = reader.readtext(dummy, detail=0)
+        print("✅ EasyOCR warm-up complete")
+    except Exception as e:
+        print(f"⚠️ EasyOCR warm-up failed: {e}")
+
+# Optional endpoint to trigger warm-up manually after deploy
+@app.get("/warmup")
+async def warmup():
+    try:
+        dummy = np.zeros((50, 200), dtype=np.uint8)
+        _ = reader.readtext(dummy, detail=0)
+        return {"status": "warmed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Warm-up error: {str(e)}")
+
 def extract_passport_data(text_lines: List[str]) -> Dict[str, Any]:
     """Extract passport data from OCR text"""
     data = {
@@ -151,6 +174,26 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+@app.on_event("startup")
+async def warmup_ocr():
+    """Warm-up EasyOCR at startup to minimize cold-start latency"""
+    try:
+        dummy = np.zeros((50, 200), dtype=np.uint8)
+        _ = reader.readtext(dummy, detail=0)
+        print("✅ EasyOCR warm-up complete")
+    except Exception as e:
+        print(f"⚠️ EasyOCR warm-up failed: {e}")
+
+@app.get("/warmup")
+async def warmup():
+    """Manual warmup endpoint"""
+    try:
+        dummy = np.zeros((50, 200), dtype=np.uint8)
+        _ = reader.readtext(dummy, detail=0)
+        return {"status": "warmed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Warm-up error: {str(e)}")
 
 @app.post("/extract")
 async def extract_passport(file: UploadFile = File(...)):

@@ -7,7 +7,22 @@ window.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Re
 
   const headers = new Headers(init?.headers || {});
 
-  if (token) {
+  // Determine target URL to decide whether to attach Authorization
+  let urlString = '';
+  if (typeof input === 'string') urlString = input;
+  else if (input instanceof URL) urlString = input.toString();
+  else if (typeof (input as Request).url === 'string') urlString = (input as Request).url;
+
+  const shouldSkipAuth = (() => {
+    try {
+      // Skip auth for OCR Cloud Run domain to keep CORS simple
+      return urlString.includes('govissagcpocr-872569311567.asia-south2.run.app');
+    } catch {
+      return false;
+    }
+  })();
+
+  if (token && !shouldSkipAuth) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
