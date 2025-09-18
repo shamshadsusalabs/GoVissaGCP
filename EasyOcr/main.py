@@ -151,7 +151,7 @@ def extract_passport_data(text_lines: List[str]) -> Dict[str, Any]:
                     address_parts.append(text_lines[j].strip())
             data['address'] = ' '.join(address_parts)
         
-        # File number
+        # File number #sddsd
         file_match = re.search(r'[A-Z]{2}\d{13}', line)
         if file_match:
             data['file_number'] = file_match.group()
