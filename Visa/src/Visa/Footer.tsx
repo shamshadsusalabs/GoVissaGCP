@@ -30,11 +30,15 @@ const Footer: React.FC = () => {
             <p className="text-sm text-gray-500 mb-4">
               Fast Visa Provider | Trusted Immigration Services
             </p>
-            <p className="text-sm text-gray-500">
-              CIN: U30400DL2004PTC124202<br />
-              Registered since 2004<br />
-              ROC: Delhi
-            </p>
+            <div className="text-sm text-gray-500 space-y-2">
+              <p>Email: contact@traveli.asia</p>
+              <p>Phone: 9289280509</p>
+              <p>
+                CIN: U30400DL2004PTC124202<br />
+                Registered since 2004<br />
+                ROC: Delhi
+              </p>
+            </div>
           </div>
 
           {/* Column 2 - Services */}
@@ -60,7 +64,7 @@ const Footer: React.FC = () => {
                     New Delhi Head Office
                   </span>
                   <span className="text-sm text-gray-500">
-                    KEHAR TRAVEL SERVICES PRIVATE LIMITED on its Email address - accounts@traveli.asia. B 122 MAIN BAZARSHAKARPUR , DELHI, Delhi, India - 110092.
+                    KEHAR TRAVEL SERVICES PRIVATE LIMITED on its Email address - contact@traveli.asia. B 122 MAIN BAZARSHAKARPUR , DELHI, Delhi, India - 110092.
                   </span>
                 </div>
               </li>

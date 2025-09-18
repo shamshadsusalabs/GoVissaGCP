@@ -44,7 +44,7 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
   const fetchTemplates = async () => {
     setLoadingTemplates(true)
     try {
-      const response = await fetch("http://localhost:5000/api/configurations/visa-with-5-docs")
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/visa-with-5-docs")
       if (!response.ok) {
         throw new Error("Failed to fetch templates")
       }
@@ -114,7 +114,7 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
   const saveDocumentsStep = async () => {
     if (!configId) return
     try {
-      const response = await fetch("http://localhost:5000/api/configurations/save-step", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/save-step", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -207,7 +207,7 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
 
       console.log("Uploading samples for document:", documentId, "Config:", configId)
 
-      const response = await fetch("http://localhost:5000/api/configurations/save-document-samples", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/save-document-samples", {
         method: "POST",
         body: formData,
       })
@@ -244,7 +244,7 @@ const DocumentRequirements: React.FC<DocumentRequirementsProps> = ({
     if (!configId) return
 
     try {
-      const response = await fetch("http://localhost:5000/api/configurations/remove-document-sample", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/remove-document-sample", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

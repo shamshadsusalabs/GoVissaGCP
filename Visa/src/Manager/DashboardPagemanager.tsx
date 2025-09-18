@@ -72,7 +72,7 @@ const DashboardPage: React.FC = () => {
       try {
         setLoading(true)
         // Fetch stats
-        const statsResponse = await fetch("http://localhost:5000/api/VisaApplication/stats")
+        const statsResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/stats")
         if (!statsResponse.ok) {
           throw new Error("Failed to fetch stats")
         }
@@ -80,7 +80,7 @@ const DashboardPage: React.FC = () => {
         setStats(statsData)
 
         // Fetch recent applications
-        const recentResponse = await fetch("http://localhost:5000/api/VisaApplication/getLatest")
+        const recentResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getLatest")
         if (!recentResponse.ok) {
           throw new Error("Failed to fetch recent applications")
         }
@@ -88,7 +88,7 @@ const DashboardPage: React.FC = () => {
         setRecentApplications(recentData.data)
 
         // Fetch visa type counts
-        const visaTypesResponse = await fetch("http://localhost:5000/api/configurations/counts/types")
+        const visaTypesResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/counts/types")
         if (!visaTypesResponse.ok) {
           throw new Error("Failed to fetch visa type counts")
         }

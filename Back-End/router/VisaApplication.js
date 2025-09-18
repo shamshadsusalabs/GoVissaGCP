@@ -5,7 +5,7 @@ const { verifyAccessToken } = require('../middileware/authMiddleware');
 const { createVisaApplication,getAllVisaApplications,updateVisaStatus ,
     getVisaApplicationById,getVisaApplicationsByPhone,getVisaStatusById,
     getVisaStatusByPaymentId,getPaymentByPaymentId,getVisaApplicationStats,getLatestVisaApplications,
-    getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById} = require('../controller/VisaApplication');
+    getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById,getMonthlyStats} = require('../controller/VisaApplication');
 
 router.post('/apply-visa',verifyAccessToken, parser.any(), createVisaApplication);
 router.get('/GetAll',verifyAccessToken, getAllVisaApplications);
@@ -37,4 +37,6 @@ router.get('/status-history/:id',verifyAccessToken, getStatusHistoryById);
 
 router.get('/stats',verifyAccessToken, getVisaApplicationStats);
 router.get('/getLatest',verifyAccessToken, getLatestVisaApplications);
+// ✅ NEW: Monthly statistics route for dashboard chart
+router.get('/monthly-stats',verifyAccessToken, getMonthlyStats);
 module.exports = router;

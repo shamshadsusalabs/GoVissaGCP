@@ -93,7 +93,7 @@ const AllVisaApplication: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/VisaApplication/GetAll")
+        const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/GetAll")
         const data: ApiResponse = await response.json()
         setApplications(data.data)
         setFilteredApplications(data.data)
@@ -114,7 +114,7 @@ const AllVisaApplication: React.FC = () => {
     try {
       setEmployeesLoading(true)
       console.log("🔄 Fetching employees...")
-      const response = await fetch("http://localhost:5000/api/employee/getAll")
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/employee/getAll")
       console.log("📡 Response status:", response.status)
       const data = await response.json()
       console.log("📊 Full API response:", data)
@@ -139,7 +139,7 @@ const AllVisaApplication: React.FC = () => {
   const fetchPendingPayments = async () => {
     try {
       const token = localStorage.getItem("accessToken")
-      const response = await fetch("http://localhost:5000/api/payments/pending-approvals", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/pending-approvals", {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -165,7 +165,7 @@ const AllVisaApplication: React.FC = () => {
       const token = localStorage.getItem("accessToken")
       const adminId = localStorage.getItem("adminId") || "admin"
 
-      const response = await fetch("http://localhost:5000/api/payments/approve-payment", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/approve-payment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -354,7 +354,7 @@ const AllVisaApplication: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/VisaApplication/visa-status/${selectedApp._id}`,
+        `https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/visa-status/${selectedApp._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -402,7 +402,7 @@ const AllVisaApplication: React.FC = () => {
         appId: selectedApp._id,
       })
 
-      const response = await fetch(`http://localhost:5000/api/employee/addVisaId/${employeeId}/add-visa`, {
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/addVisaId/${employeeId}/add-visa`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visaId: payloadVisaId }),

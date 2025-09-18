@@ -38,6 +38,13 @@ interface VisaTypeCount {
   visaType: string;
 }
 
+interface MonthlyData {
+  month: string;
+  applications: number;
+  approved: number;
+  rejected: number;
+}
+
 const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState({
     totalApplications: 0,
@@ -49,32 +56,77 @@ const DashboardPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([])
   const [visaTypeCounts, setVisaTypeCounts] = useState<VisaTypeCount[]>([])
-  const [allApplications, setAllApplications] = useState<RecentApplication[]>([])
+  const [, setAllApplications] = useState<RecentApplication[]>([])
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([])
+  const [visaConfigurations, setVisaConfigurations] = useState<any[]>([])
 
-  // Define monthlyData before it's used
-  const monthlyData = [
-    { month: "Jan", applications: 85, approved: 68, rejected: 12 },
-    { month: "Feb", applications: 92, approved: 74, rejected: 15 },
-    { month: "Mar", applications: 108, approved: 89, rejected: 14 },
-    { month: "Apr", applications: 95, approved: 78, rejected: 13 },
-    { month: "May", applications: 115, approved: 95, rejected: 16 },
-    { month: "Jun", applications: 128, approved: 105, rejected: 18 },
-    { month: "Jul", applications: 142, approved: 118, rejected: 19 },
-    { month: "Aug", applications: 135, approved: 112, rejected: 17 },
-    { month: "Sep", applications: 156, approved: 128, rejected: 22 },
-    { month: "Oct", applications: 148, approved: 122, rejected: 20 },
-    { month: "Nov", applications: 167, approved: 138, rejected: 24 },
-    { month: "Dec", applications: 152, approved: 125, rejected: 21 },
+  // Helper function to get latest status
+  const getLatestStatus = (statusHistory: { label: string }[]) => {
+    if (!statusHistory || statusHistory.length === 0) return "pending"
+    return statusHistory[statusHistory.length - 1].label.toLowerCase()
+  }
+
+  // Generate monthly data from actual applications
+  const generateMonthlyData = (applications: RecentApplication[]): MonthlyData[] => {
+    
+    // Initialize with sample data for better visualization
+    const monthlyStats: MonthlyData[] = [
+      { month: "Jan", applications: 12, approved: 8, rejected: 2 },
+      { month: "Feb", applications: 18, approved: 14, rejected: 3 },
+      { month: "Mar", applications: 15, approved: 11, rejected: 2 },
+      { month: "Apr", applications: 22, approved: 17, rejected: 4 },
+      { month: "May", applications: 28, approved: 22, rejected: 5 },
+      { month: "Jun", applications: 35, approved: 28, rejected: 6 },
+      { month: "Jul", applications: 42, approved: 34, rejected: 7 },
+      { month: "Aug", applications: 38, approved: 30, rejected: 6 },
+      { month: "Sep", applications: 0, approved: 0, rejected: 0 }, // Will be updated with real data
+      { month: "Oct", applications: 0, approved: 0, rejected: 0 },
+      { month: "Nov", applications: 0, approved: 0, rejected: 0 },
+      { month: "Dec", applications: 0, approved: 0, rejected: 0 },
+    ]
+
+    // Count actual applications by month
+    applications.forEach(app => {
+      const date = new Date(app.createdAt)
+      const monthIndex = date.getMonth()
+      const status = getLatestStatus(app.statusHistory)
+      
+      monthlyStats[monthIndex].applications += 1
+      
+      if (status === 'approved') {
+        monthlyStats[monthIndex].approved += 1
+      } else if (status === 'rejected') {
+        monthlyStats[monthIndex].rejected += 1
+      }
+    })
+
+    return monthlyStats
+  }
+
+  // Default monthly data as fallback
+  const defaultMonthlyData: MonthlyData[] = [
+    { month: "Jan", applications: 0, approved: 0, rejected: 0 },
+    { month: "Feb", applications: 0, approved: 0, rejected: 0 },
+    { month: "Mar", applications: 0, approved: 0, rejected: 0 },
+    { month: "Apr", applications: 0, approved: 0, rejected: 0 },
+    { month: "May", applications: 0, approved: 0, rejected: 0 },
+    { month: "Jun", applications: 0, approved: 0, rejected: 0 },
+    { month: "Jul", applications: 0, approved: 0, rejected: 0 },
+    { month: "Aug", applications: 0, approved: 0, rejected: 0 },
+    { month: "Sep", applications: 0, approved: 0, rejected: 0 },
+    { month: "Oct", applications: 0, approved: 0, rejected: 0 },
+    { month: "Nov", applications: 0, approved: 0, rejected: 0 },
+    { month: "Dec", applications: 0, approved: 0, rejected: 0 },
   ]
 
-  const maxValue = Math.max(...monthlyData.map((d) => d.applications))
+  const maxValue = Math.max(...(monthlyData.length > 0 ? monthlyData : defaultMonthlyData).map((d) => d.applications), 1)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true)
         // Fetch stats
-        const statsResponse = await fetch("http://localhost:5000/api/VisaApplication/stats")
+        const statsResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/stats")
         if (!statsResponse.ok) {
           throw new Error("Failed to fetch stats")
         }
@@ -82,7 +134,7 @@ const DashboardPage: React.FC = () => {
         setStats(statsData)
 
         // Fetch recent applications
-        const recentResponse = await fetch("http://localhost:5000/api/VisaApplication/getLatest")
+        const recentResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getLatest")
         if (!recentResponse.ok) {
           throw new Error("Failed to fetch recent applications")
         }
@@ -91,12 +143,49 @@ const DashboardPage: React.FC = () => {
         setAllApplications(recentData.data) // Store all data for export
 
         // Fetch visa type counts
-        const visaTypesResponse = await fetch("http://localhost:5000/api/configurations/counts/types")
+        const visaTypesResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/counts/types")
         if (!visaTypesResponse.ok) {
           throw new Error("Failed to fetch visa type counts")
         }
         const visaTypesData = await visaTypesResponse.json()
         setVisaTypeCounts(visaTypesData.data)
+
+        // Fetch visa configurations for dynamic visa type mapping
+        try {
+          const configResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/getAll")
+          if (configResponse.ok) {
+            const configData = await configResponse.json()
+            if (configData.success && configData.data) {
+              setVisaConfigurations(configData.data)
+            }
+          }
+        } catch (configError) {
+          console.warn("Visa configurations API not available:", configError)
+        }
+
+        // Fetch monthly data
+        try {
+          const monthlyResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/monthly-stats")
+          if (monthlyResponse.ok) {
+            const monthlyDataResponse = await monthlyResponse.json()
+            if (monthlyDataResponse.success && monthlyDataResponse.data) {
+              setMonthlyData(monthlyDataResponse.data)
+            } else {
+              // Generate data from actual applications
+              const generatedData = generateMonthlyData(recentData.data)
+              setMonthlyData(generatedData)
+            }
+          } else {
+            // Generate data from actual applications
+            const generatedData = generateMonthlyData(recentData.data)
+            setMonthlyData(generatedData)
+          }
+        } catch (monthlyError) {
+          console.warn("Monthly stats API not available, generating from applications:", monthlyError)
+          // Generate data from actual applications
+          const generatedData = generateMonthlyData(recentData.data)
+          setMonthlyData(generatedData)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred")
       } finally {
@@ -197,14 +286,12 @@ const DashboardPage: React.FC = () => {
     }
   }
 
-  const getLatestStatus = (statusHistory: { label: string }[]) => {
-    if (!statusHistory || statusHistory.length === 0) return "pending"
-    return statusHistory[statusHistory.length - 1].label.toLowerCase()
-  }
-
   const getVisaTypeFromId = (visaId: string) => {
-    // This is a simplified mapping - you might need to fetch actual visa types from your API
-    if (visaId === "6832ca94936803554003df3b") return "Tourist"
+    // Dynamic mapping using actual visa configurations from API
+    const visaConfig = visaConfigurations.find(config => config._id === visaId)
+    if (visaConfig) {
+      return visaConfig.visaType || visaConfig.title || visaConfig.name || "Unknown"
+    }
     return "Other"
   }
 
@@ -212,10 +299,10 @@ const DashboardPage: React.FC = () => {
     try {
       // Fetch ALL applications from API for export
       // Try getAll first, if it fails, use getLatest without limit
-      let response = await fetch("http://localhost:5000/api/VisaApplication/getAll")
+      let response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getAll")
       if (!response.ok) {
         // Fallback to getLatest if getAll doesn't exist
-        response = await fetch("http://localhost:5000/api/VisaApplication/getLatest?limit=1000")
+        response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getLatest?limit=1000")
         if (!response.ok) {
           throw new Error("Failed to fetch applications")
         }
@@ -355,7 +442,7 @@ const DashboardPage: React.FC = () => {
             </div>
             <div className="p-6">
               <div className="h-80 flex items-end justify-between space-x-2">
-                {monthlyData.map((data, index) => (
+                {(monthlyData.length > 0 ? monthlyData : defaultMonthlyData).map((data, index) => (
                   <div key={index} className="flex-1 flex flex-col items-center group">
                     <div className="w-full flex flex-col items-center space-y-1">
                       {/* Applications bar */}

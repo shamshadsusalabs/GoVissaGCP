@@ -413,7 +413,67 @@ const getLatestVisaApplications = async (req, res) => {
   }
 };
 
+// ✅ NEW: Get monthly statistics for dashboard chart
+const getMonthlyStats = async (req, res) => {
+  try {
+    const allApplications = await VisaApplication.find({})
+      .select('createdAt statusHistory')
+      .lean()
+      .exec();
+
+    // Initialize monthly data for all 12 months
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    const monthlyStats = months.map(month => ({
+      month,
+      applications: 0,
+      approved: 0,
+      rejected: 0
+    }));
+
+    // Helper function to get latest status
+    const getLatestStatus = (statusHistory) => {
+      if (!statusHistory || statusHistory.length === 0) return 'pending';
+      return statusHistory[statusHistory.length - 1].label?.toLowerCase() || 'pending';
+    };
+
+    // Count applications by month
+    allApplications.forEach(app => {
+      const date = new Date(app.createdAt);
+      const monthIndex = date.getMonth(); // 0-11
+      const status = getLatestStatus(app.statusHistory);
+
+      // Increment total applications for this month
+      monthlyStats[monthIndex].applications += 1;
+
+      // Increment status-specific counts
+      if (status === 'approved') {
+        monthlyStats[monthIndex].approved += 1;
+      } else if (status === 'rejected') {
+        monthlyStats[monthIndex].rejected += 1;
+      }
+      // Note: pending applications are calculated as: applications - approved - rejected
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Monthly statistics fetched successfully',
+      data: monthlyStats,
+    });
+  } catch (error) {
+    console.error('Error fetching monthly statistics:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
+};
+
 
 module.exports = { createVisaApplication , getAllVisaApplications,updateVisaStatus,getVisaApplicationById,
   getVisaApplicationsByPhone,getVisaApplicationStats, getLatestVisaApplications,getVisaStatusById,
-  getVisaStatusByPaymentId,getPaymentByPaymentId,getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById};
+  getVisaStatusByPaymentId,getPaymentByPaymentId,getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById,getMonthlyStats};
