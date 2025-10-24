@@ -743,10 +743,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const subtotal = adultCost + childCost + youngChildCost
   const total = (subtotal - discountAmount).toFixed(2)
 
-  // Individual fee variables for price breakdown display
-  const governmentFee = selectedVisaType.visaFee
-  const serviceFee = selectedVisaType.serviceFee
-  const totalPerTraveler = selectedVisaType.visaFee + selectedVisaType.serviceFee
+  // Individual fee variables for price breakdown display (removed unused variables)
 
       return (
         <div className="w-full rounded-2xl border border-gray-200 shadow-xl overflow-hidden bg-white">

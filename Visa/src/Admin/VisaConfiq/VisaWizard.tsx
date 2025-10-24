@@ -38,8 +38,15 @@ interface VisaType {
   category: string
   processingTime: string
   processingMethod: string
+  // Adult pricing (12+ years)
   visaFee: number
   serviceFee: number
+  // Children pricing (6-12 years)
+  childVisaFee: number
+  childServiceFee: number
+  // Young children pricing (0-6 years)
+  youngChildVisaFee: number
+  youngChildServiceFee: number
   currency: string
   validity: string
   entries: string

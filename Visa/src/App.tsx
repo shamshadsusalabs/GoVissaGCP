@@ -40,6 +40,7 @@ const VisaFullDetails = lazy(() => import('./Admin/VisaFullDeatils'));
 const VisaConfigList = lazy(() => import('./Admin/VisaConfigList'));
 const Employee = lazy(() => import('./Admin/Employee'));
 const AllUsers = lazy(() => import('./Admin/AllUsers'));
+const AllPayments = lazy(() => import('./Admin/AllPayments'));
 const CouponCode = lazy(() => import('./Admin/CouponCode'));
 const Manager = lazy(() => import('./Admin/Manager'));
 
@@ -163,6 +164,7 @@ function AppRoutes() {
           <Route path="VisaFullDeatils/:id" element={<VisaFullDetails />} />
           <Route path="Employee" element={<Employee />} />
           <Route path="AllUsers" element={<AllUsers />} />
+          <Route path="AllPayments" element={<AllPayments />} />
            <Route path="CouponCode" element={<CouponCode/>} />
             <Route path="Manager" element={<Manager/>} />
         </Route>

@@ -6,7 +6,8 @@ import {
   FiUsers,
   FiUser,
   FiList,
-  FiEdit
+  FiEdit,
+  FiCreditCard
 } from 'react-icons/fi';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -153,6 +154,12 @@ const AdminLayout = () => {
                 <Link to="/dashboard/AllUsers" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
                   <FiUser className="h-5 w-5" />
                   <span className="ml-3">All Users</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/dashboard/AllPayments" className="flex items-center p-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                  <FiCreditCard className="h-5 w-5" />
+                  <span className="ml-3">Payments</span>
                 </Link>
               </li>
               <li>
