@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaMapMarkerAlt, FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
@@ -53,31 +53,15 @@ const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Column 3 - Offices */}
+          {/* Column 3 - Contact Information */}
           <div>
-            <h4 className="font-bold text-gray-900 mb-4 text-lg">Our Offices</h4>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <FaMapMarkerAlt className="mt-1 text-gray-500 flex-shrink-0" />
-                <div>
-                  <span className="hover:text-gray-900 transition-colors block">
-                    New Delhi Head Office
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    KEHAR TRAVEL SERVICES PRIVATE LIMITED on its Email address - contact@traveli.asia. B 122 MAIN BAZARSHAKARPUR , DELHI, Delhi, India - 110092.
-                  </span>
-                </div>
+            <h4 className="font-bold text-gray-900 mb-4 text-lg">Contact Information</h4>
+            <ul className="space-y-3">
+              <li className="text-sm text-gray-500">
+                <span className="font-semibold text-gray-700">Email:</span> contact@traveli.asia
               </li>
-              <li className="flex items-start gap-3">
-                <FaMapMarkerAlt className="mt-1 text-gray-500 flex-shrink-0" />
-                <div>
-                  <span className="hover:text-gray-900 transition-colors block">
-                    Second Office
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    Kehar Travel Services Pvt Ltd iMNM-1 Old DLF Colony, Sector-14, Gurgaon, Haryana, 122001.
-                  </span>
-                </div>
+              <li className="text-sm text-gray-500">
+                <span className="font-semibold text-gray-700">Phone:</span> 9289280509
               </li>
             </ul>
           </div>

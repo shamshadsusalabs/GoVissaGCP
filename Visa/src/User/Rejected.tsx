@@ -47,14 +47,14 @@ const columns = [
   columnHelper.accessor('statusHistory', {
     header: 'Status',
     cell: info => {
-      const status = info.getValue().find(item => item.label === 'Rejected')?.label || 'Processing';
+      const isRejected = info.getValue().find(item => item.label === 'visa_rejected');
       return (
         <div className={`px-3 py-1 rounded-full text-sm ${
-          status === 'Rejected' 
+          isRejected
             ? 'bg-red-100 text-red-800 border border-red-200' 
             : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
         }`}>
-          {status}
+          {isRejected ? 'Rejected' : 'Processing'}
         </div>
       );
     },
@@ -97,7 +97,7 @@ export default function RejectedVisaTable() {
         if (result.success) {
           setData(result.data.map((item: any) => ({
             ...item,
-            status: item.statusHistory.some((h: any) => h.label === 'Rejected') ? 'Rejected' : 'Processing'
+            status: item.statusHistory.some((h: any) => h.label === 'visa_rejected') ? 'Rejected' : 'Processing'
           })));
         } else {
           throw new Error(result.message || 'Failed to fetch data');
@@ -190,7 +190,8 @@ export default function RejectedVisaTable() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filteredData.map((item) => {
-              const status = item.statusHistory.find(h => h.label === 'Rejected')?.label || 'Processing';
+              const isRejected = item.statusHistory.find(h => h.label === 'visa_rejected');
+              const status = isRejected ? 'Rejected' : 'Processing';
               const paymentStatus = item.paymentId ? 'Complete' : 'Pending';
               
               return (

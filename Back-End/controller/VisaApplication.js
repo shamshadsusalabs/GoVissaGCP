@@ -153,9 +153,9 @@ const getVisaApplicationStats = async (req, res) => {
         pending++;
       } else {
         const lastStatus = history[history.length - 1].label?.toLowerCase();
-        if (lastStatus === 'approved') {
+        if (lastStatus === 'visa_approved') {
           approved++;
-        } else if (lastStatus === 'rejected') {
+        } else if (lastStatus === 'visa_rejected') {
           rejected++;
         } else {
           pending++;
@@ -354,7 +354,7 @@ const getRejectedByPhone = async (req, res) => {
       phone: phone,
       statusHistory: {
         $elemMatch: {
-          label: { $regex: /^rejected$/i } // case-insensitive match for 'rejected'
+          label: 'visa_rejected'
         }
       }
     });
@@ -374,7 +374,7 @@ const getApprovedByPhone = async (req, res) => {
       phone: phone,
       statusHistory: {
         $elemMatch: {
-          label: { $regex: /^approved$/i } // case-insensitive match for 'approved'
+          label: 'visa_approved'
         }
       }
     });
@@ -484,9 +484,9 @@ const getMonthlyStats = async (req, res) => {
       monthlyStats[monthIndex].applications += 1;
 
       // Increment status-specific counts
-      if (status === 'approved') {
+      if (status === 'visa_approved') {
         monthlyStats[monthIndex].approved += 1;
-      } else if (status === 'rejected') {
+      } else if (status === 'visa_rejected') {
         monthlyStats[monthIndex].rejected += 1;
       }
       // Note: pending applications are calculated as: applications - approved - rejected

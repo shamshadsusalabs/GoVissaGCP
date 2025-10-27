@@ -9,7 +9,8 @@ const {
   createPayLaterOrder,
   approvePayment,
   getPendingApprovals,
-  getAllPayments // ✅ NEW: Import getAllPayments
+  getAllPayments,
+  getCustomerNameByPaymentId // ✅ NEW: Import getCustomerNameByPaymentId
 } = require("../controller/payment")
 const { verifyAccessToken } = require('../middileware/authMiddleware');
 
@@ -25,5 +26,8 @@ router.post("/create-paylater-order", createPayLaterOrder)
 router.post("/approve-payment", verifyAccessToken, approvePayment)
 router.get("/pending-approvals", verifyAccessToken, getPendingApprovals)
 router.get("/getAll", getAllPayments) // ✅ NEW: Get all payments route
+
+// ✅ NEW: Get customer name by payment ID
+router.get("/customer-name/:paymentId", getCustomerNameByPaymentId)
 
 module.exports = router

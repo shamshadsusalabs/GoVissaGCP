@@ -140,9 +140,7 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
   const getPromoCodeDisplayText = (code: PromoCode) => {
     const discountText =
       code.discountType === "percentage" ? `${code.discountValue}% OFF` : `₹${code.discountValue} OFF`
-    const usageText = `${code.usedCount}/${code.maxUsage} used`
-    const expiryDate = new Date(code.validUntil).toLocaleDateString()
-    return `${code.code} - ${discountText} (${usageText}, expires ${expiryDate})`
+    return `${code.code} - ${discountText}`
   }
 
   const getAvailablePromoCodes = () => {

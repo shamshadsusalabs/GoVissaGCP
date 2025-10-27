@@ -26,6 +26,7 @@ const Bill = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [payment, setPayment] = useState<Payment | null>(null);
+  const [customerName, setCustomerName] = useState<string>('');
 
   useEffect(() => {
     if (!location.state?.payment) {
@@ -33,7 +34,30 @@ const Bill = () => {
       return;
     }
     setPayment(location.state.payment);
+    
+    // Fetch customer name from API
+    fetchCustomerName(location.state.payment.paymentId);
   }, [location, navigate]);
+
+  const fetchCustomerName = async (paymentId: string | undefined) => {
+    if (!paymentId) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/payments/customer-name/${paymentId}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setCustomerName(result.data.customerName);
+      } else {
+        // Fallback to email username
+        setCustomerName(location.state.payment.email.split('@')[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching customer name:', error);
+      // Fallback to email username
+      setCustomerName(location.state.payment.email.split('@')[0]);
+    }
+  };
 
   const handleDownloadPDF = () => {
     const input = billRef.current;
@@ -241,7 +265,7 @@ const Bill = () => {
           <div>
             <h2 style={styles.sectionTitle}>Customer Details:</h2>
             <div style={styles.detailBox}>
-              <p style={{ fontWeight: '500' }}>{payment.email.split('@')[0]}</p>
+              <p style={{ fontWeight: '500' }}>Name: {customerName}</p>
               <p>Email: {payment.email}</p>
               <p>Contact: {payment.phone}</p>
               <p>Booking Date: {formatDate(payment.createdAt)}</p>

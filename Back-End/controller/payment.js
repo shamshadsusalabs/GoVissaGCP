@@ -362,3 +362,70 @@ exports.getAllPayments = async (req, res) => {
   }
 };
 
+// ✅ NEW: Get customer name by payment ID
+exports.getCustomerNameByPaymentId = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    if (!paymentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment ID is required"
+      });
+    }
+
+    // First, find the payment order to get the paymentOrderId
+    const paymentOrder = await PaymentOrder.findOne({ paymentId });
+    
+    if (!paymentOrder) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment order not found"
+      });
+    }
+
+    // Import VisaApplication model
+    const VisaApplication = require("../shcema/VisaApplication");
+
+    // Find visa application using paymentOrderId from payment order
+    const visaApplication = await VisaApplication.findOne({ 
+      paymentOrderId: paymentOrder._id 
+    });
+
+    if (!visaApplication) {
+      return res.status(404).json({
+        success: false,
+        message: "Visa application not found"
+      });
+    }
+
+    // Extract customer name from passport data
+    let customerName = "";
+    if (visaApplication.passportData && visaApplication.passportData.length > 0) {
+      const firstTraveler = visaApplication.passportData[0];
+      const givenNames = firstTraveler.given_names || "";
+      const surname = firstTraveler.surname || "";
+      customerName = `${givenNames} ${surname}`.trim();
+    }
+
+    // Fallback to email username if no name in passport data
+    if (!customerName) {
+      customerName = paymentOrder.email.split("@")[0];
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        customerName: customerName,
+        email: paymentOrder.email,
+        phone: paymentOrder.phone
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching customer name:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};

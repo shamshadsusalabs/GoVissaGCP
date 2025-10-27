@@ -7,11 +7,13 @@ interface StatusStep {
   name: string;
   status: 'completed' | 'current' | 'pending';
   date: string;
+  rejectionReason?: string;
 }
 
 interface ApiStatus {
   label: string;
   date: string;
+  rejectionReason?: string;
 }
 
 const VisaStatusTracker = () => {
@@ -29,14 +31,12 @@ const VisaStatusTracker = () => {
         );
         const data = await response.json();
         
-        // Define all possible visa steps in order
+        // Define all possible visa steps in order (excluding terminal states)
         const allPossibleSteps = [
           'pending',
           'document_received', 
           'document_verified',
-          'in_process_with_embassy',
-          'visa_approved',
-          'visa_rejected'
+          'in_process_with_embassy'
         ];
 
         // Transform API data to our format
@@ -45,30 +45,40 @@ const VisaStatusTracker = () => {
             id: index + 1,
             name: step.label,
             status: 'completed' as const,
-            date: new Date(step.date).toLocaleDateString('en-CA')
+            date: new Date(step.date).toLocaleDateString('en-CA'),
+            rejectionReason: step.rejectionReason
           })
         );
 
-        // Mark the last step as current instead of completed
-        if (completedSteps.length > 0) {
+        // Get the current status
+        const completedStepNames = data.statusHistory.map((step: ApiStatus) => step.label);
+        const currentStatus = completedStepNames[completedStepNames.length - 1];
+
+        // Check if visa is approved or rejected (terminal states)
+        const isApproved = currentStatus === 'visa_approved';
+        const isRejected = currentStatus === 'visa_rejected';
+
+        // Mark the last step as current instead of completed (unless it's a terminal state)
+        if (completedSteps.length > 0 && !isApproved && !isRejected) {
           completedSteps[completedSteps.length - 1].status = 'current';
         }
 
-        // Find what steps are still pending
-        const completedStepNames = data.statusHistory.map((step: ApiStatus) => step.label);
-        const currentStepIndex = allPossibleSteps.findIndex(step => 
-          step === completedStepNames[completedStepNames.length - 1]
-        );
+        let pendingSteps: StatusStep[] = [];
 
-        // Add pending steps
-        const pendingSteps = allPossibleSteps
-          .slice(currentStepIndex + 1)
-          .map((stepName, index) => ({
-            id: completedSteps.length + index + 1,
-            name: stepName,
-            status: 'pending' as const,
-            date: ''
-          }));
+        // If not approved or rejected, add pending steps
+        if (!isApproved && !isRejected) {
+          const currentStepIndex = allPossibleSteps.findIndex(step => step === currentStatus);
+          
+          // Add remaining process steps
+          pendingSteps = allPossibleSteps
+            .slice(currentStepIndex + 1)
+            .map((stepName, index) => ({
+              id: completedSteps.length + index + 1,
+              name: stepName,
+              status: 'pending' as const,
+              date: ''
+            }));
+        }
 
         const transformedData = [...completedSteps, ...pendingSteps];
 
@@ -83,7 +93,13 @@ const VisaStatusTracker = () => {
     fetchStatus();
   }, [paymentId]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string, stepName?: string) => {
+    if (stepName === 'visa_approved' && status === 'completed') {
+      return 'bg-green-600';
+    }
+    if (stepName === 'visa_rejected' && status === 'completed') {
+      return 'bg-red-600';
+    }
     switch (status) {
       case 'completed':
         return 'bg-green-500';
@@ -140,19 +156,39 @@ const VisaStatusTracker = () => {
           {statusData.map((step) => (
             <div key={step.id} className="flex items-start gap-4">
               {/* Status circle */}
-              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white ${getStatusColor(step.status)}`}>
+              <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-white ${getStatusColor(step.status, step.name)}`}>
                 {getStatusIcon(step.status)}
               </div>
               
               {/* Step details */}
               <div className="flex-1">
                 <h3 className={`font-semibold ${
+                  step.name === 'visa_approved' && step.status === 'completed' ? 'text-green-700' :
+                  step.name === 'visa_rejected' && step.status === 'completed' ? 'text-red-700' :
                   step.status === 'current' ? 'text-blue-600' : 
                   step.status === 'completed' ? 'text-green-700' : 'text-gray-500'
                 }`}>
                   {step.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 </h3>
-                {step.status === 'completed' && step.date && (
+                {step.status === 'completed' && step.date && step.name === 'visa_approved' && (
+                  <p className="text-sm text-green-700 mt-1 font-semibold">
+                    🎉 Congratulations! Your visa has been approved on {step.date}
+                  </p>
+                )}
+                {step.status === 'completed' && step.date && step.name === 'visa_rejected' && (
+                  <div className="mt-1">
+                    <p className="text-sm text-red-700 font-semibold">
+                      ❌ Sorry, your visa application was rejected on {step.date}
+                    </p>
+                    {step.rejectionReason && (
+                      <p className="text-sm text-red-600 mt-2 bg-red-50 p-3 rounded-lg border border-red-200">
+                        <span className="font-semibold">Reason: </span>
+                        {step.rejectionReason}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {step.status === 'completed' && step.date && step.name !== 'visa_approved' && step.name !== 'visa_rejected' && (
                   <p className="text-sm text-gray-500 mt-1">
                     Completed on: {step.date}
                   </p>

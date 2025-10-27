@@ -47,14 +47,14 @@ const columns = [
   columnHelper.accessor('statusHistory', {
     header: 'Status',
     cell: info => {
-      const status = info.getValue().find(item => item.label === 'Approved')?.label || 'Processing';
+      const isApproved = info.getValue().find(item => item.label === 'visa_approved');
       return (
         <div className={`px-3 py-1 rounded-full text-sm ${
-          status === 'Approved' 
+          isApproved
             ? 'bg-green-100 text-green-800 border border-green-200' 
             : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
         }`}>
-          {status}
+          {isApproved ? 'Approved' : 'Processing'}
         </div>
       );
     },
@@ -97,7 +97,7 @@ export default function ApprovedVisaTable() {
         if (result.success) {
           setData(result.data.map((item: any) => ({
             ...item,
-            status: item.statusHistory.some((h: any) => h.label === 'Approved') ? 'Approved' : 'Processing'
+            status: item.statusHistory.some((h: any) => h.label === 'visa_approved') ? 'Approved' : 'Processing'
           })));
         } else {
           throw new Error(result.message || 'Failed to fetch data');
@@ -190,7 +190,8 @@ export default function ApprovedVisaTable() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filteredData.map((item) => {
-              const status = item.statusHistory.find(h => h.label === 'Approved')?.label || 'Processing';
+              const isApproved = item.statusHistory.find(h => h.label === 'visa_approved');
+              const status = isApproved ? 'Approved' : 'Processing';
               const paymentStatus = item.paymentId ? 'Complete' : 'Pending';
               
               return (
