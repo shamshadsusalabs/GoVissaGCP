@@ -131,13 +131,14 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
   const handleEditVisaType = (id: string) => {
     const visaTypeToEdit = visaTypes.find((vt) => vt.id === id)
     if (visaTypeToEdit) {
+      console.log("Editing visa type:", visaTypeToEdit) // Debug log
       setCurrentVisaType({
         ...visaTypeToEdit,
-        // Ensure new fields have default values for existing visa types
-        childVisaFee: visaTypeToEdit.childVisaFee || 0,
-        childServiceFee: visaTypeToEdit.childServiceFee || 0,
-        youngChildVisaFee: visaTypeToEdit.youngChildVisaFee || 0,
-        youngChildServiceFee: visaTypeToEdit.youngChildServiceFee || 0,
+        // Use actual values from the server, don't override with 0
+        childVisaFee: visaTypeToEdit.childVisaFee ?? 0,
+        childServiceFee: visaTypeToEdit.childServiceFee ?? 0,
+        youngChildVisaFee: visaTypeToEdit.youngChildVisaFee ?? 0,
+        youngChildServiceFee: visaTypeToEdit.youngChildServiceFee ?? 0,
       })
     }
   }
@@ -204,7 +205,16 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
                       <span className="text-gray-500">Entries:</span> {visaType.entries}
                     </div>
                     <div>
+                      <span className="text-gray-500">Stay Duration:</span> {visaType.stayDuration || "N/A"}
+                    </div>
+                    <div>
                       <span className="text-gray-500">Expected Days:</span> {visaType.expectedVisaDays} days
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Interview:</span> {visaType.interviewRequired ? "Required" : "Not Required"}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Biometrics:</span> {visaType.biometricRequired ? "Required" : "Not Required"}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -213,11 +223,16 @@ const VisaTypes: React.FC<VisaTypesProps> = ({ visaTypes, updateVisaTypes, nextS
                       <span className="text-blue-600 font-medium">Adult (12+ years):</span> {visaType.currency} {formatFee(visaType.visaFee)} + {formatFee(visaType.serviceFee)} service
                     </div>
                     <div>
-                      <span className="text-green-600 font-medium">Child (6-12 years):</span> {visaType.currency} {formatFee(visaType.childVisaFee || 0)} + {formatFee(visaType.childServiceFee || 0)} service
+                      <span className="text-green-600 font-medium">Child (6-12 years):</span> {visaType.currency} {formatFee(visaType.childVisaFee)} + {formatFee(visaType.childServiceFee)} service
                     </div>
                     <div>
-                      <span className="text-orange-600 font-medium">Young Child (0-6 years):</span> {visaType.currency} {formatFee(visaType.youngChildVisaFee || 0)} + {formatFee(visaType.youngChildServiceFee || 0)} service
+                      <span className="text-orange-600 font-medium">Young Child (0-6 years):</span> {visaType.currency} {formatFee(visaType.youngChildVisaFee)} + {formatFee(visaType.youngChildServiceFee)} service
                     </div>
+                    {visaType.notes && (
+                      <div className="mt-2">
+                        <span className="text-gray-500">Notes:</span> {visaType.notes}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

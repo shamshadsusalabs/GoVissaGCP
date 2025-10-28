@@ -23,7 +23,7 @@ const paymentOrderSchema = new mongoose.Schema(
     travellerDetails: {
       adults: { type: Number, default: 0 },
       children: { type: Number, default: 0 },
-      infants: { type: Number, default: 0 },
+      youngChildren: { type: Number, default: 0 },
       total: { type: Number, default: 0 }
     },
     webhookVerified: { type: Boolean, default: false },

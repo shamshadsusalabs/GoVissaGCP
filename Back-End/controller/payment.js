@@ -55,7 +55,7 @@ exports.createOrder = async (req, res) => {
       phone,
       selectedDate,
       travellers: computedTravellers,
-      travellerDetails, // ✅ NEW: Age group breakdown
+      travellerDetails, // ✅ Save as-is from frontend
       paymentType,
       paymentMethod,
       payLaterDetails,
@@ -102,7 +102,7 @@ exports.createCashOrder = async (req, res) => {
       phone,
       selectedDate,
       travellers: computedTravellers,
-      travellerDetails, // ✅ NEW: Age group breakdown
+      travellerDetails, // ✅ Save as-is from frontend
       paymentType: "cash",
       paymentMethod: "cash",
       cashDetails,
@@ -150,7 +150,7 @@ exports.createPayLaterOrder = async (req, res) => {
       phone,
       selectedDate,
       travellers: computedTravellers,
-      travellerDetails, // ✅ NEW: Age group breakdown
+      travellerDetails, // ✅ Save as-is from frontend
       paymentType: "paylater",
       paymentMethod: "paylater",
       payLaterDetails,
@@ -359,6 +359,26 @@ exports.getAllPayments = async (req, res) => {
       success: false,
       message: "Internal server error" 
     });
+  }
+};
+
+// ✅ NEW: Get a single payment order by Mongo ID (includes travellerDetails)
+exports.getPaymentOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: "Payment order id is required" });
+    }
+
+    const order = await PaymentOrder.findById(id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Payment order not found" });
+    }
+
+    return res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    console.error("Error fetching payment order by id:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 

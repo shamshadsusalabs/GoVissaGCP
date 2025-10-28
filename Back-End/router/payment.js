@@ -10,7 +10,8 @@ const {
   approvePayment,
   getPendingApprovals,
   getAllPayments,
-  getCustomerNameByPaymentId // ✅ NEW: Import getCustomerNameByPaymentId
+  getCustomerNameByPaymentId, // ✅ NEW: Import getCustomerNameByPaymentId
+  getPaymentOrderById, // ✅ NEW: Import getPaymentOrderById
 } = require("../controller/payment")
 const { verifyAccessToken } = require('../middileware/authMiddleware');
 
@@ -29,5 +30,8 @@ router.get("/getAll", getAllPayments) // ✅ NEW: Get all payments route
 
 // ✅ NEW: Get customer name by payment ID
 router.get("/customer-name/:paymentId", getCustomerNameByPaymentId)
+
+// ✅ NEW: Get payment order by Mongo ID
+router.get("/order/:id", getPaymentOrderById)
 
 module.exports = router

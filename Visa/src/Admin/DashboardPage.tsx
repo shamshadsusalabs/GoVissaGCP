@@ -766,7 +766,7 @@ const DashboardPage: React.FC = () => {
                   Amount Details
                 </label>
                 <div className="bg-gray-100 p-2 rounded space-y-1">
-                  <p className="text-sm text-gray-900">Final Amount: ₹{(parseInt(selectedPayment.amount) / 100).toFixed(2)}</p>
+                  <p className="text-sm text-gray-900">Final Amount: ₹{parseInt(selectedPayment.amount).toFixed(2)}</p>
                   {selectedPayment.originalAmount && (
                     <p className="text-sm text-gray-900">Original Amount: ₹{selectedPayment.originalAmount}</p>
                   )}

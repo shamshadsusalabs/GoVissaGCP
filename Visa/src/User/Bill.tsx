@@ -5,10 +5,17 @@ import jsPDF from 'jspdf';
 import { CSSProperties } from 'react';
 import GovisaaLogo from '../assets/logo.jpeg';
 
+interface TravellerDetails {
+  adults?: number;
+  children?: number;
+  youngChildren?: number;
+  total?: number;
+}
+
 interface Payment {
   _id: string;
   orderId: string;
-  amount: number;
+  amount: string | number; // Can be string from API
   currency: string;
   country: string;
   status: string;
@@ -16,9 +23,12 @@ interface Payment {
   phone: string;
   selectedDate: string;
   travellers: number;
+  travellerDetails?: TravellerDetails;
   createdAt: number;
   paidAt?: string;
   paymentId?: string;
+  paymentMethod?: string; // Added for cash payments
+  paymentType?: string; // Added for cash payments
 }
 
 const Bill = () => {
@@ -37,6 +47,12 @@ const Bill = () => {
     
     // Fetch customer name from API
     fetchCustomerName(location.state.payment.paymentId);
+
+    // Fallback name immediately when no paymentId (e.g., cash payments)
+    if (!location.state.payment.paymentId && location.state.payment.email) {
+      const fallbackName = location.state.payment.email.split('@')[0];
+      setCustomerName(fallbackName);
+    }
   }, [location, navigate]);
 
   const fetchCustomerName = async (paymentId: string | undefined) => {
@@ -80,17 +96,22 @@ const Bill = () => {
 
   const formatDate = (dateString: string | number) => {
     if (typeof dateString === 'number') {
-      return new Date(dateString * 1000).toLocaleDateString('en-IN');
+      // If timestamp is in seconds, convert to ms; if already ms, use as-is
+      const ts = dateString < 1e12 ? dateString * 1000 : dateString;
+      return new Date(ts).toLocaleDateString('en-IN');
     }
     return new Date(dateString).toLocaleDateString('en-IN');
   };
 
-  const calculateTaxes = (amount: number) => {
-    const subtotal = amount / 100;
-    const cgst = subtotal * 0.09; // 9% CGST
-    const sgst = subtotal * 0.09; // 9% SGST
-    const total = subtotal + cgst + sgst;
-    return { subtotal, cgst, sgst, total };
+  const calculateTaxes = (amount: string | number) => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    // Amount already includes 18% GST (9% CGST + 9% SGST)
+    // Reverse calculate: base amount excluding GST
+    const baseAmount = numericAmount / 1.18;
+    const cgst = baseAmount * 0.09; // 9% CGST
+    const sgst = baseAmount * 0.09; // 9% SGST
+    const total = baseAmount + cgst + sgst; // Should equal numericAmount (₹5690)
+    return { subtotal: baseAmount, cgst, sgst, total };
   };
 
   if (!payment) {
@@ -275,10 +296,43 @@ const Bill = () => {
             <h2 style={styles.sectionTitle}>Booking Details:</h2>
             <div style={styles.detailBox}>
               <p style={{ fontWeight: '500' }}>Order ID: {payment.orderId}</p>
-              <p>Payment ID: {payment.paymentId || 'N/A'}</p>
+              {payment.paymentMethod === 'cash' || payment.paymentType === 'cash' ? (
+                <p>Payment Method: Cash</p>
+              ) : (
+                <p>Payment ID: {payment.paymentId || 'N/A'}</p>
+              )}
               <p>Country: {payment.country}</p>
               <p>Travel Date: {formatDate(payment.selectedDate)}</p>
               <p>Travellers: {payment.travellers}</p>
+              <p>
+                Traveller Breakdown: {payment.travellerDetails?.adults || 0} Adult{(payment.travellerDetails?.adults || 0) > 1 ? 's' : ''}, {payment.travellerDetails?.children || 0} Child{(payment.travellerDetails?.children || 0) > 1 ? 'ren' : ''}, {payment.travellerDetails?.youngChildren || 0} Infant{(payment.travellerDetails?.youngChildren || 0) > 1 ? 's' : ''}
+              </p>
+              {payment.travellerDetails && (
+                <div style={{ marginTop: '8px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={styles.tableCell}>Type</th>
+                        <th style={styles.tableCell}>Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={styles.tableCell}>Adults</td>
+                        <td style={styles.tableCell}>{payment.travellerDetails.adults || 0}</td>
+                      </tr>
+                      <tr>
+                        <td style={styles.tableCell}>Children</td>
+                        <td style={styles.tableCell}>{payment.travellerDetails.children || 0}</td>
+                      </tr>
+                      <tr>
+                        <td style={styles.tableCell}>Young Children</td>
+                        <td style={styles.tableCell}>{payment.travellerDetails.youngChildren || 0}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -305,7 +359,6 @@ const Bill = () => {
               <th style={styles.tableCell}>Country</th>
               <th style={styles.tableCell}>HSN/SAC</th>
               <th style={styles.tableCell}>Qty</th>
-              <th style={styles.tableCell}>Rate (₹)</th>
               <th style={styles.tableCell}>Amount (₹)</th>
             </tr>
           </thead>
@@ -314,14 +367,11 @@ const Bill = () => {
               <td style={styles.tableCell}>1</td>
               <td style={styles.tableCell}>Visa Processing</td>
               <td style={styles.tableCell}>
-                Travel visa service for {payment.travellers} person(s)
+                Travel visa service for {payment.travellers} person(s) — {payment.travellerDetails?.adults || 0} Adult{(payment.travellerDetails?.adults || 0) > 1 ? 's' : ''}, {payment.travellerDetails?.children || 0} Child{(payment.travellerDetails?.children || 0) > 1 ? 'ren' : ''}, {payment.travellerDetails?.youngChildren || 0} Infant{(payment.travellerDetails?.youngChildren || 0) > 1 ? 's' : ''}
               </td>
               <td style={styles.tableCell}>{payment.country}</td>
               <td style={styles.tableCell}>9983</td>
               <td style={styles.tableCell}>{payment.travellers}</td>
-              <td style={styles.tableCell}>
-                {(subtotal / payment.travellers).toFixed(2)}
-              </td>
               <td style={styles.tableCell}>{subtotal.toFixed(2)}</td>
             </tr>
           </tbody>

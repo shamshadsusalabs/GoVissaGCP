@@ -23,16 +23,24 @@ import { styled } from '@mui/system';
 import { useNavigate } from 'react-router-dom';
 
 // Define types for our data
+interface TravellerDetails {
+  adults?: number;
+  children?: number;
+  youngChildren?: number;
+  total?: number;
+}
+
 interface Payment {
   _id: string;
   orderId: string;
-  amount: number;
+  amount: string | number; // Can be string from API
   currency: string;
   status: string;
   email: string;
   phone: string;
   selectedDate: string;
   travellers: number;
+  travellerDetails?: TravellerDetails;
   createdAt: number;
   paidAt?: string;
   paymentId?: string;
@@ -130,12 +138,30 @@ const BillList: React.FC = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: string | number, currency: string) => {
+    const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
-    }).format(amount / 100); // Assuming amount is in paisa
+    }).format(numericAmount); // Amount is stored in rupees, not paisa
+  };
+
+  const formatTravellers = (payment: Payment) => {
+    if (payment.travellerDetails) {
+      const parts: string[] = [];
+      if (payment.travellerDetails.adults && payment.travellerDetails.adults > 0) {
+        parts.push(`${payment.travellerDetails.adults} Adult${payment.travellerDetails.adults > 1 ? 's' : ''}`);
+      }
+      if (payment.travellerDetails.children && payment.travellerDetails.children > 0) {
+        parts.push(`${payment.travellerDetails.children} Child${payment.travellerDetails.children > 1 ? 'ren' : ''}`);
+      }
+      if (payment.travellerDetails.youngChildren && payment.travellerDetails.youngChildren > 0) {
+        parts.push(`${payment.travellerDetails.youngChildren} Infant${payment.travellerDetails.youngChildren > 1 ? 's' : ''}`);
+      }
+      return parts.length > 0 ? parts.join(', ') : `${payment.travellers} Travellers`;
+    }
+    return `${payment.travellers} Traveller${payment.travellers > 1 ? 's' : ''}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -223,7 +249,7 @@ const BillList: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>{formatDate(payment.createdAt)}</TableCell>
-                  <TableCell>{payment.travellers}</TableCell>
+                  <TableCell>{formatTravellers(payment)}</TableCell>
                   <TableCell>
                     <Button
                       variant="contained"

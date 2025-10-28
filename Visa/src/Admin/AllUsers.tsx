@@ -59,7 +59,7 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
   }
 
   const formatAmount = (amount: string) => {
-    return `₹${(parseInt(amount) / 100).toFixed(2)}`
+    return `₹${parseInt(amount).toFixed(2)}`
   }
 
   return (
@@ -313,7 +313,7 @@ const AllUsers: React.FC = () => {
   }
 
   const formatAmount = (amount: number) => {
-    return `₹${(amount / 100).toFixed(2)}`
+    return `₹${amount.toFixed(2)}`
   }
 
   // Pagination logic

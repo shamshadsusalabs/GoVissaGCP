@@ -51,6 +51,7 @@ interface VisaApplication {
   _id: string
   visaId: string
   paymentId: string
+  paymentOrderId?: string
   travellers: string
   email: string
   phone: string
@@ -108,6 +109,7 @@ export default function VisaDashboard() {
   const [newStatus, setNewStatus] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
   const [error, setError] = useState("")
+  const [selectedPaymentOrder, setSelectedPaymentOrder] = useState<any | null>(null)
 
   // Predefined status options
   const statusOptions = [
@@ -327,6 +329,18 @@ export default function VisaDashboard() {
   const handleViewDetails = (app: VisaApplication) => {
     setSelectedApp(app)
     setOpenViewDialog(true)
+    // Fetch traveller breakdown from payment order if available
+    setSelectedPaymentOrder(null)
+    if (app.paymentOrderId) {
+      fetch(`http://localhost:5000/api/payments/order/${app.paymentOrderId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success) {
+            setSelectedPaymentOrder(data.data)
+          }
+        })
+        .catch(() => {})
+    }
   }
 
   // Document download handler
@@ -823,6 +837,37 @@ export default function VisaDashboard() {
                     </div>
                   </div>
                 </div>
+
+                {/* Traveller Breakdown (from payment order) */}
+                {selectedPaymentOrder?.travellerDetails && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h4 className="font-medium text-gray-900 mb-3">Traveller Breakdown</h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="text-left py-2 px-3">Type</th>
+                            <th className="text-left py-2 px-3">Count</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b">
+                            <td className="py-2 px-3">Adults</td>
+                            <td className="py-2 px-3">{selectedPaymentOrder.travellerDetails.adults || 0}</td>
+                          </tr>
+                          <tr className="border-b">
+                            <td className="py-2 px-3">Children</td>
+                            <td className="py-2 px-3">{selectedPaymentOrder.travellerDetails.children || 0}</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-3">Young Children</td>
+                            <td className="py-2 px-3">{selectedPaymentOrder.travellerDetails.youngChildren || 0}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* Passport Information */}
                 {selectedApp.passportData && selectedApp.passportData.length > 0 && (

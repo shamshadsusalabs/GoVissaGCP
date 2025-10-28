@@ -80,7 +80,26 @@ exports.saveStep = async (req, res) => {
         visaConfig.countryDetails = stepData.countryDetails
         break
       case 3:
-        visaConfig.visaTypes = stepData.visaTypes
+        // Handle visaTypes update with preservation of existing values
+        if (stepData.visaTypes) {
+          const updatedVisaTypes = stepData.visaTypes.map((newVisaType, index) => {
+            // If there's an existing visa type at this index, preserve its values
+            const existingVisaType = visaConfig.visaTypes[index] || {}
+            
+            return {
+              // Preserve existing values, override with new ones
+              ...existingVisaType,
+              ...newVisaType,
+              // Specifically handle fee fields to preserve existing values when not provided
+              childVisaFee: newVisaType.childVisaFee !== undefined ? newVisaType.childVisaFee : existingVisaType.childVisaFee,
+              childServiceFee: newVisaType.childServiceFee !== undefined ? newVisaType.childServiceFee : existingVisaType.childServiceFee,
+              youngChildVisaFee: newVisaType.youngChildVisaFee !== undefined ? newVisaType.youngChildVisaFee : existingVisaType.youngChildVisaFee,
+              youngChildServiceFee: newVisaType.youngChildServiceFee !== undefined ? newVisaType.youngChildServiceFee : existingVisaType.youngChildServiceFee,
+            }
+          })
+          
+          visaConfig.visaTypes = updatedVisaTypes
+        }
         break
       case 4:
         visaConfig.documents = stepData.documents
@@ -321,18 +340,50 @@ exports.updateVisaSubmissionById = async (req, res) => {
   try {
     const { id } = req.params
     const { continent, countryDetails, visaTypes, documents, eligibility, rejectionReasons } = req.body
+    
+    // First, get the existing document to preserve values that aren't being updated
+    const existingVisa = await VisaSubmission.findById(id)
+    if (!existingVisa) {
+      return res.status(404).json({ success: false, message: "Visa Submission not found" })
+    }
+    
     const updatedFields = {
       continent,
       eligibility,
       lastSavedAt: new Date(),
     }
+    
     if (countryDetails) updatedFields.countryDetails = JSON.parse(countryDetails)
-    if (visaTypes) updatedFields.visaTypes = JSON.parse(visaTypes)
     if (documents) updatedFields.documents = JSON.parse(documents)
     if (rejectionReasons) updatedFields.rejectionReasons = JSON.parse(rejectionReasons)
     if (req.file) {
       updatedFields.images = [req.file.path]
     }
+    
+    // Handle visaTypes update with preservation of existing values
+    if (visaTypes) {
+      const parsedVisaTypes = JSON.parse(visaTypes)
+      
+      // Preserve existing values for fields that aren't provided in the update
+      const updatedVisaTypes = parsedVisaTypes.map((newVisaType, index) => {
+        // If there's an existing visa type at this index, preserve its values
+        const existingVisaType = existingVisa.visaTypes[index] || {}
+        
+        return {
+          // Preserve existing values, override with new ones
+          ...existingVisaType,
+          ...newVisaType,
+          // Specifically handle fee fields to preserve existing values when not provided
+          childVisaFee: newVisaType.childVisaFee !== undefined ? newVisaType.childVisaFee : existingVisaType.childVisaFee,
+          childServiceFee: newVisaType.childServiceFee !== undefined ? newVisaType.childServiceFee : existingVisaType.childServiceFee,
+          youngChildVisaFee: newVisaType.youngChildVisaFee !== undefined ? newVisaType.youngChildVisaFee : existingVisaType.youngChildVisaFee,
+          youngChildServiceFee: newVisaType.youngChildServiceFee !== undefined ? newVisaType.youngChildServiceFee : existingVisaType.youngChildServiceFee,
+        }
+      })
+      
+      updatedFields.visaTypes = updatedVisaTypes
+    }
+    
     const updatedVisa = await VisaSubmission.findByIdAndUpdate(id, updatedFields, {
       new: true,
       runValidators: true,
@@ -529,15 +580,44 @@ exports.updateVisaSubmission = async (req, res) => {
   try {
     const { continent, countryDetails, visaTypes, documents, eligibility, rejectionReasons } = req.body;
 
+    // First, get the existing document to preserve values that aren't being updated
+    const existingVisa = await VisaSubmission.findById(req.params.id);
+    if (!existingVisa) {
+      return res.status(404).json({ message: 'Visa submission not found' });
+    }
+
     // Upload new files if provided
     const newImageUrls = req.files?.map(file => file.path) || [];
+
+    // Handle visaTypes update with preservation of existing values
+    let updatedVisaTypes = existingVisa.visaTypes;
+    if (visaTypes) {
+      const parsedVisaTypes = JSON.parse(visaTypes);
+      
+      // Preserve existing values for fields that aren't provided in the update
+      updatedVisaTypes = parsedVisaTypes.map((newVisaType, index) => {
+        // If there's an existing visa type at this index, preserve its values
+        const existingVisaType = existingVisa.visaTypes[index] || {};
+        
+        return {
+          // Preserve existing values, override with new ones
+          ...existingVisaType,
+          ...newVisaType,
+          // Specifically handle fee fields to preserve existing values when not provided
+          childVisaFee: newVisaType.childVisaFee !== undefined ? newVisaType.childVisaFee : existingVisaType.childVisaFee,
+          childServiceFee: newVisaType.childServiceFee !== undefined ? newVisaType.childServiceFee : existingVisaType.childServiceFee,
+          youngChildVisaFee: newVisaType.youngChildVisaFee !== undefined ? newVisaType.youngChildVisaFee : existingVisaType.youngChildVisaFee,
+          youngChildServiceFee: newVisaType.youngChildServiceFee !== undefined ? newVisaType.youngChildServiceFee : existingVisaType.youngChildServiceFee,
+        }
+      });
+    }
 
     const updatedSubmission = await VisaSubmission.findByIdAndUpdate(
       req.params.id,
       {
         continent,
         countryDetails,
-        visaTypes,
+        visaTypes: updatedVisaTypes,
         documents,
         eligibility,
         rejectionReasons,

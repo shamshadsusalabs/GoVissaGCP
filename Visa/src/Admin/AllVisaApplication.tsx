@@ -1339,7 +1339,7 @@ const AllVisaApplication: React.FC = () => {
                   Amount Details
                 </label>
                 <div className="bg-gray-100 p-2 rounded space-y-1">
-                  <p className="text-sm text-gray-900">Final Amount: ₹{(parseInt(selectedPayment.amount) / 100).toFixed(2)}</p>
+                  <p className="text-sm text-gray-900">Final Amount: ₹{parseInt(selectedPayment.amount).toFixed(2)}</p>
                   {selectedPayment.originalAmount && (
                     <p className="text-sm text-gray-900">Original Amount: ₹{selectedPayment.originalAmount}</p>
                   )}
@@ -1493,7 +1493,7 @@ const AllVisaApplication: React.FC = () => {
                         {payment.paymentType}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ₹{(parseInt(payment.amount) / 100).toFixed(2)}
+                        ₹{parseInt(payment.amount).toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div>
