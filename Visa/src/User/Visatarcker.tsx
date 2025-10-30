@@ -31,6 +31,26 @@ const VisaStatusTracker = () => {
         );
         const data = await response.json();
         
+        // Fallback: If no statusHistory returned, try to resolve by searching all applications
+        let statusHistory: ApiStatus[] = Array.isArray(data?.statusHistory) ? data.statusHistory : [];
+
+        if (!statusHistory.length) {
+          try {
+            const allRes = await fetch('http://localhost:5000/api/VisaApplication/GetAll');
+            const allData = await allRes.json();
+            const apps = Array.isArray(allData?.data) ? allData.data : [];
+            // Match by any of paymentId, paymentOrderId (which can be an orderId for cash), or _id
+            const matched = apps.find((app: any) =>
+              app.paymentId === paymentId || app.paymentOrderId === paymentId || app._id === paymentId
+            );
+            if (matched && Array.isArray(matched.statusHistory)) {
+              statusHistory = matched.statusHistory;
+            }
+          } catch (_) {
+            // ignore fallback errors; we'll show no data state below
+          }
+        }
+        
         // Define all possible visa steps in order (excluding terminal states)
         const allPossibleSteps = [
           'pending',
@@ -40,18 +60,18 @@ const VisaStatusTracker = () => {
         ];
 
         // Transform API data to our format
-        const completedSteps = data.statusHistory.map(
+        const completedSteps: StatusStep[] = statusHistory.map(
           (step: ApiStatus, index: number) => ({
             id: index + 1,
             name: step.label,
-            status: 'completed' as const,
+            status: 'completed',
             date: new Date(step.date).toLocaleDateString('en-CA'),
             rejectionReason: step.rejectionReason
           })
         );
 
         // Get the current status
-        const completedStepNames = data.statusHistory.map((step: ApiStatus) => step.label);
+        const completedStepNames = statusHistory.map((step: ApiStatus) => step.label);
         const currentStatus = completedStepNames[completedStepNames.length - 1];
 
         // Check if visa is approved or rejected (terminal states)

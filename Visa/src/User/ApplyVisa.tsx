@@ -51,6 +51,17 @@ type PaymentWithStatus = Payment & {
 
 const columnHelper = createColumnHelper<PaymentWithStatus>()
 
+// ✅ Helper function to handle both seconds and milliseconds timestamps
+const formatTimestamp = (timestamp: number): string => {
+  // If timestamp has more than 10 digits, it's already in milliseconds
+  const milliseconds = timestamp.toString().length > 10 ? timestamp : timestamp * 1000
+  return new Date(milliseconds).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+}
+
 export default function PaymentHistory() {
   const navigate = useNavigate()
   const [data, setData] = useState<PaymentWithStatus[]>([])
@@ -60,12 +71,13 @@ export default function PaymentHistory() {
   const [statusLoading, setStatusLoading] = useState<{ [key: string]: boolean }>({})
 
   // Function to check document status for a payment
-  const checkDocumentStatus = async (paymentId: string) => {
-    if (!paymentId) return false
+  // ✅ Updated to accept paymentIdentifier (can be paymentId OR orderId)
+  const checkDocumentStatus = async (paymentIdentifier: string) => {
+    if (!paymentIdentifier) return false
 
     try {
-      setStatusLoading((prev) => ({ ...prev, [paymentId]: true }))
-      const response = await fetch(`http://localhost:5000/api/VisaApplication/getbyPaymentID/${paymentId}`)
+      setStatusLoading((prev) => ({ ...prev, [paymentIdentifier]: true }))
+      const response = await fetch(`http://localhost:5000/api/VisaApplication/getbyPaymentID/${paymentIdentifier}`)
 
       // Handle 404 as "no documents uploaded" instead of error
       if (response.status === 404) {
@@ -83,7 +95,7 @@ export default function PaymentHistory() {
       // Return false instead of throwing error to prevent UI breaking
       return false
     } finally {
-      setStatusLoading((prev) => ({ ...prev, [paymentId]: false }))
+      setStatusLoading((prev) => ({ ...prev, [paymentIdentifier]: false }))
     }
   }
 
@@ -160,11 +172,7 @@ export default function PaymentHistory() {
       header: "Date",
       cell: (info) => (
         <span className="text-gray-600">
-          {new Date(info.getValue() * 1000).toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          })}
+          {formatTimestamp(info.getValue())}
         </span>
       ),
     }),
@@ -193,7 +201,10 @@ export default function PaymentHistory() {
         if (payment.hasDocumentsUploaded) {
           return (
             <button
-              onClick={() => navigate(`/user-dashboard/Visatarcker/${payment.paymentId}`)}
+              onClick={() => {
+                const paymentIdentifier = payment.paymentId || payment.orderId
+                navigate(`/user-dashboard/Visatarcker/${paymentIdentifier}`)
+              }}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               Check Status
@@ -242,8 +253,11 @@ export default function PaymentHistory() {
           <div className="flex flex-col gap-1">
             <button
               onClick={() => {
+                // ✅ For cash/offline payments, use orderId instead of paymentId
+                const paymentIdentifier = payment.paymentId || payment.orderId || 'Offline'
+                
                 // Build URL with promo code data if available
-                let uploadUrl = `/user-dashboard/upload-documents/${payment.visaId}/${payment.travellers}/${payment.paymentId}/${payment.country}`
+                let uploadUrl = `/user-dashboard/upload-documents/${payment.visaId}/${payment.travellers}/${paymentIdentifier}/${payment.country}` 
                 
                 // Add promo code data to URL if available
                 if (payment.promoCode || payment.promoCodeId || payment.discountAmount || payment.originalAmount) {
@@ -252,7 +266,7 @@ export default function PaymentHistory() {
                   if (payment.promoCodeId) promoParams.set('promoCodeId', payment.promoCodeId)
                   if (payment.discountAmount) promoParams.set('discountAmount', payment.discountAmount.toString())
                   if (payment.originalAmount) promoParams.set('originalAmount', payment.originalAmount)
-                  uploadUrl += `?${promoParams.toString()}`
+                  uploadUrl += `?${promoParams.toString()}` 
                 }
                 
                 console.log("🚀 Navigating to upload documents with URL:", uploadUrl)
@@ -288,10 +302,12 @@ export default function PaymentHistory() {
       const result = await response.json()
 
       // Check document status for each payment
+      // ✅ Use paymentId if available, otherwise use orderId for cash/offline payments
       const paymentsWithStatus = await Promise.all(
         result.map(async (payment: Payment) => {
-          if (payment.paymentId) {
-            const hasDocuments = await checkDocumentStatus(payment.paymentId)
+          const paymentIdentifier = payment.paymentId || payment.orderId
+          if (paymentIdentifier) {
+            const hasDocuments = await checkDocumentStatus(paymentIdentifier)
             return { ...payment, hasDocumentsUploaded: hasDocuments }
           }
           return { ...payment, hasDocumentsUploaded: false }
@@ -467,11 +483,7 @@ export default function PaymentHistory() {
               </div>
               
               <div className="text-xs text-gray-500">
-                {new Date(payment.createdAt * 1000).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
+                {formatTimestamp(payment.createdAt)}
               </div>
               
               <div className="pt-2 border-t">
@@ -481,7 +493,10 @@ export default function PaymentHistory() {
                   </div>
                 ) : payment.hasDocumentsUploaded ? (
                   <button
-                    onClick={() => navigate(`/user-dashboard/Visatarcker/${payment.paymentId}`)}
+                    onClick={() => {
+                      const paymentIdentifier = payment.paymentId || payment.orderId || 'Offline'
+                      navigate(`/user-dashboard/Visatarcker/${paymentIdentifier}`)
+                    }}
                     className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
                   >
                     Check Status
@@ -511,7 +526,9 @@ export default function PaymentHistory() {
                   <div className="text-center">
                     <button
                       onClick={() => {
-                        let uploadUrl = `/user-dashboard/upload-documents/${payment.visaId}/${payment.travellers}/${payment.paymentId}/${payment.country}`
+                        // ✅ For cash/offline payments, use orderId instead of paymentId
+                        const paymentIdentifier = payment.paymentId || payment.orderId || 'Offline'
+                        let uploadUrl = `/user-dashboard/upload-documents/${payment.visaId}/${payment.travellers}/${paymentIdentifier}/${payment.country}`
                         if (payment.promoCode || payment.promoCodeId || payment.discountAmount || payment.originalAmount) {
                           const promoParams = new URLSearchParams()
                           if (payment.promoCode) promoParams.set('promoCode', payment.promoCode)

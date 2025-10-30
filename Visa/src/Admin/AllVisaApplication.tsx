@@ -103,6 +103,13 @@ const AllVisaApplication: React.FC = () => {
   const [paymentVisaDetails, setPaymentVisaDetails] = useState<any>(null)
   const [paymentOrders, setPaymentOrders] = useState<any[]>([]) // Store payment orders for traveller details
 
+  // Helper function to handle both seconds and milliseconds timestamps
+  const formatTimestamp = (timestamp: number): string => {
+    // If timestamp has more than 10 digits, it's already in milliseconds
+    const milliseconds = timestamp.toString().length > 10 ? timestamp : timestamp * 1000
+    return new Date(milliseconds).toLocaleDateString()
+  }
+
   // Predefined status options
   const statusOptions = [
     { value: "pending", label: "Pending" },
@@ -222,7 +229,11 @@ const AllVisaApplication: React.FC = () => {
 
   // ✅ NEW: Get traveller details from payment order using paymentOrderId
   const getTravellerDetails = (paymentOrderId: string) => {
-    const paymentOrder = paymentOrders.find(order => order._id === paymentOrderId)
+    // Some applications store paymentOrderId as the payment order's _id (online),
+    // others store it as orderId (cash/offline). Match against both.
+    const paymentOrder = paymentOrders.find(order => 
+      order._id === paymentOrderId || order.orderId === paymentOrderId
+    )
     if (paymentOrder && paymentOrder.travellerDetails) {
       return paymentOrder.travellerDetails
     }
@@ -307,7 +318,9 @@ const AllVisaApplication: React.FC = () => {
   const getTravelDate = (application: VisaApplication) => {
     // First try to get travel date from payment order using paymentOrderId
     if (application.paymentOrderId) {
-      const paymentOrder = paymentOrders.find(order => order._id === application.paymentOrderId)
+      const paymentOrder = paymentOrders.find(order => 
+        order._id === application.paymentOrderId || order.orderId === application.paymentOrderId
+      )
       if (paymentOrder && paymentOrder.selectedDate) {
         // Format the selectedDate to a readable format
         const travelDate = new Date(paymentOrder.selectedDate)
@@ -392,7 +405,7 @@ const AllVisaApplication: React.FC = () => {
           
           // Get promo code and payment details from payment order
           const paymentOrder = application.paymentOrderId ? 
-            paymentOrders.find(order => order._id === application.paymentOrderId) : null
+            paymentOrders.find(order => order._id === application.paymentOrderId || order.orderId === application.paymentOrderId) : null
           
           const promoCode = paymentOrder?.promoCode || ''
           
@@ -1507,7 +1520,7 @@ const AllVisaApplication: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(payment.createdAt * 1000).toLocaleDateString()}
+                        {formatTimestamp(payment.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
