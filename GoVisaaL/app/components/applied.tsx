@@ -45,7 +45,7 @@ export default function AppliedScreen() {
         throw new Error("Phone number not found")
       }
 
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/by-phone/${phoneNumber}`, {
+      const response = await fetch(`http://localhost:5000/api/VisaApplication/by-phone/${phoneNumber}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

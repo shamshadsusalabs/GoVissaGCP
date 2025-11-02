@@ -194,6 +194,121 @@ const AllPayments: React.FC = () => {
     setShowModal(true);
   };
 
+  const exportToExcel = () => {
+    try {
+      // Create CSV headers
+      const headers = [
+        'Order ID',
+        'Payment ID',
+        'Payment Type',
+        'Status',
+        'Amount',
+        'Original Amount',
+        'Discount',
+        'Promo Code',
+        'Country',
+        'Customer Email',
+        'Customer Phone',
+        'Total Travellers',
+        'Adults',
+        'Children',
+        'Infants',
+        'Travel Date',
+        'Payment Method',
+        'Processing Mode',
+        'Created Date',
+        'Paid Date',
+        'Admin Approved',
+        'Approved By',
+        'Approval Date',
+        'Approval Notes',
+        'Corporate Name',
+        'Cash Receipt Number',
+        'Collected By'
+      ];
+
+      // Create CSV rows
+      const rows = filteredPayments.map((payment) => {
+        const travelDate = payment.selectedDate 
+          ? new Date(payment.selectedDate).toLocaleDateString('en-IN')
+          : '';
+        
+        const createdDate = new Date(payment.createdAt).toLocaleDateString('en-IN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const paidDate = payment.paidAt 
+          ? new Date(payment.paidAt).toLocaleDateString('en-IN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : '';
+
+        const approvalDate = payment.adminApproval?.approvedAt
+          ? new Date(payment.adminApproval.approvedAt).toLocaleDateString('en-IN', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            })
+          : '';
+
+        return [
+          `"${payment.orderId}"`,
+          `"${payment.paymentId || ''}"`,
+          `"${payment.paymentType}"`,
+          `"${payment.status}"`,
+          `"${payment.amount}"`,
+          `"${payment.originalAmount || ''}"`,
+          `"${payment.discountAmount || '0'}"`,
+          `"${payment.promoCode || ''}"`,
+          `"${payment.country || ''}"`,
+          `"${payment.email || ''}"`,
+          `"${payment.phone || ''}"`,
+          `"${payment.travellerDetails?.total || payment.travellers || 0}"`,
+          `"${payment.travellerDetails?.adults || 0}"`,
+          `"${payment.travellerDetails?.children || 0}"`,
+          `"${payment.travellerDetails?.infants || 0}"`,
+          `"${travelDate}"`,
+          `"${payment.paymentMethod}"`,
+          `"${payment.processingMode || ''}"`,
+          `"${createdDate}"`,
+          `"${paidDate}"`,
+          `"${payment.adminApproval?.isApproved ? 'Yes' : 'No'}"`,
+          `"${payment.adminApproval?.approvedBy || ''}"`,
+          `"${approvalDate}"`,
+          `"${payment.adminApproval?.notes || ''}"`,
+          `"${payment.payLaterDetails?.corporateName || ''}"`,
+          `"${payment.cashDetails?.receiptNumber || ''}"`,
+          `"${payment.cashDetails?.collectedBy || ''}"`
+        ].join(',');
+      });
+
+      // Combine headers and rows
+      const csvContent = [headers.join(','), ...rows].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `payments_export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export data. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -350,7 +465,10 @@ const AllPayments: React.FC = () => {
           </div>
 
           {/* Export Button */}
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center">
+          <button 
+            onClick={exportToExcel}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+          >
             <FiDownload className="mr-2" />
             Export
           </button>

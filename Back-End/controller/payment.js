@@ -17,12 +17,6 @@ exports.createOrder = async (req, res) => {
     ? travellerDetails.total
     : travellers
 
-  // ✅ Console log for debugging
-  console.log("🎯 Received payment data:")
-  console.log("- travellers (raw):", travellers)
-  console.log("- travellerDetails:", travellerDetails)
-  console.log("- travellers (computed):", computedTravellers)
-
   const options = {
     amount: amount * 100, // Convert rupees to paise for Razorpay
     currency: "INR",
@@ -65,9 +59,6 @@ exports.createOrder = async (req, res) => {
       discountAmount,
       originalAmount
     })
-    
-    // ✅ Console log saved data
-    console.log("💾 Saving payment order with travellerDetails:", newOrder.travellerDetails)
 
     await newOrder.save()
     res.status(200).json(order)
@@ -84,10 +75,6 @@ exports.createCashOrder = async (req, res) => {
     const computedTravellers = (travellerDetails && typeof travellerDetails.total === "number")
       ? travellerDetails.total
       : travellers
-    
-    // ✅ Console log for debugging
-    console.log("🎯 Cash payment - travellerDetails:", travellerDetails)
-    console.log("🎯 Cash payment - travellers (computed):", computedTravellers)
 
     const newOrder = new PaymentOrder({
       orderId: `cash_${Date.now()}`,
@@ -132,10 +119,6 @@ exports.createPayLaterOrder = async (req, res) => {
     const computedTravellers = (travellerDetails && typeof travellerDetails.total === "number")
       ? travellerDetails.total
       : travellers
-    
-    // ✅ Console log for debugging
-    console.log("🎯 Pay Later - travellerDetails:", travellerDetails)
-    console.log("🎯 Pay Later - travellers (computed):", computedTravellers)
 
     const newOrder = new PaymentOrder({
       orderId: `paylater_${Date.now()}`,
@@ -201,6 +184,10 @@ exports.approvePayment = async (req, res) => {
         approvedAt: new Date(),
         isApproved: true
       }
+    } else if (paymentType === "offline") {
+      // ✅ NEW: Handle offline payment approval
+      order.status = "paid"
+      order.paymentId = `offline_${Date.now()}`
     }
 
     order.adminApproval = {

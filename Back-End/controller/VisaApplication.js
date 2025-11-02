@@ -3,10 +3,6 @@ const PaymentOrder = require('../shcema/Payment');
 
 const createVisaApplication = async (req, res) => {
   try {
-    console.log('🚀 [VISA APPLICATION] Starting visa application creation...');
-    console.log('📦 [REQUEST BODY]:', JSON.stringify(req.body, null, 2));
-    console.log('📁 [FILES COUNT]:', req.files ? req.files.length : 0);
-    
     const {
       visaId,
       travellers,
@@ -20,20 +16,6 @@ const createVisaApplication = async (req, res) => {
       promoCodeId, // ✅ Promo code ID
       paymentOrderId, // ✅ Payment Order ID
     } = req.body
-    
-    console.log('✅ [EXTRACTED DATA]:', {
-      visaId,
-      travellers,
-      email,
-      country,
-      phone,
-      paymentId,
-      processingMode,
-      employeeId,
-      promoCode,
-      promoCodeId,
-      paymentOrderId
-    });
 
     // ✅ Fetch promo code data from payment order using paymentId
     let promoCodeData = {
@@ -46,10 +28,8 @@ const createVisaApplication = async (req, res) => {
 
     if (paymentId) {
       try {
-        console.log('🔍 [PAYMENT SEARCH] Searching for payment order with paymentId:', paymentId);
         const paymentOrder = await PaymentOrder.findOne({ paymentId: paymentId });
         if (paymentOrder) {
-          console.log('✅ [PAYMENT FOUND]:', paymentOrder._id);
           paymentOrderMongoId = paymentOrder._id; // ✅ Get the MongoDB _id
           promoCodeData = {
             promoCode: paymentOrder.promoCode,
@@ -57,9 +37,6 @@ const createVisaApplication = async (req, res) => {
             discountAmount: paymentOrder.discountAmount || 0,
             originalAmount: paymentOrder.originalAmount
           };
-          console.log('💰 [PROMO DATA]:', promoCodeData);
-        } else {
-          console.log('❌ [PAYMENT NOT FOUND] No payment order found for paymentId:', paymentId);
         }
       } catch (error) {
         console.error('⚠️ [PAYMENT SEARCH ERROR]:', error.message);
@@ -73,7 +50,6 @@ const createVisaApplication = async (req, res) => {
     const finalOriginalAmount = promoCodeData.originalAmount;
 
     // Parse passportData (should be an array of objects)
-    console.log('📄 [PASSPORT DATA] Raw passportData:', req.body.passportData);
     let passportData = []
     if (req.body.passportData) {
       try {
@@ -83,7 +59,6 @@ const createVisaApplication = async (req, res) => {
         if (!Array.isArray(passportData)) {
           passportData = [passportData]
         }
-        console.log('✅ [PASSPORT DATA PARSED]:', passportData.length, 'entries');
       } catch (err) {
         console.error('⚠️ [PASSPORT PARSE ERROR]:', err.message);
         passportData = []
@@ -91,27 +66,19 @@ const createVisaApplication = async (req, res) => {
     }
 
     // Parse documentsMetadata (for naming uploaded files)
-    console.log('📋 [DOCUMENTS METADATA] Raw:', req.body.documentsMetadata);
     const documentsMetadata = JSON.parse(req.body.documentsMetadata || "[]")
-    console.log('📋 [DOCUMENTS METADATA PARSED]:', documentsMetadata.length, 'travellers');
-
-    console.log('📂 [PROCESSING FILES]...');
     const documents = {}
     if (req.files && req.files.length > 0) {
-      console.log(`📎 [FILES] Processing ${req.files.length} files...`);
       for (const file of req.files) {
-        console.log('📎 [FILE]:', file.fieldname, '→', file.originalname);
         // Expected format: documents[<travellerIndex>][<docId>][front/back]
         const match = file.fieldname.match(/^documents\[(\d+)\]\[(.+?)\]\[(front|back)\]$/)
         if (!match) {
-          console.log('⚠️ [FILE SKIP] Field name does not match expected pattern:', file.fieldname);
           continue
         }
 
         const travellerIndex = match[1]
         const docId = match[2]
         const side = match[3] // 'front' or 'back'
-        console.log(`  → Traveller: ${travellerIndex}, Doc: ${docId}, Side: ${side}`);
 
         // Find metadata for this traveller and document
         const travellerMeta = documentsMetadata.find((m) => m.travellerIndex === Number.parseInt(travellerIndex))
@@ -128,15 +95,10 @@ const createVisaApplication = async (req, res) => {
           url: file.path,
           fileName,
         }
-        console.log(`  ✅ Added to documents[${documentKey}][${side}]`);
       }
-      console.log('✅ [FILES PROCESSED] Total document keys:', Object.keys(documents).length);
-    } else {
-      console.log('⚠️ [NO FILES] No files uploaded');
     }
 
     // Create new visa application with new fields
-    console.log('💾 [CREATING APPLICATION]...');
     const applicationData = {
       visaId,
       travellers,
@@ -155,13 +117,8 @@ const createVisaApplication = async (req, res) => {
       paymentOrderId: paymentOrderMongoId || paymentOrderId, // ✅ Use MongoDB _id if found, fallback to original
     };
     
-    console.log('📝 [APPLICATION DATA]:', JSON.stringify(applicationData, null, 2));
-    
     const visaApplication = new VisaApplication(applicationData);
-    
-    console.log('💾 [SAVING TO DATABASE]...');
     const savedVisaApplication = await visaApplication.save();
-    console.log('✅ [SAVED] Application ID:', savedVisaApplication._id);
 
     res.status(201).json({
       message: "Visa application created successfully.",
@@ -340,8 +297,6 @@ const getVisaStatusByPaymentId = async (req, res) => {
       return res.status(400).json({ error: 'Payment ID is required in params.' });
     }
 
-    console.log('🔍 [GET STATUS] Fetching status for paymentId:', paymentId);
-
     // ✅ Works for both online paymentId and cash orderId
     const visa = await VisaApplication.findOne({ paymentId })
       .select('statusHistory')
@@ -349,11 +304,8 @@ const getVisaStatusByPaymentId = async (req, res) => {
       .exec();
 
     if (!visa) {
-      console.log('❌ [GET STATUS] Visa application not found for paymentId:', paymentId);
       return res.status(404).json({ error: 'Visa application not found.' });
     }
-
-    console.log('✅ [GET STATUS] Found visa application with', visa.statusHistory?.length || 0, 'status entries');
 
     res.status(200).json({
       message: `Status history for payment ID ${paymentId} fetched successfully.`,
@@ -394,13 +346,9 @@ const getVisaStatusById = async (req, res) => {
 const getPaymentByPaymentId = async (req, res) => {
   try {
     const { paymentId } = req.params;
-    
-    console.log('🔍 [CHECK DOCUMENT] Checking if documents exist for paymentId:', paymentId);
 
     // ✅ Check if visa application exists with this paymentId (works for both online and cash/orderId)
     const exists = await VisaApplication.exists({ paymentId });
-    
-    console.log('📋 [CHECK DOCUMENT] Document exists:', !!exists);
 
     if (exists) {
       return res.status(200).json({ success: true });
@@ -408,7 +356,6 @@ const getPaymentByPaymentId = async (req, res) => {
       return res.status(404).json({ success: false});
     }
   } catch (err) {
-    console.error('❌ [CHECK DOCUMENT ERROR]:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 };

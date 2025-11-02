@@ -37,13 +37,8 @@ exports.sendOtp = async (req, res) => {
   )}&senderId=KEHTRV&routeId=8&mobileNos=${phoneNumber}&smsContentType=english&entityid=1701175213872191155&tmid=1002408235216785541&templateid=1707175767888508970`;
 
   try {
-    console.log("🔗 SMS API URL:", url);
-    
     const response = await fetch(url);
     const result = await response.json();
-
-    console.log("✅ SMS API Response:", result);
-    console.log("📲 OTP Sent to: +91" + phoneNumber, "OTP:", otp);
 
     // Check if the response indicates success
     if (result.responseCode === '3001') {
@@ -101,8 +96,6 @@ exports.verifyOtp = async (req, res) => {
   // OTP is valid
   delete otpStore[phoneNumber]; // Clear OTP from store
 
-  console.log("✅ OTP verified for:", phoneNumber);
-
   // Attach phoneNumber to request and call login/signup
   req.body.phoneNumber = phoneNumber;
   return exports.loginOrSignupWithPhone(req, res);
@@ -110,7 +103,6 @@ exports.verifyOtp = async (req, res) => {
 
 exports.loginOrSignupWithPhone = async (req, res) => {
   const phoneNumber = req.body?.phoneNumber;
-  console.log("➡️ Logging in with phone number:", phoneNumber);
 
   if (!phoneNumber) {
     return res.status(400).json({ message: "Phone number is required" });
@@ -122,7 +114,6 @@ exports.loginOrSignupWithPhone = async (req, res) => {
     if (!user) {
       user = new User({ phoneNumber });
       await user.save();
-      console.log("🆕 New user created:", user);
     }
 
     const accessToken = generateAccessToken(user._id);
@@ -241,8 +232,6 @@ exports.sendEmailOtp = async (req, res) => {
   try {
     await transporter.sendMail(mailOptions);
 
-    console.log("✅ Email OTP Sent to:", email, "OTP:", otp);
-
     emailOtpStore[email] = {
       otp,
       expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
@@ -282,8 +271,6 @@ exports.verifyEmailOtp = async (req, res) => {
   // Email OTP is valid
   delete emailOtpStore[email]; // Clear OTP from store
 
-  console.log("✅ Email OTP verified for:", email);
-
   // Just return success - frontend will handle user profile update
   return res.status(200).json({
     message: "Email OTP verified successfully",
@@ -316,8 +303,6 @@ exports.registerEmailForUser = async (req, res) => {
     user.email = email;
     await user.save();
 
-    console.log("✅ Email registered for existing user:", user);
-
     return res.status(200).json({
       message: "Email registered successfully",
       user,
@@ -333,7 +318,6 @@ exports.registerEmailForUser = async (req, res) => {
 
 exports.loginOrSignupWithEmail = async (req, res) => {
   const email = req.body?.email;
-  console.log("➡️ Logging in with email:", email);
 
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
@@ -347,9 +331,6 @@ exports.loginOrSignupWithEmail = async (req, res) => {
       // If no user found by email, create new user with email
       user = new User({ email });
       await user.save();
-      console.log("🆕 New user created with email:", user);
-    } else {
-      console.log("✅ Existing user found with email:", user);
     }
 
     const accessToken = generateAccessToken(user._id);
@@ -377,11 +358,8 @@ exports.loginOrSignupWithEmail = async (req, res) => {
 // ✅ NEW: Get all users with visa and payment statistics
 exports.getAllUsersWithStats = async (req, res) => {
   try {
-    console.log("📊 Fetching all users with visa and payment statistics...");
-
     // Get all users
     const users = await User.find({}).select('-refreshToken').lean();
-    console.log(`Found ${users.length} users`);
 
     // Import required models
     const VisaApplication = require("../shcema/VisaApplication");
@@ -474,8 +452,6 @@ exports.getAllUsersWithStats = async (req, res) => {
 
     // Sort users by total visa count (descending)
     usersWithStats.sort((a, b) => b.visaCount - a.visaCount);
-
-    console.log(`✅ Successfully processed ${usersWithStats.length} users with statistics`);
 
     return res.status(200).json({
       message: "Users with statistics fetched successfully",
@@ -603,7 +579,6 @@ exports.sendSuccessEmail = async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log('✅ Success email sent successfully to:', email);
 
     res.status(200).json({
       success: true,
