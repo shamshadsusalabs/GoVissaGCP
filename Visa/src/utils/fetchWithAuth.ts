@@ -35,5 +35,44 @@ window.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Re
 
   const modifiedInit: RequestInit = { ...init, headers };
 
-  return originalFetch(input, modifiedInit);
+  const response = await originalFetch(input, modifiedInit);
+
+  // ✅ NEW: Handle authentication errors globally
+  if (response.status === 401 || response.status === 403) {
+    const responseClone = response.clone();
+    try {
+      const errorData = await responseClone.json();
+      if (errorData.message && (errorData.message.includes('expired') || errorData.message.includes('Invalid'))) {
+        console.warn('🚨 Token expired or invalid, logging out...');
+        
+        // Determine which login page to redirect to BEFORE clearing localStorage
+        const currentPath = window.location.pathname;
+        const hasAdminId = localStorage.getItem('adminId');
+        const hasEmployee = localStorage.getItem('employee');
+        const hasManager = localStorage.getItem('manager');
+        const hasUser = localStorage.getItem('user');
+        
+        // Clear localStorage
+        localStorage.clear();
+        
+        // Redirect based on user type
+        if (currentPath.includes('/dashboard') || currentPath.includes('/admin') || hasAdminId) {
+          window.location.href = '/admin/login';
+        } else if (currentPath.includes('/employee') || hasEmployee) {
+          window.location.href = '/employee';
+        } else if (currentPath.includes('/manager') || hasManager) {
+          window.location.href = '/manager';
+        } else if (currentPath.includes('/user') || hasUser) {
+          window.location.href = '/auth';
+        } else {
+          // Default fallback to home page
+          window.location.href = '/';
+        }
+      }
+    } catch (e) {
+      // If response is not JSON, ignore
+    }
+  }
+
+  return response;
 }) as typeof window.fetch;

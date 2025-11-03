@@ -2,7 +2,7 @@ require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
 const generateAccessToken = (adminId) => {
-  return jwt.sign({ id: adminId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
+  return jwt.sign({ id: adminId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '24h' }); // 24 hours
 };
 
 const generateRefreshToken = (adminId) => {

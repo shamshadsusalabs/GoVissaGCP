@@ -64,7 +64,7 @@ const BillList: React.FC = () => {
       const { phoneNumber, accessToken } = await getUserData()
 
       const response = await fetch(
-        `http://localhost:5000/api/payments/by-phone/${phoneNumber}`,
+        `https://govisaa-872569311567.asia-south2.run.app/api/payments/by-phone/${phoneNumber}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
