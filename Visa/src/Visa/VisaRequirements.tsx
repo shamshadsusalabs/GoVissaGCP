@@ -72,7 +72,7 @@ const VisaRequirements = () => {
         await new Promise(resolve => setTimeout(resolve, 800));
         
         const response = await fetch(
-          `http://localhost:5000/api/configurations/country-details/${countryId}`
+          `https://govisaa-872569311567.asia-south2.run.app/api/configurations/country-details/${countryId}`
         );
 
         if (!response.ok) {

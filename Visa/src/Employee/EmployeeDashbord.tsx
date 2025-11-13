@@ -36,7 +36,7 @@ export default function EmployeeDashboard() {
           return
         }
 
-        const response = await fetch(`http://localhost:5000/api/employee/points/${employeeId}`)
+        const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/points/${employeeId}`)
 
         if (response.ok) {
           const data: EmployeeData = await response.json()

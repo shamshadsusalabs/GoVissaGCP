@@ -27,7 +27,7 @@ const Header = ({ onSearch }: HeaderProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <span className="inline-block animate-pulse">✓</span> 99.2% visas on time
+          {/* <span className="inline-block animate-pulse">✓</span> 99.2% visas on time */}
         </motion.p>
         <motion.h2 
           className="text-4xl md:text-5xl font-bold leading-tight mb-6"

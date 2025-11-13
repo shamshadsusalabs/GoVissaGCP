@@ -1,12 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiDownload, FiEye, FiCreditCard, FiDollarSign } from 'react-icons/fi';
 
+interface TravellerDetails {
+  adults?: number;
+  children?: number;
+  youngChildren?: number;
+  youngChild?: number; // fallback name
+  infants?: number;
+  total?: number;
+}
+
+interface AdminApproval {
+  isApproved: boolean;
+  approvedBy?: string;
+  approvedAt?: string | number | Date | null;
+  notes?: string;
+}
+
+interface PayLaterDetails {
+  corporateName?: string;
+  corporateEmail?: string;
+  isApproved?: boolean;
+}
+
+interface CashDetails {
+  collectedBy?: string;
+  receiptNumber?: string;
+}
+
 interface PaymentOrder {
   _id: string;
   orderId: string;
   paymentId?: string;
   amount: string;
-  currency: string;
+  currency?: string;
   status: string;
   receipt?: string;
   signature?: string;
@@ -14,38 +41,21 @@ interface PaymentOrder {
   country?: string;
   email?: string;
   phone?: string;
-  selectedDate?: Date;
+  selectedDate?: string | number | Date | null;
   travellers?: number;
-  travellerDetails?: {
-    adults: number;
-    children: number;
-    infants: number;
-    total: number;
-  };
+  travellerDetails?: TravellerDetails;
   paymentType: string;
-  paymentMethod: string;
+  paymentMethod?: string;
   processingMode?: string;
-  promoCode?: string;
+  promoCode?: string | null;
   discountAmount?: number;
   originalAmount?: string;
-  createdAt: string;
-  updatedAt: string;
-  paidAt?: Date;
-  adminApproval?: {
-    isApproved: boolean;
-    approvedBy?: string;
-    approvedAt?: Date;
-    notes?: string;
-  };
-  payLaterDetails?: {
-    corporateName?: string;
-    corporateEmail?: string;
-    isApproved: boolean;
-  };
-  cashDetails?: {
-    collectedBy?: string;
-    receiptNumber?: string;
-  };
+  createdAt?: string | number | Date | null;
+  updatedAt?: string;
+  paidAt?: string | number | Date | null;
+  adminApproval?: AdminApproval | null;
+  payLaterDetails?: PayLaterDetails | null;
+  cashDetails?: CashDetails | null;
 }
 
 const AllPayments: React.FC = () => {
@@ -81,12 +91,12 @@ const AllPayments: React.FC = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/payments/getAll');
-      
+      const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/payments/getAll');
+
       if (!response.ok) {
         throw new Error(`Failed to fetch payments: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
       setPayments(result.data || []);
     } catch (err) {
@@ -101,12 +111,12 @@ const AllPayments: React.FC = () => {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(payment => 
-        payment.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.phone?.includes(searchTerm) ||
-        payment.country?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.paymentId?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter((payment) =>
+        (payment.orderId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.phone || '').toString().includes(searchTerm) ||
+        (payment.country || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.paymentId || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -125,7 +135,10 @@ const AllPayments: React.FC = () => {
 
   const calculateStats = () => {
     const totalPayments = payments.length;
-    const totalAmount = payments.reduce((sum, payment) => sum + parseFloat(payment.amount || '0'), 0);
+    const totalAmount = payments.reduce((sum, payment) => {
+      const n = parseFloat(payment.amount || '0');
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
     const onlinePayments = payments.filter(p => p.paymentType === 'online').length;
     const offlinePayments = payments.filter(p => p.paymentType !== 'online').length;
     const pendingApprovals = payments.filter(p => p.status === 'pending_approval').length;
@@ -142,7 +155,7 @@ const AllPayments: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusColors = {
+    const statusColors: Record<string, string> = {
       'created': 'bg-blue-100 text-blue-800',
       'paid': 'bg-green-100 text-green-800',
       'captured': 'bg-green-100 text-green-800',
@@ -154,14 +167,14 @@ const AllPayments: React.FC = () => {
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
         {status.replace('_', ' ').toUpperCase()}
       </span>
     );
   };
 
-  const getPaymentTypeBadge = (type: string) => {
-    const typeColors = {
+  const getPaymentTypeBadge = (type?: string) => {
+    const typeColors: Record<string, string> = {
       'online': 'bg-blue-100 text-blue-800',
       'offline': 'bg-orange-100 text-orange-800',
       'cash': 'bg-green-100 text-green-800',
@@ -169,14 +182,36 @@ const AllPayments: React.FC = () => {
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeColors[type as keyof typeof typeColors] || 'bg-gray-100 text-gray-800'}`}>
-        {type.toUpperCase()}
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${type && typeColors[type] ? typeColors[type] : 'bg-gray-100 text-gray-800'}`}>
+        {(type || '').toUpperCase()}
       </span>
     );
   };
 
-  const formatDate = (dateString: string | Date) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
+  // === Date helpers (handle seconds, milliseconds, ISO strings, Date objects) ===
+  const parseDateValue = (val?: string | number | Date | null): Date | null => {
+    if (val === null || val === undefined || val === '') return null;
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+
+    // If it's numeric-like string or number
+    const n = Number(val);
+    if (!isNaN(n)) {
+      const s = n.toString();
+      // 10-digit -> seconds
+      if (s.length === 10) return new Date(n * 1000);
+      // else assume milliseconds or large numeric representation
+      return new Date(n);
+    }
+
+    // fallback to Date parse from string
+    const d = new Date(String(val));
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const formatDate = (dateString?: string | number | Date | null) => {
+    const d = parseDateValue(dateString);
+    if (!d) return '';
+    return d.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -185,8 +220,22 @@ const AllPayments: React.FC = () => {
     });
   };
 
-  const formatAmount = (amount: string) => {
-    return `₹${parseFloat(amount).toLocaleString('en-IN')}`;
+  const formatDateForExport = (val?: string | number | Date | null) => {
+    const d = parseDateValue(val);
+    if (!d) return '';
+    return d.toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatAmount = (amount?: string | number) => {
+    const n = typeof amount === 'number' ? amount : parseFloat(String(amount || '0'));
+    if (isNaN(n)) return '₹0';
+    return `₹${n.toLocaleString('en-IN')}`;
   };
 
   const openPaymentModal = (payment: PaymentOrder) => {
@@ -194,9 +243,10 @@ const AllPayments: React.FC = () => {
     setShowModal(true);
   };
 
+  // === CSV Export with traveller details (INFANTS column REMOVED) ===
   const exportToExcel = () => {
     try {
-      // Create CSV headers
+      // Create CSV headers (Infants column removed)
       const headers = [
         'Order ID',
         'Payment ID',
@@ -212,7 +262,7 @@ const AllPayments: React.FC = () => {
         'Total Travellers',
         'Adults',
         'Children',
-        'Infants',
+        'Young Children',
         'Travel Date',
         'Payment Method',
         'Processing Mode',
@@ -227,73 +277,53 @@ const AllPayments: React.FC = () => {
         'Collected By'
       ];
 
-      // Create CSV rows
       const rows = filteredPayments.map((payment) => {
-        const travelDate = payment.selectedDate 
-          ? new Date(payment.selectedDate).toLocaleDateString('en-IN')
-          : '';
-        
-        const createdDate = new Date(payment.createdAt).toLocaleDateString('en-IN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
+        const travelDate = formatDateForExport(payment.selectedDate);
+        const createdDate = formatDateForExport(payment.createdAt);
+        const paidDate = formatDateForExport(payment.paidAt);
+        const approvalDate = formatDateForExport(payment.adminApproval?.approvedAt);
 
-        const paidDate = payment.paidAt 
-          ? new Date(payment.paidAt).toLocaleDateString('en-IN', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          : '';
+        const totalTravellers = payment.travellerDetails?.total ?? payment.travellers ?? 0;
+        const adults = payment.travellerDetails?.adults ?? 0;
+        const children = payment.travellerDetails?.children ?? 0;
+        // handle variants youngChildren / youngChild
+        const youngChildren = payment.travellerDetails?.youngChildren ?? payment.travellerDetails?.youngChild ?? 0;
 
-        const approvalDate = payment.adminApproval?.approvedAt
-          ? new Date(payment.adminApproval.approvedAt).toLocaleDateString('en-IN', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit'
-            })
-          : '';
+        const row = [
+          payment.orderId ?? '',
+          payment.paymentId ?? '',
+          payment.paymentType ?? '',
+          payment.status ?? '',
+          payment.amount ?? '',
+          payment.originalAmount ?? '',
+          payment.discountAmount ?? 0,
+          payment.promoCode ?? '',
+          payment.country ?? '',
+          payment.email ?? '',
+          payment.phone ?? '',
+          totalTravellers,
+          adults,
+          children,
+          youngChildren,
+          travelDate,
+          payment.paymentMethod ?? '',
+          payment.processingMode ?? '',
+          createdDate,
+          paidDate,
+          payment.adminApproval?.isApproved ? 'Yes' : 'No',
+          payment.adminApproval?.approvedBy ?? '',
+          approvalDate,
+          payment.adminApproval?.notes ?? '',
+          payment.payLaterDetails?.corporateName ?? '',
+          payment.cashDetails?.receiptNumber ?? '',
+          payment.cashDetails?.collectedBy ?? ''
+        ];
 
-        return [
-          `"${payment.orderId}"`,
-          `"${payment.paymentId || ''}"`,
-          `"${payment.paymentType}"`,
-          `"${payment.status}"`,
-          `"${payment.amount}"`,
-          `"${payment.originalAmount || ''}"`,
-          `"${payment.discountAmount || '0'}"`,
-          `"${payment.promoCode || ''}"`,
-          `"${payment.country || ''}"`,
-          `"${payment.email || ''}"`,
-          `"${payment.phone || ''}"`,
-          `"${payment.travellerDetails?.total || payment.travellers || 0}"`,
-          `"${payment.travellerDetails?.adults || 0}"`,
-          `"${payment.travellerDetails?.children || 0}"`,
-          `"${payment.travellerDetails?.infants || 0}"`,
-          `"${travelDate}"`,
-          `"${payment.paymentMethod}"`,
-          `"${payment.processingMode || ''}"`,
-          `"${createdDate}"`,
-          `"${paidDate}"`,
-          `"${payment.adminApproval?.isApproved ? 'Yes' : 'No'}"`,
-          `"${payment.adminApproval?.approvedBy || ''}"`,
-          `"${approvalDate}"`,
-          `"${payment.adminApproval?.notes || ''}"`,
-          `"${payment.payLaterDetails?.corporateName || ''}"`,
-          `"${payment.cashDetails?.receiptNumber || ''}"`,
-          `"${payment.cashDetails?.collectedBy || ''}"`
-        ].join(',');
+        // Quote each cell and escape internal quotes
+        return row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',');
       });
 
-      // Combine headers and rows
       const csvContent = [headers.join(','), ...rows].join('\n');
-
-      // Create and download file
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -303,8 +333,8 @@ const AllPayments: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error) {
-      console.error('Export error:', error);
+    } catch (err) {
+      console.error('Export error:', err);
       alert('Failed to export data. Please try again.');
     }
   };
@@ -323,7 +353,7 @@ const AllPayments: React.FC = () => {
         <div className="text-red-600 text-center">
           <p className="text-xl font-semibold">Error Loading Payments</p>
           <p className="mt-2">{error}</p>
-          <button 
+          <button
             onClick={fetchPayments}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
@@ -359,7 +389,7 @@ const AllPayments: React.FC = () => {
             <FiDollarSign className="h-8 w-8 text-green-600" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-600">Total Amount</p>
-              <p className="text-2xl font-bold text-gray-900">{formatAmount(stats.totalAmount.toString())}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatAmount(stats.totalAmount)}</p>
             </div>
           </div>
         </div>
@@ -465,7 +495,7 @@ const AllPayments: React.FC = () => {
           </div>
 
           {/* Export Button */}
-          <button 
+          <button
             onClick={exportToExcel}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
           >
@@ -518,7 +548,7 @@ const AllPayments: React.FC = () => {
                         </div>
                       )}
                       <div className="text-sm text-gray-500">
-                        {payment.country} • {payment.travellers || payment.travellerDetails?.total || 0} travellers
+                        {payment.country} • {payment.travellers ?? payment.travellerDetails?.total ?? 0} travellers
                       </div>
                     </div>
                   </td>
@@ -639,10 +669,10 @@ const AllPayments: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Traveller Details</label>
                     <p className="mt-1 text-sm text-gray-900">
-                      Total: {selectedPayment.travellerDetails.total} 
-                      (Adults: {selectedPayment.travellerDetails.adults}, 
-                      Children: {selectedPayment.travellerDetails.children}, 
-                      Infants: {selectedPayment.travellerDetails.infants})
+                      Total: {selectedPayment.travellerDetails.total ?? selectedPayment.travellers ?? 0} {' '}
+                      (Adults: {selectedPayment.travellerDetails.adults ?? 0}, {' '}
+                      Children: {selectedPayment.travellerDetails.children ?? 0}, {' '}
+                      Young Children: {selectedPayment.travellerDetails.youngChildren ?? selectedPayment.travellerDetails.youngChild ?? 0})
                     </p>
                   </div>
                 )}

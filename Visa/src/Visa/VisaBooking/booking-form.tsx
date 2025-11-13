@@ -116,7 +116,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setOtpLoading(true)
     setOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/send-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -147,7 +147,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setOtpLoading(true)
     setOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/verify-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,7 +215,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // ✅ NEW: Send success email after both OTPs are verified
   const sendSuccessEmail = async (paymentStatus?: string) => {
     try {
-      const response = await fetch("http://localhost:5000/api/User/send-success-email", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/send-success-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -247,7 +247,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setEmailOtpLoading(true)
     setEmailOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/send-email-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/send-email-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -286,7 +286,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         currentUser = JSON.parse(existingUser)
       }
 
-      const response = await fetch("http://localhost:5000/api/User/verify-email-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/verify-email-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -305,7 +305,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         // If user was already logged in with phone, update their profile with email
         if (currentUser && currentUser._id && !currentUser.email) {
           try {
-            const updateResponse = await fetch("http://localhost:5000/api/User/register-email", {
+            const updateResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/register-email", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -373,7 +373,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const amountInRupees = Math.round(finalAmount); const amountInPaise = Math.round(finalAmount * 100)
 
       if (appliedPromoCode) {
-        await fetch("http://localhost:5000/api/promocode/incrementUsage", {
+        await fetch("https://govisaa-872569311567.asia-south2.run.app/api/promocode/incrementUsage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -384,7 +384,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         })
       }
 
-      const response = await fetch("http://localhost:5000/api/payments/create-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -432,7 +432,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         handler: async (response: any) => {
           try {
             const verifyResponse = await fetch(
-              "http://localhost:5000/api/payments/verify-payment",
+              "https://govisaa-872569311567.asia-south2.run.app/api/payments/verify-payment",
               {
                 method: "POST",
                 headers: {
@@ -518,7 +518,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const amountInRupees = Math.round(finalAmount)
 
       if (appliedPromoCode) {
-        await fetch("http://localhost:5000/api/promocode/incrementUsage", {
+        await fetch("https://govisaa-872569311567.asia-south2.run.app/api/promocode/incrementUsage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -529,7 +529,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         })
       }
 
-      const response = await fetch("http://localhost:5000/api/payments/create-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -608,7 +608,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const finalAmount = originalAmount - discountAmount
       const amountInRupees = Math.round(finalAmount)
 
-      const response = await fetch("http://localhost:5000/api/payments/create-cash-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-cash-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -675,7 +675,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const finalAmount = originalAmount - discountAmount
       const amountInRupees = Math.round(finalAmount)
 
-      const response = await fetch("http://localhost:5000/api/payments/create-paylater-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-paylater-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

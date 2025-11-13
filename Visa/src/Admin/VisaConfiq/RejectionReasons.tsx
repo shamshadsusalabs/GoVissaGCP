@@ -32,7 +32,7 @@ const RejectionReasons: React.FC<RejectionReasonsProps> = ({ reasons, updateReas
   const fetchTemplates = async () => {
     setLoadingTemplates(true)
     try {
-      const response = await fetch("http://localhost:5000/api/configurations/first-five-rejections")
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/first-five-rejections")
       if (!response.ok) {
         throw new Error("Failed to fetch templates")
       }

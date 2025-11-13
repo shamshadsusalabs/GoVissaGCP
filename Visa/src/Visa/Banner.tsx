@@ -12,7 +12,7 @@ const Banner = () => {
       try {
         setLoading(true);
         const res = await fetch(
-          `http://localhost:5000/api/configurations/visa/images/${id}`
+          `https://govisaa-872569311567.asia-south2.run.app/api/configurations/visa/images/${id}`
         );
         const data = await res.json();
         if (!data.success || !data.images?.length) throw new Error("No image");

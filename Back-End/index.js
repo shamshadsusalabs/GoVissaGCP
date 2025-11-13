@@ -27,7 +27,9 @@ const app = express();
 const allowedOrigins = [
    'https://govisaa-83693.web.app',
    'http://localhost:5173',
-   'http://localhost:3000'
+   'http://localhost:3000',
+   'https://visaafy.com'
+   
 ];
 
 app.use(cors({
