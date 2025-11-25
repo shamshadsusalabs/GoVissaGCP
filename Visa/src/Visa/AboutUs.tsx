@@ -2,14 +2,14 @@ const AboutUs = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">About Govisaa</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">About visaafy</h1>
       </div>
 
       <div className="bg-white rounded-xl shadow-lg p-8 sm:p-10 lg:p-12">
         <div className="prose prose-lg max-w-none text-gray-600">
           <div className="mb-12">
             <p className="mb-6">
-              At Govisaa, we are committed to simplifying global travel through fast, secure, and reliable visa services. Whether you're applying for a tourist, business, or student visa, our expert team ensures a seamless process from start to finish.
+              At visaafy, we are committed to simplifying global travel through fast, secure, and reliable visa services. Whether you're applying for a tourist, business, or student visa, our expert team ensures a seamless process from start to finish.
             </p>
             <p className="mb-6">
               With a presence across multiple countries and a customer-first approach, we make visa applications transparent, hassle-free, and tailored to your travel needs.
@@ -52,7 +52,7 @@ const AboutUs = () => {
                 </svg>
                 Customer Care
               </h3>
-              <p className="text-gray-600">Email: <a href="mailto:support@govisaa.com" className="text-blue-600 hover:underline">support@govisaa.com</a></p>
+              <p className="text-gray-600">Email: <a href="mailto:support@Visaafy.com" className="text-blue-600 hover:underline">support@Visaafy.com</a></p>
             </div>
           </div>
         </div>

@@ -30,11 +30,11 @@ exports.sendOtp = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const message = `[GoVisa] Dear User, Your One-Time Password (OTP) is ${otp}. This code is valid for 10 minutes. For security reasons, please do not share this OTP with anyone. KEHAR TRAVEL SERVICES PRIVATE LIMITED`;
+  const message = `VISAAFY User , Your One-Time Password (OTP) is ${otp}.This OTP is valid for 10 minutes. For security reasons, please do not share this OTP with anyone. Kehar Travels.`;
 
   const url = `https://msg.icloudsms.com/rest/services/sendSMS/sendGroupSms?AUTH_KEY=${authKey}&message=${encodeURIComponent(
     message
-  )}&senderId=KEHTRV&routeId=8&mobileNos=${phoneNumber}&smsContentType=english&entityid=1701175213872191155&tmid=1002408235216785541&templateid=1707175767888508970`;
+  )}&senderId=KEHTRV&routeId=8&mobileNos=${phoneNumber}&smsContentType=english&entityid=1701175213872191155&tmid=1002408235216785541&templateid=1707176355246713455`;
 
   try {
     const response = await fetch(url);

@@ -265,7 +265,7 @@ const Bill = () => {
         {/* Header with logo */}
         <header style={styles.header}>
           <div style={styles.logoContainer}>
-            <img src={GovisaaLogo} alt="Govisaa Logo" style={styles.logo} />
+            <img src={GovisaaLogo} alt="Visaafy Logo" style={styles.logo} />
           </div>
           <div style={styles.headerRight}>
             <h1 style={styles.invoiceTitle}>TAX INVOICE</h1>
@@ -357,7 +357,7 @@ const Bill = () => {
               <th style={styles.tableCell}>Service</th>
               <th style={styles.tableCell}>Description</th>
               <th style={styles.tableCell}>Country</th>
-              <th style={styles.tableCell}>HSN/SAC</th>
+              {/* <th style={styles.tableCell}>HSN/SAC</th> */}
               <th style={styles.tableCell}>Qty</th>
               <th style={styles.tableCell}>Amount (₹)</th>
             </tr>
@@ -370,7 +370,7 @@ const Bill = () => {
                 Travel visa service for {payment.travellers} person(s) — {payment.travellerDetails?.adults || 0} Adult{(payment.travellerDetails?.adults || 0) > 1 ? 's' : ''}, {payment.travellerDetails?.children || 0} Child{(payment.travellerDetails?.children || 0) > 1 ? 'ren' : ''}, {payment.travellerDetails?.youngChildren || 0} Infant{(payment.travellerDetails?.youngChildren || 0) > 1 ? 's' : ''}
               </td>
               <td style={styles.tableCell}>{payment.country}</td>
-              <td style={styles.tableCell}>9983</td>
+              {/* <td style={styles.tableCell}>9983</td> */}
               <td style={styles.tableCell}>{payment.travellers}</td>
               <td style={styles.tableCell}>{subtotal.toFixed(2)}</td>
             </tr>
@@ -417,7 +417,7 @@ const Bill = () => {
           <div style={styles.footerText}>
             <p>GSTIN: 06AACCK3779PZZU | Registration Valid From: 15/02/2022</p>
             <p style={{ marginTop: '8px' }}>
-              Thank you for choosing Govisaa - Your Gateway to the World!
+              Thank you for choosing Visaafy - Your Gateway to the World!
             </p>
           </div>
         </footer>

@@ -90,7 +90,7 @@ const Login = () => {
         </Box>
 
         <Typography variant="h4" component="h1" align="center" sx={{ mb: 3, fontWeight: "bold", color: "#1976d2" }}>
-          Login to GoVisaa
+          Login to Visaafy
         </Typography>
 
         <Collapse in={!!error}>

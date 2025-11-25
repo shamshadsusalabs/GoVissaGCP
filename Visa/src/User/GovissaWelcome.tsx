@@ -9,7 +9,7 @@ const GovissaWelcome = () => {
       <div className="flex items-center justify-center mb-6">
         {/* <RiVisaLine className="text-6xl text-blue-600 mr-3" /> */}
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Govissa
+         Visaafy
         </h1>
       </div>
       

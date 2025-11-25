@@ -55,7 +55,7 @@ const LoginPage = () => {
             </svg>
           </div>
           <h2 className="text-3xl font-extrabold text-gray-900">
-            GoVisaa  Admin
+            Visaafy  Admin
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Enter your credentials to access the admin dashboard

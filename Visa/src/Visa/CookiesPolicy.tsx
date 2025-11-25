@@ -13,7 +13,7 @@ const CookiesPolicy = () => {
           <div className="mb-12">
             <h2 className="text-2xl font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">1. What Are Cookies</h2>
             <p className="mb-6">
-              Cookies are small text files placed on your device when you visit <span className="font-bold text-blue-600">GoVisaa</span>. They help us:
+              Cookies are small text files placed on your device when you visit <span className="font-bold text-blue-600">Visaafy</span>. They help us:
             </p>
             <div className="grid md:grid-cols-3 gap-6 mb-6">
               {[

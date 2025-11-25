@@ -45,7 +45,14 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="font-bold text-gray-900 mb-4 text-lg">Services</h4>
             <ul className="space-y-3">
-              {['Visa Processing', 'Immigration Consultation', 'Document Verification', 'Travel Insurance', 'Flight Booking', 'Hotel Reservation'].map((item) => (
+              {[
+                'Visa Processing',
+                'Immigration Consultation',
+                'Document Verification',
+                'Travel Insurance',
+                'Flight Booking',
+                'Hotel Reservation'
+              ].map((item) => (
                 <li key={item} className="hover:text-gray-900 transition-colors cursor-pointer">
                   {item}
                 </li>
@@ -67,12 +74,17 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-200 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+        {/* Powered By */}
+        <div className="text-center text-gray-600 text-sm mt-10">
+          Powered by <span className="font-semibold text-gray-800">Kehar Travel Services Pvt. Ltd.</span>
+        </div>
+
+        <div className="border-t border-gray-200 mt-6 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-gray-500 text-sm mb-4 md:mb-0">
-            © {new Date().getFullYear()} GoVisaa. All rights reserved.
+            © {new Date().getFullYear()} Visaafy. All rights reserved.
           </div>
           <div className="flex gap-6">
-             <Link to="/about" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">
+            <Link to="/about" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">
               About Us
             </Link>
             <Link to="/PrivacyPolicy" className="text-gray-500 hover:text-gray-900 text-sm transition-colors">

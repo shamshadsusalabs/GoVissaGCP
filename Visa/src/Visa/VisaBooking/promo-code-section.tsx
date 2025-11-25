@@ -104,6 +104,8 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
         setPromoCodeError("This promo code has reached its usage limit")
         return
       }
+
+      // Welcome promo logic
       if (promoCode.code.toUpperCase().includes("WELCOME")) {
         const userExists = await checkUserExists(phoneNumber)
         if (userExists) {
@@ -137,12 +139,6 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
     setPromoCodeError("")
   }
 
-  const getPromoCodeDisplayText = (code: PromoCode) => {
-    const discountText =
-      code.discountType === "percentage" ? `${code.discountValue}% OFF` : `₹${code.discountValue} OFF`
-    return `${code.code} - ${discountText}`
-  }
-
   const getAvailablePromoCodes = () => {
     return promoCodes.filter((code) => {
       if (!code.isActive) return false
@@ -158,12 +154,14 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
   return (
     <div className="space-y-4">
       <h5 className="font-bold text-xl text-gray-800">Promo Code</h5>
+
       {!appliedPromoCode ? (
         <div className="space-y-4">
           <div>
             <label htmlFor="promo-code-select" className="block text-sm font-medium text-gray-700 mb-2">
               Select Promo Code
             </label>
+
             <div className="relative">
               <select
                 id="promo-code-select"
@@ -172,22 +170,26 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
                 className="w-full p-3 border border-gray-300 rounded-lg appearance-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 bg-white text-gray-800 text-sm sm:text-base transition-all duration-200"
               >
                 <option value="">Choose a promo code</option>
+
                 {getAvailablePromoCodes().map((code) => (
                   <option key={code._id} value={code.code}>
-                    {getPromoCodeDisplayText(code)}
+                    {code.code}  {/* Only promo code name */}
                   </option>
                 ))}
               </select>
+
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </div>
+
             {getAvailablePromoCodes().length === 0 && (
               <p className="text-sm text-gray-500 mt-2">No promo codes available at the moment</p>
             )}
           </div>
+
           <button
             type="button"
             onClick={handleApplyPromoCode}
@@ -196,10 +198,16 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
           >
             {promoCodeLoading ? "Applying..." : "Apply Promo Code"}
           </button>
+
           {!phoneNumber && (
-            <p className="text-xs text-orange-600 font-medium mt-2">Please enter phone number to apply promo codes</p>
+            <p className="text-xs text-orange-600 font-medium mt-2">
+              Please enter phone number to apply promo codes
+            </p>
           )}
-          {promoCodeError && <div className="text-red-500 text-sm font-medium mt-2">{promoCodeError}</div>}
+
+          {promoCodeError && (
+            <div className="text-red-500 text-sm font-medium mt-2">{promoCodeError}</div>
+          )}
         </div>
       ) : (
         <div className="bg-green-50 p-4 sm:p-5 rounded-xl border border-green-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -211,6 +219,7 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
             </p>
             <p className="text-sm text-green-700 font-semibold mt-1">You saved ₹{discountAmount.toFixed(2)}</p>
           </div>
+
           <button
             type="button"
             onClick={handleRemovePromoCode}
@@ -224,4 +233,4 @@ const PromoCodeSection: React.FC<PromoCodeSectionProps> = ({
   )
 }
 
-export default PromoCodeSection;
+export default PromoCodeSection

@@ -48,7 +48,7 @@ const UserLayout: React.FC = () => {
         <div className="p-4">
           <img
             src="/logo.jpeg"
-            alt="GoVisaa Logo"
+            alt="Visaafy Logo"
             className="h-12 w-auto object-contain rounded"
           />
         </div>
@@ -133,7 +133,7 @@ const UserLayout: React.FC = () => {
         {/* Top Navbar */}
         <header className="bg-white shadow">
           <div className="flex items-center justify-between p-4">
-            <h2 className="text-xl font-semibold text-gray-800">GoVisaa Dashboard</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Visaafy Dashboard</h2>
             <div className="flex items-center space-x-4">
               <span className="text-gray-600">Welcome, {userName ? (userName.includes('@') ? userName.split('@')[0] : userName) : 'User'}</span>
               <LogOut

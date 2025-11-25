@@ -7,7 +7,7 @@ const AtlysNews: React.FC = () => {
     <section className="bg-gray-50 py-20 px-6">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-5xl font-bold text-center text-gray-900 mb-16 tracking-tight">
-          GoVisaa in the News
+          Visaafy in the News
         </h2>
 
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 justify-items-center">

@@ -9,8 +9,8 @@ export default function DetailsNavbar() {
         <Link to="/" className="flex items-center">
           <img
             src="/logo.jpeg"
-            alt="GoVisaa Logo"
-            className="max-h-12 object-contain"
+            alt="Visaafy Logo"
+            className="max-h-16 object-contain"
           />
         </Link>
 

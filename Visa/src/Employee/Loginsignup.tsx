@@ -55,10 +55,10 @@ const Login = () => {
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-100 to-blue-100 p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
         <div className="flex justify-center mb-6">
-          <img src="/logo.jpeg" alt="GoVisaa Logo" className="w-30 h-auto" />
+          <img src="/logo.jpeg" alt="Visaafy Logo" className="w-30 h-auto" />
         </div>
 
-        <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">Login to GoVisaa</h1>
+        <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">Login to Visaafy</h1>
 
         {error && (
           <div

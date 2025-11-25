@@ -54,8 +54,8 @@ export default function Navbar() {
         <Link to="/">
           <img
             src="/logo.jpeg"
-            alt="GoVisaa Logo"
-            className="h-16 w-auto object-contain rounded"
+            alt="Visaafy Logo"
+            className="h-18 w-auto object-contain rounded"
           />
         </Link>
 

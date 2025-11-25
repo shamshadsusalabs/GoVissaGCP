@@ -30,12 +30,12 @@ const Header = ({ onSearch }: HeaderProps) => {
           {/* <span className="inline-block animate-pulse">✓</span> 99.2% visas on time */}
         </motion.p>
         <motion.h2 
-          className="text-4xl md:text-5xl font-bold leading-tight mb-6"
+          className="text-4xl md:text-5xl font-bold leading-tight mb-6 text-black"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          Get Your Visa <span className="text-[#F9D85E]">On Time</span> with GoVisaa
+          Get Your Visa <span className="text-[#F9D85E]">On Time</span> with Visaafy
         </motion.h2>
         <motion.p 
           className="text-lg text-blue-500 max-w-2xl"
