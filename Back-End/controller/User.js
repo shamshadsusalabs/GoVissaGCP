@@ -199,16 +199,16 @@ exports.sendEmailOtp = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const message = `Your GoVissa OTP is ${otp}. Please do not share it with anyone. This OTP will expire in 5 minutes.`;
+  const message = `Your Visaafy OTP is ${otp}. Please do not share it with anyone. This OTP will expire in 5 minutes.`;
 
   const mailOptions = {
     from: process.env.EMAIL_USER || 'shamshadalamansari2@gmail.com',
     to: email,
-    subject: 'GoVissa - Email Verification OTP',
+    subject: 'Visaafy - Email Verification OTP',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px 10px 0 0;">
-          <h1 style="margin: 0; text-align: center;">GoVissa</h1>
+          <h1 style="margin: 0; text-align: center;">Visaafy</h1>
           <p style="margin: 10px 0 0 0; text-align: center; opacity: 0.9;">Email Verification</p>
         </div>
         <div style="background: white; padding: 30px; border: 1px solid #e0e0e0; border-radius: 0 0 10px 10px;">
@@ -530,7 +530,7 @@ exports.sendSuccessEmail = async (req, res) => {
     }
 
     // Email template for success notification
-    const emailSubject = "🎉 Login Verification Successful - GoVissa";
+    const emailSubject = "🎉 Login Verification Successful - Visaafy";
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -560,7 +560,7 @@ exports.sendSuccessEmail = async (req, res) => {
 
           <div style="text-align: center; margin-top: 30px;">
             <p style="color: #6b7280; font-size: 14px;">
-              Thank you for choosing GoVissa for your visa services!
+              Thank you for choosing Visaafy for your visa services!
             </p>
             <p style="color: #6b7280; font-size: 12px; margin-top: 15px;">
               If you have any questions, please contact our support team.
