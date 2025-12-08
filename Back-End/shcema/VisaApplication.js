@@ -73,7 +73,10 @@ const visaApplicationSchema = new mongoose.Schema(
         address: { type: String },
       },
     ],
-
+  isFinalSubmit: {
+      type: Boolean,
+      default: false,
+    },
     statusHistory: {
       type: [statusSchema],
       default: [],

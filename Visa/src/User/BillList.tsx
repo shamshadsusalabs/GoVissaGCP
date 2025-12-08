@@ -82,7 +82,7 @@ const BillList: React.FC = () => {
       try {
         setLoading(true);
         const phoneNumber = getPhoneNumber();
-        const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/payments/by-phone/${phoneNumber}`);
+        const response = await fetch(`http://localhost:5000/api/payments/by-phone/${phoneNumber}`);
         if (!response.ok) {
           throw new Error('Failed to fetch payments');
         }

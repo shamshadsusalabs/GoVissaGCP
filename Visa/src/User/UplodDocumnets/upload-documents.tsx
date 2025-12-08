@@ -2,7 +2,7 @@
 
 import { useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { Users, FileText, CheckCircle, Clock, ArrowRight } from "lucide-react"
+import { Users, FileText, CheckCircle, Clock, ArrowRight, Loader2 } from "lucide-react" // 👈 Loader2 add
 import DocumentUploader from "./document-uploader"
 import DocumentReview from "./document-review"
 import ProcessingModeModal from "./processing-mode-modal"
@@ -14,55 +14,211 @@ export default function UploadDocuments() {
   const travellersCount = Number.parseInt(params?.travellers as string) || 1
   const paymentId = params?.paymentId as string
   const country = params?.country as string
-  
-  // ✅ NOTE: Promo code data will be automatically fetched by backend from payment order using paymentId
 
   const [documents, setDocuments] = useState<Document[]>([])
   const [currentStep, setCurrentStep] = useState(0)
   const [currentTraveller, setCurrentTraveller] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+  const [currentSide, setCurrentSide] = useState<"front" | "back">("front")
 
-  // New state for processing mode
+  const [isLoading, setIsLoading] = useState(true)
+  const [isInitializingProgress, setIsInitializingProgress] = useState(true)
+
+  // ⭐ Next button ke liye step save loader
+  const [isSavingStep, setIsSavingStep] = useState(false)
+
+  // Processing mode
   const [showProcessingModal, setShowProcessingModal] = useState(true)
   const [processingMode, setProcessingMode] = useState<"online" | "offline" | null>(null)
   const [employeeId, setEmployeeId] = useState<string>("")
 
-  // Store data for all travellers
+  // All travellers data
   const [travellersData, setTravellersData] = useState<TravellerData[]>(
     Array.from({ length: travellersCount }, (_, index) => ({
       travellerIndex: index,
       uploadedFiles: {},
       ocrData: null,
       ocrError: null,
-      passportDataSaved: false, // ✅ Add this to track if passport data is saved
+      passportDataSaved: false,
     })),
   )
 
   const [showReview, setShowReview] = useState(false)
-  const [currentSide, setCurrentSide] = useState<"front" | "back">("front")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
 
-  // Get current traveller's data
+  // Current traveller data
   const currentTravellerData = travellersData[currentTraveller]
 
-  // Handle processing mode selection
+  // 👉 processing mode select hone ke baad
   const handleProcessingModeSelect = (mode: "online" | "offline", empId?: string) => {
     setProcessingMode(mode)
     setEmployeeId(empId || "")
     setShowProcessingModal(false)
   }
 
+  const updateCurrentTravellerData = (updates: Partial<TravellerData>) => {
+    setTravellersData((prev) =>
+      prev.map((traveller, index) => (index === currentTraveller ? { ...traveller, ...updates } : traveller)),
+    )
+  }
+
+  // ============================
+  //   EXISTING APPLICATION LOAD
+  // ============================
+  const hydrateFromExistingApplication = (app: any, docsWithSides: Document[]) => {
+    if (!app) return
+
+    // 1) processing mode restore
+    if (app.processingMode) {
+      setProcessingMode(app.processingMode)
+      setShowProcessingModal(false)
+    }
+    if (app.employeeId) {
+      setEmployeeId(app.employeeId)
+    }
+
+    const newTravellers: TravellerData[] = Array.from({ length: travellersCount }, (_, index) => ({
+      travellerIndex: index,
+      uploadedFiles: {},
+      ocrData: null,
+      ocrError: null,
+      passportDataSaved: false,
+    }))
+
+    // 2) documents -> uploadedFiles + preview
+    const docsFromDb = app.documents || {}
+
+    Object.entries(docsFromDb).forEach(([key, value]) => {
+      // key format: "0_<docId>"
+      const [idxStr, ...docIdParts] = key.split("_")
+      const travellerIndex = Number.parseInt(idxStr)
+      const docId = docIdParts.join("_")
+
+      if (Number.isNaN(travellerIndex) || travellerIndex < 0 || travellerIndex >= travellersCount) return
+
+      const sides: any = value
+      const fileEntry: any = {}
+
+      if (sides.front?.url) {
+        // 👇 DB se aaya URL => preview ke liye use kar rahe hain
+        fileEntry.frontPreview = sides.front.url
+      }
+      if (sides.back?.url) {
+        fileEntry.backPreview = sides.back.url
+      }
+
+      if (Object.keys(fileEntry).length > 0) {
+        newTravellers[travellerIndex].uploadedFiles[docId] = fileEntry
+      }
+    })
+
+    // 3) passportData -> ocrData
+    const passportDataArr = app.passportData || []
+    passportDataArr.forEach((p: any) => {
+      const travellerIndex = p.travellerIndex ?? 0
+      if (travellerIndex < 0 || travellerIndex >= travellersCount) return
+
+      const { travellerIndex: _ti, ...restPassport } = p
+
+      const pd: PassportData = {
+        passport_number: restPassport.passport_number || "",
+        surname: restPassport.surname || "",
+        given_names: restPassport.given_names || "",
+        date_of_birth: restPassport.date_of_birth || "",
+        date_of_issue: restPassport.date_of_issue || "",
+        date_of_expiry: restPassport.date_of_expiry || "",
+        place_of_birth: restPassport.place_of_birth || "",
+        place_of_issue: restPassport.place_of_issue || "",
+        nationality: restPassport.nationality || "",
+        sex: restPassport.sex || "",
+        father_name: restPassport.father_name || "",
+        mother_name: restPassport.mother_name || "",
+        spouse_name: restPassport.spouse_name || "",
+        address: restPassport.address || "",
+        file_number: restPassport.file_number || "",
+      }
+
+      newTravellers[travellerIndex].ocrData = {
+        success: true,
+        filename: "",
+        data: pd,
+        timestamp: app.updatedAt || new Date().toISOString(),
+      }
+      newTravellers[travellerIndex].passportDataSaved = true
+    })
+
+    setTravellersData(newTravellers)
+
+    // 4) find next step (first incomplete doc/side)
+    let nextTravellerIndex = 0
+    let nextStep = 0
+    let nextSide: "front" | "back" = "front"
+    let allComplete = true
+
+    outer: for (let t = 0; t < travellersCount; t++) {
+      for (let d = 0; d < docsWithSides.length; d++) {
+        const doc = docsWithSides[d]
+        const files = newTravellers[t].uploadedFiles[doc.id] || {}
+        const hasFront = !!files.front || !!files.frontPreview
+        const hasBack = !!files.back || !!files.backPreview
+
+        if (doc.requiresBothSides) {
+          if (!hasFront) {
+            nextTravellerIndex = t
+            nextStep = d
+            nextSide = "front"
+            allComplete = false
+            break outer
+          }
+          if (!hasBack) {
+            nextTravellerIndex = t
+            nextStep = d
+            nextSide = "back"
+            allComplete = false
+            break outer
+          }
+        } else {
+          if (!hasFront) {
+            nextTravellerIndex = t
+            nextStep = d
+            nextSide = "front"
+            allComplete = false
+            break outer
+          }
+        }
+      }
+    }
+
+    if (allComplete) {
+      // sab done hai -> direct review
+      setCurrentTraveller(travellersCount - 1)
+      setCurrentStep(docsWithSides.length - 1)
+      setCurrentSide(docsWithSides[docsWithSides.length - 1].requiresBothSides ? "back" : "front")
+      setShowReview(true)
+    } else {
+      setCurrentTraveller(nextTravellerIndex)
+      setCurrentStep(nextStep)
+      setCurrentSide(nextSide)
+    }
+  }
+
+  // Docs config + existing progress fetch
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchDocsAndProgress = async () => {
+      if (!visaId) return
+      setIsLoading(true)
+      setIsInitializingProgress(true)
+
       try {
+        // 1) fetch documents config
         const response = await fetch(
-          `https://govisaa-872569311567.asia-south2.run.app/api/configurations/documents/${visaId}/documents-only`,
+          `http://localhost:5000/api/configurations/documents/${visaId}/documents-only`,
         )
         const data = await response.json()
+
         if (data.success) {
-          const docsWithSides = data.documents.map((doc: Document) => ({
+          const docsWithSides: Document[] = data.documents.map((doc: Document) => ({
             ...doc,
             requiresBothSides: [
               "passport",
@@ -71,30 +227,52 @@ export default function UploadDocuments() {
               "pan card",
               "driver license",
               "voter id",
-            ].includes(
-              doc.name.toLowerCase(),
-            ),
+            ].includes(doc.name.toLowerCase()),
           }))
           setDocuments(docsWithSides)
+
+          // 2) fetch existing visa application (by paymentId) for restore
+          if (paymentId) {
+            try {
+              const appRes = await fetch(
+                `http://localhost:5000/api/VisaApplication/by-payment/${paymentId}`,
+              )
+
+              if (appRes.ok) {
+                const appJson = await appRes.json()
+
+                // ✅ agar final submit ho chuka hai to direct success screen
+                if (appJson.meta?.isFinalSubmit) {
+                  setSubmitSuccess(true)
+                }
+
+                const app = appJson.visaApplication || appJson
+                if (app && app.documents && !appJson.meta?.isFinalSubmit) {
+                  // sirf tab hi restore karo jab final submit nahi hua
+                  hydrateFromExistingApplication(app, docsWithSides)
+                }
+              }
+            } catch (e) {
+              console.error("Failed to load existing visa application:", e)
+            }
+          }
         }
       } catch (error) {
-        // Error fetching documents
+        console.error("Failed to fetch documents:", error)
       } finally {
         setIsLoading(false)
+        setIsInitializingProgress(false)
       }
     }
 
     if (visaId && !showProcessingModal) {
-      fetchDocuments()
+      fetchDocsAndProgress()
     }
-  }, [visaId, showProcessingModal])
+  }, [visaId, showProcessingModal, paymentId])
 
-  const updateCurrentTravellerData = (updates: Partial<TravellerData>) => {
-    setTravellersData((prev) =>
-      prev.map((traveller, index) => (index === currentTraveller ? { ...traveller, ...updates } : traveller)),
-    )
-  }
-
+  // ============================
+  //      FILE / OCR HANDLING
+  // ============================
   const handleFileChange = async (file: File | null) => {
     if (!file) return
 
@@ -112,15 +290,12 @@ export default function UploadDocuments() {
 
     updateCurrentTravellerData({ uploadedFiles: updatedFiles })
 
-    // Helper to check passport-like names
     const isPassportName = (name: string) => {
       const n = name.trim().toLowerCase()
       return n === "passport" || n === "valid passport"
     }
 
-    // Check if this is passport front side
     if (isPassportName(currentDoc.name) && currentSide === "front") {
-      // ✅ Reset passport data saved status when new passport is uploaded
       updateCurrentTravellerData({ passportDataSaved: false })
 
       try {
@@ -128,20 +303,13 @@ export default function UploadDocuments() {
         const formData = new FormData()
         formData.append("file", file)
 
-        // Try localhost first, then fallback to other possible URLs
-        const ocrUrls = [
-          "https://govissagcpocr-872569311567.asia-south2.run.app/extract",
-          // Replace with your actual OCR service URL
-        ]
+        const ocrUrls = ["https://govissagcpocr-872569311567.asia-south2.run.app/extract"]
 
-        // Warm-up helper: call /warmup for the base URL before OCR POST to reduce cold-start latency
         const warmupIfPossible = async (extractUrl: string) => {
           try {
-            const base = extractUrl.replace(/\/extract$/, '')
-            await fetch(`${base}/warmup`, { method: 'GET', mode: 'cors', credentials: 'omit' })
-          } catch (_) {
-            // ignore warm-up failures
-          }
+            const base = extractUrl.replace(/\/extract$/, "")
+            await fetch(`${base}/warmup`, { method: "GET", mode: "cors", credentials: "omit" })
+          } catch (_) {}
         }
 
         let response: Response | null = null
@@ -153,26 +321,23 @@ export default function UploadDocuments() {
             response = await fetch(url, {
               method: "POST",
               body: formData,
-              mode: 'cors',
-              credentials: 'omit',
+              mode: "cors",
+              credentials: "omit",
             })
 
             if (response.ok) {
               break
             } else {
-              // Simple one-time retry on 5xx (e.g., cold start)
               if (response.status >= 500) {
-                await new Promise(r => setTimeout(r, 800))
+                await new Promise((r) => setTimeout(r, 800))
                 await warmupIfPossible(url)
                 response = await fetch(url, {
-                  method: 'POST',
+                  method: "POST",
                   body: formData,
-                  mode: 'cors',
-                  credentials: 'omit',
+                  mode: "cors",
+                  credentials: "omit",
                 })
-                if (response.ok) {
-                  break
-                }
+                if (response.ok) break
               }
               response = null
             }
@@ -258,7 +423,6 @@ export default function UploadDocuments() {
     }
   }
 
-  // ✅ Updated passport data change handler to mark as saved
   const handlePassportDataChange = (data: PassportData) => {
     updateCurrentTravellerData({
       ocrData: currentTravellerData.ocrData
@@ -267,11 +431,151 @@ export default function UploadDocuments() {
             data: data,
           }
         : null,
-      passportDataSaved: true, // ✅ Mark as saved when data is submitted
+      passportDataSaved: true,
     })
   }
 
-  const handleNext = () => {
+  const handleRemoveFile = (docId: string, side: "front" | "back") => {
+    const updatedFiles = { ...currentTravellerData.uploadedFiles }
+    if (updatedFiles[docId]) {
+      URL.revokeObjectURL(updatedFiles[docId][`${side}Preview`] || "")
+      delete updatedFiles[docId][side]
+      delete updatedFiles[docId][`${side}Preview`]
+      if (Object.keys(updatedFiles[docId]).length === 0) {
+        delete updatedFiles[docId]
+      }
+    }
+
+    updateCurrentTravellerData({ uploadedFiles: updatedFiles })
+
+    const name = documents[currentStep].name.trim().toLowerCase()
+    if ((name === "passport" || name === "valid passport") && side === "front") {
+      updateCurrentTravellerData({ ocrData: null, ocrError: null, passportDataSaved: false })
+    }
+  }
+
+  // ⭐ STEP-BY-STEP SAVE – ab loader ke saath
+  const saveCurrentStep = async () => {
+    const currentDocument = documents[currentStep]
+    const travellerIndex = currentTraveller
+    const currentUploads = currentTravellerData.uploadedFiles[currentDocument.id] || {}
+
+    const hasAnyFile =
+      !!currentUploads.front ||
+      !!currentUploads.back ||
+      !!currentUploads.frontPreview ||
+      !!currentUploads.backPreview
+
+    const isPassportDocument = (() => {
+      const n = currentDocument.name.trim().toLowerCase()
+      return n === "passport" || n === "valid passport"
+    })()
+    const isPassportFrontSide = isPassportDocument && currentSide === "front"
+
+    if (!hasAnyFile && !currentTravellerData.ocrData) {
+      return
+    }
+
+    setIsSavingStep(true) // 👈 loader on
+
+    try {
+      const formData = new FormData()
+
+      const userString = localStorage.getItem("user")
+      let userEmail = "abc@gmail.com"
+      let userPhone = "7070357583"
+
+      if (userString) {
+        try {
+          const user = JSON.parse(userString)
+          userEmail = user.email || userEmail
+          userPhone = user.phoneNumber || userPhone
+        } catch (e) {}
+      }
+
+      formData.append("visaId", visaId)
+      formData.append("travellers", travellersCount.toString())
+      formData.append("email", userEmail)
+      formData.append("phone", userPhone)
+      formData.append("country", country)
+      formData.append("paymentId", paymentId)
+      formData.append("paymentOrderId", paymentId)
+
+      if (processingMode) {
+        formData.append("processingMode", processingMode)
+      }
+      if (employeeId) {
+        formData.append("employeeId", employeeId)
+      }
+
+      if (currentUploads.front instanceof File) {
+        formData.append(`documents[${travellerIndex}][${currentDocument.id}][front]`, currentUploads.front)
+      }
+      if (currentUploads.back instanceof File) {
+        formData.append(`documents[${travellerIndex}][${currentDocument.id}][back]`, currentUploads.back)
+      }
+
+      if (isPassportFrontSide && currentTravellerData.ocrData?.data && currentTravellerData.passportDataSaved) {
+        const d = currentTravellerData.ocrData.data
+
+        const passportDataArray = [
+          {
+            travellerIndex,
+            passport_number: d.passport_number || "",
+            surname: d.surname || "",
+            given_names: d.given_names || "",
+            nationality: d.nationality || "",
+            date_of_birth: d.date_of_birth || "",
+            place_of_birth: d.place_of_birth || "",
+            sex: d.sex || "",
+            date_of_issue: d.date_of_issue || "",
+            date_of_expiry: d.date_of_expiry || "",
+            place_of_issue: d.place_of_issue || "",
+            file_number: d.file_number || "",
+            father_name: d.father_name || "",
+            mother_name: d.mother_name || "",
+            spouse_name: d.spouse_name || "",
+            address: d.address || "",
+          },
+        ]
+
+        formData.append("passportData", JSON.stringify(passportDataArray))
+      }
+
+      const token = localStorage.getItem("token")
+
+      const response = await fetch("http://localhost:5000/api/VisaApplication/apply-visa", {
+        method: "POST",
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : undefined,
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Server responded with status: ${response.status}`)
+      }
+
+      await response.json()
+    } finally {
+      setIsSavingStep(false) // 👈 loader off
+    }
+  }
+
+  const handleNext = async () => {
+    if (isSavingStep) return // double click se bachao
+
+    try {
+      await saveCurrentStep()
+    } catch (error) {
+      console.error("Step save failed:", error)
+      setSubmitError(error instanceof Error ? error.message : "Failed to save current step")
+      return
+    }
+
     const currentDoc = documents[currentStep]
     if (currentDoc.requiresBothSides && currentSide === "front") {
       setCurrentSide("back")
@@ -293,6 +597,8 @@ export default function UploadDocuments() {
   }
 
   const handlePrevious = () => {
+    if (isSavingStep) return // save ke time pe previous mat allow karo
+
     const currentDoc = documents[currentStep]
     if (currentDoc.requiresBothSides && currentSide === "back") {
       setCurrentSide("front")
@@ -309,168 +615,92 @@ export default function UploadDocuments() {
     }
   }
 
-  const handleRemoveFile = (docId: string, side: "front" | "back") => {
-    const updatedFiles = { ...currentTravellerData.uploadedFiles }
-    if (updatedFiles[docId]) {
-      URL.revokeObjectURL(updatedFiles[docId][`${side}Preview`] || "")
-      delete updatedFiles[docId][side]
-      delete updatedFiles[docId][`${side}Preview`]
-      if (Object.keys(updatedFiles[docId]).length === 0) {
-        delete updatedFiles[docId]
+  // FINAL SUBMIT – light
+ const handleSubmitApplication = async () => {
+  setIsSubmitting(true)
+  setSubmitError(null)
+
+  try {
+    const formData = new FormData()
+    const userString = localStorage.getItem("user")
+    let userEmail = "abc@gmail.com"
+    let userPhone = "7070357583"
+
+    // 🔹 localStorage parse error bhi log karo
+    if (userString) {
+      try {
+        const user = JSON.parse(userString)
+        userEmail = user.email || userEmail
+        userPhone = user.phoneNumber || userPhone
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e)
       }
     }
 
-    updateCurrentTravellerData({ uploadedFiles: updatedFiles })
+    formData.append("visaId", visaId)
+    formData.append("travellers", travellersCount.toString())
+    formData.append("email", userEmail)
+    formData.append("phone", userPhone)
+    formData.append("country", country)
+    formData.append("paymentId", paymentId)
+    formData.append("paymentOrderId", paymentId)
 
-    // ✅ Reset passport data saved status when passport file is removed
-    if ((() => { const n = documents[currentStep].name.trim().toLowerCase(); return n === "passport" || n === "valid passport" })() && side === "front") {
-      updateCurrentTravellerData({ ocrData: null, ocrError: null, passportDataSaved: false })
+    if (processingMode) {
+      formData.append("processingMode", processingMode)
     }
-  }
+    if (employeeId) {
+      formData.append("employeeId", employeeId)
+    }
 
-  const handleSubmitApplication = async () => {
-    setIsSubmitting(true)
-    setSubmitError(null)
+    // ✅ yahi se final submit flag bhej rahe hain
+    formData.append("isFinalSubmit", "true")
 
-    try {
-      const formData = new FormData()
-      const userString = localStorage.getItem("user")
-      let userEmail = "abc@gmail.com"
-      let userPhone = "7070357583"
+    const token = localStorage.getItem("token")
 
-      if (userString) {
-        try {
-          const user = JSON.parse(userString)
-          userEmail = user.email || userEmail
-          userPhone = user.phoneNumber || userPhone
-        } catch (e) {
-          // Error parsing user data from localStorage
-        }
-      }
-
-      // Add basic info
-      formData.append("visaId", visaId)
-      formData.append("travellers", travellersCount.toString())
-      formData.append("email", userEmail)
-      formData.append("phone", userPhone)
-      formData.append("country", country)
-      formData.append("paymentId", paymentId)
-
-      // ✅ NOTE: Promo code data will be automatically fetched by backend from payment order using paymentId
-
-      // ✅ Add payment order ID (using paymentId as reference)
-      formData.append("paymentOrderId", paymentId)
-
-      // ✅ Add processing mode and employee ID
-      if (processingMode) {
-        formData.append("processingMode", processingMode)
-      }
-      if (employeeId) {
-        formData.append("employeeId", employeeId)
-      }
-
-      // Add passport data for ALL travellers
-      const allPassportData: Array<{
-        travellerIndex: number
-        passport_number: string
-        surname: string
-        given_names: string
-        nationality: string
-        date_of_birth: string
-        place_of_birth: string
-        sex: string
-        date_of_issue: string
-        date_of_expiry: string
-        place_of_issue: string
-        file_number: string
-        father_name: string
-        mother_name: string
-        spouse_name: string
-        address: string
-      }> = []
-
-      travellersData.forEach((travellerData, index) => {
-        if (travellerData?.ocrData?.data) {
-          const passportData = {
-            travellerIndex: index,
-            passport_number: travellerData.ocrData.data.passport_number || "",
-            surname: travellerData.ocrData.data.surname || "",
-            given_names: travellerData.ocrData.data.given_names || "",
-            nationality: travellerData.ocrData.data.nationality || "",
-            date_of_birth: travellerData.ocrData.data.date_of_birth || "",
-            place_of_birth: travellerData.ocrData.data.place_of_birth || "",
-            sex: travellerData.ocrData.data.sex || "",
-            date_of_issue: travellerData.ocrData.data.date_of_issue || "",
-            date_of_expiry: travellerData.ocrData.data.date_of_expiry || "",
-            place_of_issue: travellerData.ocrData.data.place_of_birth || "",
-            file_number: travellerData.ocrData.data.file_number || "",
-            father_name: travellerData.ocrData.data.father_name || "",
-            mother_name: travellerData.ocrData.data.mother_name || "",
-            spouse_name: travellerData.ocrData.data.spouse_name || "",
-            address: travellerData.ocrData.data.address || "",
+    const response = await fetch("http://localhost:5000/api/VisaApplication/apply-visa", {
+      method: "POST",
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
           }
-          allPassportData.push(passportData)
-        }
-      })
+        : undefined,
+      body: formData,
+    })
 
-      formData.append("passportData", JSON.stringify(allPassportData))
+    // 🔹 response body try–catch ke bina ignore nahi karenge
+    const data = await response.json().catch((e) => {
+      console.error("Failed to parse final submit response JSON:", e)
+      return null
+    })
 
-      // Add documents for ALL travellers
-      travellersData.forEach((travellerData, travellerIndex) => {
-        documents.forEach((doc) => {
-          const files = travellerData.uploadedFiles[doc.id]
-          if (files) {
-            if (files.front) {
-              formData.append(`documents[${travellerIndex}][${doc.id}][front]`, files.front)
-            }
-            if (files.back) {
-              formData.append(`documents[${travellerIndex}][${doc.id}][back]`, files.back)
-            }
-          }
-        })
-      })
+    if (!response.ok) {
+      console.error("Final submit API error:", data)
 
-      // Add document metadata for all travellers
-      const documentMetadata = travellersData.map((travellerData, travellerIndex) => ({
-        travellerIndex,
-        documents: documents.map((doc) => ({
-          id: doc.id,
-          name: doc.name,
-          sides: doc.requiresBothSides ? ["front", "back"] : ["front"],
-          uploaded: {
-            front: !!travellerData.uploadedFiles[doc.id]?.front,
-            back: !!travellerData.uploadedFiles[doc.id]?.back,
-          },
-        })),
-      }))
+      const msg =
+        (data && (data.message || data.error || data.details)) ||
+        `Server responded with status: ${response.status}`
 
-      formData.append("documentMetadata", JSON.stringify(documentMetadata))
-
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/apply-visa", {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.message || `Server responded with status: ${response.status}`)
-      }
-
-      await response.json()
-      setSubmitSuccess(true)
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "An unexpected error occurred")
-    } finally {
-      setIsSubmitting(false)
+      throw new Error(msg)
     }
-  }
 
-  // Show processing mode modal first
-  if (showProcessingModal) {
+    console.log("Final submit success:", data)
+    setSubmitSuccess(true)
+  } catch (error) {
+    console.error("Final submit failed:", error)
+    setSubmitError(error instanceof Error ? error.message : "An unexpected error occurred")
+  } finally {
+    setIsSubmitting(false)
+  }
+}
+
+
+  // ====== UI STATES ======
+
+  if (showProcessingModal && !processingMode) {
     return <ProcessingModeModal isOpen={showProcessingModal} onClose={handleProcessingModeSelect} />
   }
 
-  if (isLoading) {
+  if (isLoading || isInitializingProgress) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="text-center p-8 bg-white rounded-2xl shadow-xl border border-gray-100">
@@ -505,7 +735,6 @@ export default function UploadDocuments() {
     )
   }
 
-  // Success screen
   if (submitSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50">
@@ -513,8 +742,7 @@ export default function UploadDocuments() {
           <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-12 h-12 text-green-600" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Successfully docs uploaded /
-          submitted!</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Successfully docs uploaded / submitted!</h2>
           <p className="text-gray-600 mb-2">
             Your visa application for{" "}
             <span className="font-semibold text-gray-900">
@@ -522,7 +750,6 @@ export default function UploadDocuments() {
             </span>{" "}
             has been submitted successfully.
           </p>
-          {/* Show processing mode info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <p className="text-sm text-blue-800">
               <span className="font-semibold">Processing Mode:</span>{" "}
@@ -605,9 +832,14 @@ export default function UploadDocuments() {
 
   const requiresBothSides = currentDocument.requiresBothSides
   const currentUploads = currentTravellerData.uploadedFiles[currentDocument.id] || {}
-  const hasUploadedFile = !!currentUploads[currentSide] || !!currentUploads.front
 
-  // ✅ Enhanced logic for Next button - check both file upload and passport data saved
+  // 🔴 IMPORTANT: preview se bhi uploaded maanenge (restore ke liye)
+  const hasUploadedFile =
+    !!currentUploads[currentSide] ||
+    !!currentUploads.front ||
+    !!currentUploads[`${currentSide}Preview`] ||
+    !!currentUploads.frontPreview
+
   const isPassportDocument = (() => {
     const n = currentDocument.name.trim().toLowerCase()
     return n === "passport" || n === "valid passport"
@@ -616,14 +848,10 @@ export default function UploadDocuments() {
   const hasPassportData = currentTravellerData.ocrData !== null
   const isPassportDataSaved = currentTravellerData.passportDataSaved
 
-  // Next button should be enabled when:
-  // 1. File is uploaded AND
-  // 2. If it's passport front side with data, passport data must be saved
   const canProceedNext = hasUploadedFile && (!isPassportFrontSide || !hasPassportData || isPassportDataSaved)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -632,7 +860,6 @@ export default function UploadDocuments() {
               <p className="text-gray-600 mt-1">
                 Traveller {currentTraveller + 1} of {travellersCount} • {currentDocument.name}
               </p>
-              {/* Show processing mode info */}
               <div className="flex items-center gap-4 mt-2">
                 <span
                   className={`text-xs px-2 py-1 rounded-full font-medium ${
@@ -655,7 +882,6 @@ export default function UploadDocuments() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Overall Progress for Multiple Travellers */}
         {travellersCount > 1 && (
           <div className="mb-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
             <div className="flex items-center justify-between mb-4">
@@ -663,7 +889,7 @@ export default function UploadDocuments() {
                 <Users className="w-5 h-5 mr-2 text-blue-600" />
                 Overall Progress
               </h3>
-              <span className="text-sm font-medium text-gray-600">{Math.round(overallProgress)}% Complete</span>
+            <span className="text-sm font-medium text-gray-600">{Math.round(overallProgress)}% Complete</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
               <div
@@ -679,7 +905,6 @@ export default function UploadDocuments() {
           </div>
         )}
 
-        {/* Travellers Navigation */}
         {travellersCount > 1 && (
           <div className="mb-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Travellers Status</h3>
@@ -694,8 +919,8 @@ export default function UploadDocuments() {
                       isCompleted
                         ? "bg-green-50 border-green-200"
                         : isCurrent
-                          ? "bg-blue-50 border-blue-300 ring-2 ring-blue-100"
-                          : "bg-gray-50 border-gray-200"
+                        ? "bg-blue-50 border-blue-300 ring-2 ring-blue-100"
+                        : "bg-gray-50 border-gray-200"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -705,8 +930,8 @@ export default function UploadDocuments() {
                             isCompleted
                               ? "bg-green-500 text-white"
                               : isCurrent
-                                ? "bg-blue-500 text-white"
-                                : "bg-gray-300 text-gray-600"
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-300 text-gray-600"
                           }`}
                         >
                           {isCompleted ? <CheckCircle className="w-4 h-4" /> : index + 1}
@@ -723,7 +948,6 @@ export default function UploadDocuments() {
           </div>
         )}
 
-        {/* Current Traveller Progress */}
         <div className="mb-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Traveller {currentTraveller + 1} Progress</h3>
@@ -755,28 +979,31 @@ export default function UploadDocuments() {
           ocrError={currentTravellerData.ocrError}
           handlePassportDataChange={handlePassportDataChange}
           travellerNumber={currentTraveller + 1}
-          passportDataSaved={currentTravellerData.passportDataSaved} // ✅ Pass the saved status
+          passportDataSaved={currentTravellerData.passportDataSaved}
         />
 
-        {/* Action buttons */}
         <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="flex flex-col sm:flex-row justify-between gap-4">
             <button
               onClick={handlePrevious}
-              disabled={currentStep === 0 && currentSide === "front" && currentTraveller === 0}
+              disabled={isSavingStep || (currentStep === 0 && currentSide === "front" && currentTraveller === 0)}
               className="px-6 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               ← Previous
             </button>
 
-            {/* ✅ Enhanced Next button with better validation */}
             <div className="flex flex-col items-end">
               <button
                 onClick={handleNext}
-                disabled={!canProceedNext}
+                disabled={isSavingStep || !canProceedNext}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg flex items-center justify-center"
               >
-                {currentTraveller === travellersCount - 1 && currentStep === documents.length - 1 ? (
+                {isSavingStep ? (
+                  <>
+                    Saving...
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  </>
+                ) : currentTraveller === travellersCount - 1 && currentStep === documents.length - 1 ? (
                   <>
                     Review All Documents
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -789,14 +1016,19 @@ export default function UploadDocuments() {
                 )}
               </button>
 
-              {/* ✅ Show helpful message when Next is disabled */}
-              {!canProceedNext && (
+              {!canProceedNext && !isSavingStep && (
                 <p className="text-xs text-red-600 mt-2 text-right">
                   {!hasUploadedFile
                     ? "Please upload the document first"
                     : isPassportFrontSide && hasPassportData && !isPassportDataSaved
-                      ? "Please save passport details before proceeding"
-                      : ""}
+                    ? "Please save passport details before proceeding"
+                    : ""}
+                </p>
+              )}
+
+              {submitError && (
+                <p className="text-xs text-red-500 mt-1 text-right">
+                  {submitError}
                 </p>
               )}
             </div>

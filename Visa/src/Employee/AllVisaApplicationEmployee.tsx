@@ -164,7 +164,7 @@ export default function VisaDashboard() {
         const employee = JSON.parse(employeeData)
         const employeeId = employee.id
 
-        const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/getByUserId/${employeeId}/visas`)
+        const response = await fetch(`http://localhost:5000/api/employee/getByUserId/${employeeId}/visas`)
 
         if (response.ok) {
           const data: ApiResponse = await response.json()
@@ -259,7 +259,7 @@ export default function VisaDashboard() {
         requestBody.rejectionReason = rejectionReason.trim()
       }
 
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/visa-status/${selectedApp._id}`, {
+      const response = await fetch(`http://localhost:5000/api/VisaApplication/visa-status/${selectedApp._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -332,7 +332,7 @@ export default function VisaDashboard() {
     // Fetch traveller breakdown from payment order if available
     setSelectedPaymentOrder(null)
     if (app.paymentOrderId) {
-      fetch(`https://govisaa-872569311567.asia-south2.run.app/api/payments/order/${app.paymentOrderId}`)
+      fetch(`http://localhost:5000/api/payments/order/${app.paymentOrderId}`)
         .then(res => res.json())
         .then(data => {
           if (data && data.success) {

@@ -89,14 +89,14 @@ export default function VisaFullDetails() {
   useEffect(() => {
     const fetchApplication = async () => {
       try {
-        const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getById/${id}`)
+        const response = await fetch(`http://localhost:5000/api/VisaApplication/getById/${id}`)
         const data = await response.json()
         setApplication(data)
         
         // ✅ Fetch payment order details if paymentOrderId exists
         if (data.paymentOrderId) {
           try {
-            const paymentResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/getAll")
+            const paymentResponse = await fetch("http://localhost:5000/api/payments/getAll")
             const paymentData = await paymentResponse.json()
             if (paymentData.success && paymentData.data) {
               const foundPaymentOrder = paymentData.data.find((order: any) => order._id === data.paymentOrderId)

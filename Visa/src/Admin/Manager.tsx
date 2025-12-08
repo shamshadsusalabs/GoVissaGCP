@@ -110,7 +110,7 @@ const ManagerManagement = () => {
 
   const fetchManagers = async () => {
     try {
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/manager/GetAll")
+      const response = await fetch("http://localhost:5000/api/manager/GetAll")
       if (!response.ok) {
         throw new Error("Failed to fetch managers")
       }
@@ -135,7 +135,7 @@ const ManagerManagement = () => {
     setFormLoading(true)
 
     try {
-      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/manager/signup", {
+      const response = await fetch("http://localhost:5000/api/manager/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,7 +182,7 @@ const ManagerManagement = () => {
         updateData.password = formData.password
       }
 
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/manager/updateById/${editingManager._id}`, {
+      const response = await fetch(`http://localhost:5000/api/manager/updateById/${editingManager._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -216,7 +216,7 @@ const ManagerManagement = () => {
     setDeletingId(deletingManager._id)
 
     try {
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/manager/deleteByID/${deletingManager._id}`, {
+      const response = await fetch(`http://localhost:5000/api/manager/deleteByID/${deletingManager._id}`, {
         method: "DELETE",
       })
 
@@ -240,7 +240,7 @@ const ManagerManagement = () => {
   const handleVerifyManager = async (id: string, currentStatus: boolean) => {
     setVerifyingId(id)
     try {
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/manager/verify/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/manager/verify/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

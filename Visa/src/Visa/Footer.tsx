@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaFacebook, FaTwitter, FaLinkedin, FaInstagram, FaYoutube } from 'react-icons/fa';
+import { FaFacebook, FaLinkedin, FaInstagram, FaYoutube } from 'react-icons/fa';
+import { FaXTwitter } from "react-icons/fa6"; // X (Twitter)
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
@@ -7,29 +8,70 @@ const Footer: React.FC = () => {
     <footer className="bg-white text-gray-700 py-12 px-6 border-t border-gray-100">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+          
           {/* Column 1 - Company */}
           <div>
             <h4 className="font-bold text-gray-900 mb-4 text-lg">Company</h4>
+
+            {/* Social Icons */}
             <div className="flex gap-4 mb-6">
-              <a href="#" className="text-gray-500 hover:text-blue-600 transition-colors">
+
+              {/* Facebook */}
+              <a
+                href="https://www.facebook.com/profile.php?id=61584367499474"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-blue-600 transition-colors"
+              >
                 <FaFacebook size={20} />
               </a>
-              <a href="#" className="text-gray-500 hover:text-blue-400 transition-colors">
-                <FaTwitter size={20} />
+
+              {/* X (Twitter) */}
+              <a
+                href="https://x.com/visaafy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-black transition-colors"
+              >
+                <FaXTwitter size={20} />
               </a>
-              <a href="#" className="text-gray-500 hover:text-blue-700 transition-colors">
+
+              {/* LinkedIn */}
+              <a
+                href="https://www.linkedin.com/company/visaafy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-blue-700 transition-colors"
+              >
                 <FaLinkedin size={20} />
               </a>
-              <a href="#" className="text-gray-500 hover:text-pink-600 transition-colors">
+
+              {/* Instagram */}
+              <a
+                href="https://www.instagram.com/visaafy/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-pink-600 transition-colors"
+              >
                 <FaInstagram size={20} />
               </a>
-              <a href="#" className="text-gray-500 hover:text-red-600 transition-colors">
+
+              {/* YouTube */}
+              <a
+                href="https://www.youtube.com/channel/UCbXurecl6VRaAODKKoM8hAA"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-red-600 transition-colors"
+              >
                 <FaYoutube size={20} />
               </a>
+
             </div>
+
             <p className="text-sm text-gray-500 mb-4">
               Fast Visa Provider | Trusted Immigration Services
             </p>
+
             <div className="text-sm text-gray-500 space-y-2">
               <p>Email: contact@traveli.asia</p>
               <p>Phone: 9289280509</p>
@@ -42,23 +84,25 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Column 2 - Services */}
-          <div>
-            <h4 className="font-bold text-gray-900 mb-4 text-lg">Services</h4>
-            <ul className="space-y-3">
-              {[
-                'Visa Processing',
-                'Immigration Consultation',
-                'Document Verification',
-                'Travel Insurance',
-                'Flight Booking',
-                'Hotel Reservation'
-              ].map((item) => (
-                <li key={item} className="hover:text-gray-900 transition-colors cursor-pointer">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
+         {/* Column 2 - Services */}
+<div>
+  <h4 className="font-bold text-gray-900 mb-4 text-lg">Services</h4>
+  <ul className="space-y-3">
+    {[
+      'Visa Processing',
+      'Immigration Consultation',
+      'Document Verification',
+      'Travel Insurance',
+      'Flight Booking',
+      'Hotel Reservation'
+    ].map((item) => (
+      <li key={item} className="text-gray-600">
+        {item}
+      </li>
+    ))}
+  </ul>
+</div>
+
 
           {/* Column 3 - Contact Information */}
           <div>

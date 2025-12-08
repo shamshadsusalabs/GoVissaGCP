@@ -57,7 +57,7 @@ const VisaBookingCard = () => {
           throw new Error("Configuration ID not found")
         }
         const response = await fetch(
-          `https://govisaa-872569311567.asia-south2.run.app/api/configurations/details/${id}`,
+          `http://localhost:5000/api/configurations/details/${id}`,
         )
         if (!response.ok) {
           throw new Error(`Failed to fetch visa data: ${response.statusText}`)

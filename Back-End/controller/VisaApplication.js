@@ -1,6 +1,9 @@
 const VisaApplication = require('../shcema/VisaApplication');
 const PaymentOrder = require('../shcema/Payment');
 
+// controllers/visaApplication.controller.js
+
+
 const createVisaApplication = async (req, res) => {
   try {
     const {
@@ -10,19 +13,27 @@ const createVisaApplication = async (req, res) => {
       country,
       phone,
       paymentId,
-      processingMode, // ✅ New field
-      employeeId, // ✅ New field
-      promoCode, // ✅ Promo code
-      promoCodeId, // ✅ Promo code ID
-      paymentOrderId, // ✅ Payment Order ID
-    } = req.body
+      processingMode,      // ✅ New field
+      employeeId,          // ✅ New field
+      promoCode,           // ✅ Promo code (fallback)
+      promoCodeId,         // ✅ Promo code ID (fallback)
+      paymentOrderId,      // ✅ Payment Order ID (fallback)
+      isFinalSubmit: rawIsFinalSubmit, // ✅ yahan se aayega (string/boolean)
+    } = req.body;
+
+    // 🟢 Normalise isFinalSubmit -> true/false
+    const isFinalSubmit =
+      rawIsFinalSubmit === true ||
+      rawIsFinalSubmit === "true" ||
+      rawIsFinalSubmit === 1 ||
+      rawIsFinalSubmit === "1";
 
     // ✅ Fetch promo code data from payment order using paymentId
     let promoCodeData = {
       promoCode: null,
       promoCodeId: null,
       discountAmount: 0,
-      originalAmount: null
+      originalAmount: null,
     };
     let paymentOrderMongoId = null; // ✅ Store the MongoDB _id of payment order
 
@@ -35,112 +46,233 @@ const createVisaApplication = async (req, res) => {
             promoCode: paymentOrder.promoCode,
             promoCodeId: paymentOrder.promoCodeId,
             discountAmount: paymentOrder.discountAmount || 0,
-            originalAmount: paymentOrder.originalAmount
+            originalAmount: paymentOrder.originalAmount,
           };
         }
       } catch (error) {
-        console.error('⚠️ [PAYMENT SEARCH ERROR]:', error.message);
+        console.error("⚠️ [PAYMENT SEARCH ERROR]:", error.message);
       }
     }
 
     // ✅ Fallback to request body if not found in payment order
-    const finalPromoCode = promoCodeData.promoCode || promoCode;
-    const finalPromoCodeId = promoCodeData.promoCodeId || promoCodeId;
+    const finalPromoCode = promoCodeData.promoCode || promoCode || null;
+    const finalPromoCodeId = promoCodeData.promoCodeId || promoCodeId || null;
     const finalDiscountAmount = promoCodeData.discountAmount || 0;
-    const finalOriginalAmount = promoCodeData.originalAmount;
+    const finalOriginalAmount = promoCodeData.originalAmount || null;
 
-    // Parse passportData (should be an array of objects)
-    let passportData = []
+    // ✅ Parse passportData (array of objects, optional)
+    let passportData = [];
     if (req.body.passportData) {
       try {
         passportData =
-          typeof req.body.passportData === "string" ? JSON.parse(req.body.passportData) : req.body.passportData
-        // Ensure it's always an array
+          typeof req.body.passportData === "string"
+            ? JSON.parse(req.body.passportData)
+            : req.body.passportData;
+
         if (!Array.isArray(passportData)) {
-          passportData = [passportData]
+          passportData = [passportData];
         }
       } catch (err) {
-        console.error('⚠️ [PASSPORT PARSE ERROR]:', err.message);
-        passportData = []
+        console.error("⚠️ [PASSPORT PARSE ERROR]:", err.message);
+        passportData = [];
       }
     }
 
-    // Parse documentsMetadata (for naming uploaded files)
-    const documentsMetadata = JSON.parse(req.body.documentsMetadata || "[]")
-    const documents = {}
+    // ✅ Parse documentsMetadata safely
+    let documentsMetadata = [];
+    try {
+      documentsMetadata = JSON.parse(req.body.documentsMetadata || "[]");
+    } catch (err) {
+      console.error("⚠️ [DOC META PARSE ERROR]:", err.message);
+      documentsMetadata = [];
+    }
+
+    // ✅ Build documents object from uploaded files
+    const incomingDocuments = {};
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         // Expected format: documents[<travellerIndex>][<docId>][front/back]
-        const match = file.fieldname.match(/^documents\[(\d+)\]\[(.+?)\]\[(front|back)\]$/)
+        const match = file.fieldname.match(
+          /^documents\[(\d+)\]\[(.+?)\]\[(front|back)\]$/
+        );
         if (!match) {
-          continue
+          continue;
         }
 
-        const travellerIndex = match[1]
-        const docId = match[2]
-        const side = match[3] // 'front' or 'back'
+        const travellerIndex = match[1];
+        const docId = match[2];
+        const side = match[3]; // 'front' or 'back'
 
         // Find metadata for this traveller and document
-        const travellerMeta = documentsMetadata.find((m) => m.travellerIndex === Number.parseInt(travellerIndex))
-        const docMeta = travellerMeta?.documents?.find((d) => d.id === docId)
-        const fileName = docMeta ? docMeta.name : file.originalname
+        const travellerMeta = documentsMetadata.find(
+          (m) => m.travellerIndex === Number.parseInt(travellerIndex)
+        );
+        const docMeta = travellerMeta?.documents?.find((d) => d.id === docId);
+        const fileName = docMeta ? docMeta.name : file.originalname;
 
-        // Create nested structure: documents[travellerIndex][docId][side]
-        const documentKey = `${travellerIndex}_${docId}`
-        if (!documents[documentKey]) {
-          documents[documentKey] = {}
+        // Create key: "<travellerIndex>_<docId>"
+        const documentKey = `${travellerIndex}_${docId}`;
+        if (!incomingDocuments[documentKey]) {
+          incomingDocuments[documentKey] = {};
         }
 
-        documents[documentKey][side] = {
+        incomingDocuments[documentKey][side] = {
           url: file.path,
           fileName,
-        }
+        };
       }
     }
 
-    // Create new visa application with new fields
+    // 🧠 IMPORTANT PART: upsert logic
+    // Try to find existing application for step-by-step saving
+    let existingApp = null;
+
+    // 1st preference: paymentId (online / offline cash ID)
+    if (paymentId) {
+      existingApp = await VisaApplication.findOne({ paymentId });
+    }
+
+    // Fallback: (visaId + phone) if needed
+    if (!existingApp && visaId && phone) {
+      existingApp = await VisaApplication.findOne({ visaId, phone });
+    }
+
+    // ✅ If application already exists → UPDATE (step-by-step save)
+    if (existingApp) {
+      console.log("ℹ️ [APPLY-VISA] Updating existing application:", existingApp._id.toString());
+
+      // 🔹 Merge documents into existing Map
+      if (!existingApp.documents) {
+        existingApp.documents = new Map();
+      }
+      const docsMap = existingApp.documents;
+
+      Object.entries(incomingDocuments).forEach(([key, value]) => {
+        const prev = docsMap.get(key) || {};
+        docsMap.set(key, { ...prev, ...value });
+      });
+
+      // 🔹 Merge passportData by travellerIndex (if provided)
+      if (!existingApp.passportData) {
+        existingApp.passportData = [];
+      }
+
+      if (passportData.length > 0) {
+        passportData.forEach((pd) => {
+          if (typeof pd.travellerIndex === "undefined") return;
+
+          const idx = existingApp.passportData.findIndex(
+            (p) => p.travellerIndex === Number(pd.travellerIndex)
+          );
+
+          if (idx >= 0) {
+            // Update existing traveller passport data
+            existingApp.passportData[idx] = {
+              ...existingApp.passportData[idx]._doc,
+              ...pd,
+            };
+          } else {
+            // Add new traveller passport data
+            existingApp.passportData.push(pd);
+          }
+        });
+      }
+
+      // 🔹 Update basic fields only if sent (so we can change processing mode, employee, etc.)
+      if (processingMode) existingApp.processingMode = processingMode;
+      if (typeof employeeId === "string" && employeeId.trim() !== "") {
+        existingApp.employeeId = employeeId.trim();
+      }
+
+      // 🔹 Promo/payment fields – set if not already set, or overwrite
+      if (finalPromoCode) existingApp.promoCode = finalPromoCode;
+      if (finalPromoCodeId) existingApp.promoCodeId = finalPromoCodeId;
+      if (typeof finalDiscountAmount === "number") {
+        existingApp.discountAmount = finalDiscountAmount;
+      }
+      if (finalOriginalAmount) existingApp.originalAmount = finalOriginalAmount;
+      if (paymentOrderMongoId || paymentOrderId) {
+        existingApp.paymentOrderId =
+          paymentOrderMongoId || paymentOrderId || existingApp.paymentOrderId;
+      }
+
+      // Optional: update travellers / email / phone / country if you want
+      if (travellers) existingApp.travellers = travellers;
+      if (email) existingApp.email = email;
+      if (country) existingApp.country = country;
+      if (phone) existingApp.phone = phone;
+
+      // ✅ FINAL SUBMIT: sirf true pe set karo, kabhi false mat karo
+      if (isFinalSubmit) {
+        existingApp.isFinalSubmit = true;
+      }
+
+      const savedVisaApplication = await existingApp.save();
+
+      return res.status(200).json({
+        message: isFinalSubmit
+          ? "Visa application finally submitted successfully."
+          : "Visa application updated successfully (step saved).",
+        visaApplication: savedVisaApplication,
+      });
+    }
+
+    // ✅ If no existing application → CREATE NEW (first call)
+    console.log("ℹ️ [APPLY-VISA] Creating new visa application");
+
     const applicationData = {
       visaId,
       travellers,
       email,
       phone,
       country,
-      documents,
+      documents: incomingDocuments,
       paymentId, // ✅ Keep Razorpay payment ID for reference
       passportData,
-      processingMode, // ✅ Save processing mode
-      employeeId, // ✅ Save employee ID
-      promoCode: finalPromoCode, // ✅ Save promo code from payment order
-      promoCodeId: finalPromoCodeId, // ✅ Save promo code ID from payment order
-      discountAmount: finalDiscountAmount, // ✅ Save discount amount from payment order
-      originalAmount: finalOriginalAmount, // ✅ Save original amount from payment order
-      paymentOrderId: paymentOrderMongoId || paymentOrderId, // ✅ Use MongoDB _id if found, fallback to original
+      processingMode,                 // ✅ Save processing mode
+      employeeId,                    // ✅ Save employee ID
+      promoCode: finalPromoCode,     // ✅ Save promo code from payment order/body
+      promoCodeId: finalPromoCodeId, // ✅ Save promo code ID
+      discountAmount: finalDiscountAmount,
+      originalAmount: finalOriginalAmount,
+      paymentOrderId: paymentOrderMongoId || paymentOrderId,
+      isFinalSubmit: !!isFinalSubmit, // ✅ yahan set ho jayega (true/false)
     };
-    
+
     const visaApplication = new VisaApplication(applicationData);
     const savedVisaApplication = await visaApplication.save();
 
     res.status(201).json({
-      message: "Visa application created successfully.",
+      message: isFinalSubmit
+        ? "Visa application created & finally submitted successfully."
+        : "Visa application created successfully (step saved).",
       visaApplication: savedVisaApplication,
-    })
+    });
   } catch (error) {
-    console.error('❌ [ERROR] Visa application creation failed!');
-    console.error('❌ [ERROR MESSAGE]:', error.message);
-    console.error('❌ [ERROR STACK]:', error.stack);
-    console.error('❌ [ERROR NAME]:', error.name);
+    console.error("❌ [ERROR] Visa application creation/update failed!");
+    console.error("❌ [ERROR MESSAGE]:", error.message);
+    console.error("❌ [ERROR STACK]:", error.stack);
+    console.error("❌ [ERROR NAME]:", error.name);
     if (error.errors) {
-      console.error('❌ [VALIDATION ERRORS]:', JSON.stringify(error.errors, null, 2));
+      console.error(
+        "❌ [VALIDATION ERRORS]:",
+        JSON.stringify(error.errors, null, 2)
+      );
     }
-    
+
     res.status(500).json({
       error: "Internal server error",
       details: error.message,
       errorName: error.name,
-      validationErrors: error.errors ? Object.keys(error.errors) : null
-    })
+      validationErrors: error.errors ? Object.keys(error.errors) : null,
+    });
   }
-}
+};
+
+
+
+
+
 
 
 
@@ -347,13 +479,28 @@ const getPaymentByPaymentId = async (req, res) => {
   try {
     const { paymentId } = req.params;
 
-    // ✅ Check if visa application exists with this paymentId (works for both online and cash/orderId)
-    const exists = await VisaApplication.exists({ paymentId });
+    // ✅ Check if visa application exists with this paymentId AND isFinalSubmit is true
+    const visaApplication = await VisaApplication.findOne({ 
+      paymentId 
+    });
 
-    if (exists) {
-      return res.status(200).json({ success: true });
+    if (visaApplication && visaApplication.isFinalSubmit === true) {
+      return res.status(200).json({ 
+        success: true, 
+        message: "Payment found and application is finalized",
+        isFinalSubmit: true
+      });
+    } else if (visaApplication && visaApplication.isFinalSubmit === false) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Application found but not finalized yet",
+        isFinalSubmit: false 
+      });
     } else {
-      return res.status(404).json({ success: false});
+      return res.status(404).json({ 
+        success: false, 
+        message: "Payment not found" 
+      });
     }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -521,6 +668,105 @@ const getMonthlyStats = async (req, res) => {
 };
 
 
-module.exports = { createVisaApplication , getAllVisaApplications,updateVisaStatus,getVisaApplicationById,
+
+
+const getVisaApplicationByPaymentId = async (req, res) => {
+  try {
+    const { paymentId } = req.params
+
+    if (!paymentId) {
+      return res.status(400).json({
+        success: false,
+        message: "paymentId is required in params",
+      })
+    }
+
+    // 🔍 Find application by paymentId
+    const application = await VisaApplication.findOne({ paymentId })
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "No visa application found for this paymentId",
+      })
+    }
+
+    // ----------------------------
+    // ✅ RESTORE SUMMARY GENERATION
+    // ----------------------------
+
+    const progress = {} // traveller wise status
+
+    if (application.documents) {
+      for (const [key, value] of application.documents.entries()) {
+        // key example => "0_1760608672798fl3lcdb61"
+        const [travellerIndex, docId] = key.split("_")
+
+        if (!progress[travellerIndex]) {
+          progress[travellerIndex] = {
+            travellerIndex: Number(travellerIndex),
+            documents: {},
+          }
+        }
+
+        progress[travellerIndex].documents[docId] = {
+          hasFront: !!value.front,
+          hasBack: !!value.back,
+        }
+      }
+    }
+
+    // ✅ passport data progress
+    const passportProgress = {}
+    if (Array.isArray(application.passportData)) {
+      for (const p of application.passportData) {
+        passportProgress[p.travellerIndex] = true
+      }
+    }
+
+    // ----------------------------
+    // ✅ FINAL RESPONSE
+    // ----------------------------
+    return res.status(200).json({
+      success: true,
+      message: "Visa application fetched successfully",
+      visaApplication: application,
+
+      meta: {
+        isFinalSubmit: application.isFinalSubmit === true,
+
+        totalTravellers: Number(application.travellers),
+
+        // ✅ traveller-wise progress for restore
+        uploadProgress: progress,
+
+        // ✅ passport filled or not
+        passportProgress: passportProgress,
+
+        // simple counts
+        documentsCount: application.documents
+          ? application.documents.size || Object.keys(application.documents).length
+          : 0,
+
+        passportCount: Array.isArray(application.passportData)
+          ? application.passportData.length
+          : 0,
+      },
+    })
+  } catch (error) {
+    console.error("❌ [ERROR] Fetch by paymentId failed!")
+    console.error("❌ [ERROR MESSAGE]:", error.message)
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      details: error.message,
+    })
+  }
+}
+
+
+
+module.exports = { createVisaApplication , getAllVisaApplications,updateVisaStatus,getVisaApplicationById,  getVisaApplicationByPaymentId,
   getVisaApplicationsByPhone,getVisaApplicationStats, getLatestVisaApplications,getVisaStatusById,
   getVisaStatusByPaymentId,getPaymentByPaymentId,getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById,getMonthlyStats};

@@ -1,107 +1,204 @@
 
 
 const CookiesPolicy = () => {
+  const today = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Cookies Policy</h1>
-        <p className="text-lg text-gray-600">Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-      </div>
+    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto">
 
-      <div className="bg-white rounded-xl shadow-lg p-8 sm:p-10 lg:p-12">
-        <div className="prose prose-lg max-w-none text-gray-600">
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">1. What Are Cookies</h2>
-            <p className="mb-6">
-              Cookies are small text files placed on your device when you visit <span className="font-bold text-blue-600">Visaafy</span>. They help us:
-            </p>
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
-              {[
-                { icon: '🔒', title: 'Secure Your Session', desc: 'Keep you logged in securely' },
-                { icon: '📊', title: 'Analyze Usage', desc: 'Understand how visitors use our site' },
-                { icon: '⚙️', title: 'Remember Preferences', desc: 'Save your language and settings' }
-              ].map((item, index) => (
-                <div key={index} className="bg-gray-50 p-6 rounded-lg text-center">
-                  <div className="text-3xl mb-3">{item.icon}</div>
-                  <h3 className="font-medium text-lg text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-600">{item.desc}</p>
+        {/* Header */}
+        <header className="mb-10 text-center">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-indigo-50 to-cyan-50 border border-indigo-100">
+            <svg className="w-6 h-6 text-indigo-600" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M3 12h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 6h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-sm font-medium text-indigo-700">Privacy & Cookies</span>
+          </div>
+
+          <h1 className="mt-6 text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+            Cookies Policy
+          </h1>
+          <p className="mt-3 text-sm text-slate-500">
+            Last updated: <span className="font-medium text-slate-700">{today}</span>
+          </p>
+          <p className="mt-1 text-xs text-slate-400">Visaafy.com • Kehar Travel Services Pvt. Ltd.</p>
+        </header>
+
+        {/* Card */}
+        <article className="bg-white shadow-md rounded-2xl border border-slate-100 overflow-hidden">
+          <div className="px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12">
+
+            {/* Intro */}
+            <section className="max-w-prose mx-auto prose prose-slate prose-lg">
+              <p className="lead">
+                We use cookies to improve your browsing experience and website performance.
+              </p>
+            </section>
+
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-8">
+
+                {/* Section 1 */}
+                <section className="prose prose-slate max-w-none">
+                  <h2>1. What Are Cookies?</h2>
+                  <p>
+                    Cookies are small text files stored on your device when you visit a website. They help websites
+                    function properly, improve user experience, remember preferences, and gather analytics.
+                  </p>
+
+                  <h3>Types of Cookies We Use</h3>
+                  <ul className="list-disc pl-5">
+                    <li><strong>Essential Cookies:</strong> Required for website functionality.</li>
+                    <li><strong>Performance Cookies:</strong> Help us analyze site traffic.</li>
+                    <li><strong>Functional Cookies:</strong> Remember user preferences.</li>
+                    <li><strong>Third-Party Cookies:</strong> Razorpay, analytics tools, social media integrations.</li>
+                  </ul>
+                </section>
+
+                {/* Section 2 */}
+                <section className="prose prose-slate max-w-none">
+                  <h2>2. How We Use Cookies</h2>
+                  <p>Visaafy.com uses cookies for the following purposes:</p>
+
+                  <h3>2.1 Essential Cookies</h3>
+                  <p>
+                    These cookies are required to operate the website and enable core functionality such as:
+                  </p>
+                  <ul className="list-inside list-disc pl-5">
+                    <li>Navigating pages</li>
+                    <li>Secure account login</li>
+                    <li>Form submissions</li>
+                    <li>Preventing fraudulent use of services</li>
+                  </ul>
+                  <p>
+                    Without essential cookies, parts of the website may not function properly.
+                  </p>
+
+                  <h3>2.2 Performance & Analytics Cookies</h3>
+                  <p>
+                    These cookies help us understand how visitors use the site. We use analytics tools (e.g., Google Analytics
+                    or similar services) to collect information such as page views, time spent on pages, click patterns, and
+                    device/browser type.
+                  </p>
+
+                  <h3>2.3 Functional Cookies</h3>
+                  <p>
+                    These cookies enable personalized features such as remembering your language and region preferences,
+                    autofill options, and content relevant to previous interactions.
+                  </p>
+
+                  <h3>2.4 Advertising & Marketing Cookies</h3>
+                  <p>
+                    These cookies allow us to deliver personalized ads, track ad performance, and retarget visitors with relevant
+                    visa or travel assistance offers. Third-party advertising networks may set these cookies.
+                  </p>
+                </section>
+
+                {/* Section 3 */}
+                <section className="prose prose-slate max-w-none">
+                  <h2>3. Third-Party Cookies</h2>
+                  <p>
+                    Visaafy.com may use trusted third-party services that set their own cookies, including analytics providers,
+                    advertising partners, payment gateways, and social media integrations. These parties may collect data
+                    according to their own privacy policies.
+                  </p>
+                </section>
+
+                {/* Section 4 */}
+                <section className="prose prose-slate max-w-none">
+                  <h2>4. Managing & Disabling Cookies</h2>
+                  <p>You have the right to control cookies.</p>
+
+                  <h3>Browser Settings</h3>
+                  <p>
+                    Most browsers allow you to block cookies, delete existing cookies, or receive alerts before a cookie is
+                    stored. Instructions vary by browser (Chrome, Safari, Firefox, Edge, etc.).
+                  </p>
+
+                  <h3>Cookie Banner / Preferences</h3>
+                  <p>
+                    When visiting Visaafy.com, you may be given an option to accept all cookies, reject non-essential cookies,
+                    or customize cookie preferences. Note: disabling certain cookies may affect functionality.
+                  </p>
+                </section>
+
+                {/* Section 5 */}
+                <section className="prose prose-slate max-w-none">
+                  <h2>5. Changes to This Cookie Policy</h2>
+                  <p>
+                    We may update this Cookie Policy periodically. Updates will be posted on this page with a new effective
+                    date. Continued use of the website after changes indicates acceptance of the revised policy.
+                  </p>
+                </section>
+
+                {/* Section 6 */}
+                <section className="prose prose-slate max-w-none">
+                  <h2>6. Contact Us</h2>
+                  <p>If you have questions about this Cookie Policy or our data practices, you can contact us at:</p>
+                  <p className="font-medium">
+                    Email Id:{" "}
+                    <a href="mailto:contact@visaafy.com" className="text-indigo-600 hover:underline">
+                      contact@visaafy.com
+                    </a>
+                  </p>
+                </section>
+
+              </div>
+
+              {/* Right Sidebar */}
+              <aside className="lg:col-span-1 space-y-6">
+                <div className="sticky top-6 space-y-4">
+
+                  <div className="rounded-xl border border-slate-100 bg-gradient-to-b from-white to-slate-50 p-4 shadow-sm">
+                    <h4 className="text-sm font-semibold text-slate-800">Quick Summary</h4>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Essential cookies are required. You can block non-essential cookies via your browser or cookie preferences.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-100 bg-indigo-50 p-4">
+                    <h4 className="text-sm font-semibold text-indigo-900">Why it matters</h4>
+                    <p className="mt-2 text-sm text-indigo-800">
+                      Cookies help secure sessions and improve your experience — but you control them.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-100 bg-white p-4">
+                    <h4 className="text-sm font-semibold text-slate-800">Manage Cookies</h4>
+                    <div className="mt-3 flex flex-col gap-3">
+                      <button className="w-full px-3 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
+                        Accept all cookies
+                      </button>
+                      <button className="w-full px-3 py-2 rounded-md border border-slate-200 text-slate-700 text-sm hover:bg-slate-50">
+                        Reject non-essential
+                      </button>
+                      <button className="w-full px-3 py-2 rounded-md bg-white text-slate-700 text-sm border border-slate-200 hover:bg-slate-50">
+                        Customize preferences
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-100 bg-white p-4 text-sm text-slate-500">
+                    <p><strong>Support:</strong></p>
+                    <p className="mt-1">
+                      Email:{" "}
+                      <a href="mailto:contact@visaafy.com" className="text-indigo-600 hover:underline">
+                        contact@visaafy.com
+                      </a>
+                    </p>
+                  </div>
+
                 </div>
-              ))}
+              </aside>
             </div>
           </div>
-
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">2. Types of Cookies We Use</h2>
-            <div className="overflow-x-auto mb-6">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cookie Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {[
-                    { type: 'Essential', purpose: 'Site functionality and security', duration: 'Session' },
-                    { type: 'Analytics', purpose: 'Visitor statistics (Google Analytics)', duration: '2 years' },
-                    { type: 'Preference', purpose: 'Remember your settings', duration: '1 year' },
-                    { type: 'Marketing', purpose: 'Relevant ads (if enabled)', duration: '6 months' }
-                  ].map((row, index) => (
-                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{row.type}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.purpose}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.duration}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">3. Managing Cookies</h2>
-            <div className="bg-blue-50 rounded-lg p-6 mb-6">
-              <h3 className="font-medium text-lg text-gray-900 mb-3">Browser Controls</h3>
-              <p className="mb-4">
-                Most browsers allow you to:
-              </p>
-              <ul className="space-y-2 text-gray-600">
-                {[
-                  'View and delete cookies',
-                  'Block third-party cookies',
-                  'Get alerts for new cookies',
-                  'Completely disable cookies'
-                ].map((item, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-blue-500 mr-2">•</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 text-sm text-gray-500">
-                Note: Disabling essential cookies may break site functionality.
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">4. Changes to This Policy</h2>
-            <p className="mb-6">
-              We may update this policy occasionally. We'll notify you of significant changes by:
-            </p>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="font-medium text-lg text-gray-900 mb-3">Website Notice</h3>
-                <p className="text-gray-600">A banner on our homepage for 30 days</p>
-              </div>
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="font-medium text-lg text-gray-900 mb-3">Email Notification</h3>
-                <p className="text-gray-600">For registered users (if changes affect data use)</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        </article>
       </div>
     </div>
   );

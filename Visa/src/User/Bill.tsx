@@ -59,7 +59,7 @@ const Bill = () => {
     if (!paymentId) return;
     
     try {
-      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/payments/customer-name/${paymentId}`);
+      const response = await fetch(`http://localhost:5000/api/payments/customer-name/${paymentId}`);
       const result = await response.json();
       
       if (result.success) {

@@ -40,7 +40,7 @@ const AdminLayout = () => {
         }
 
         // Call API to get admin profile
-        const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/admin/profile', {
+        const response = await fetch('http://localhost:5000/api/admin/profile', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -69,7 +69,7 @@ const AdminLayout = () => {
       localStorage.clear();
 
       // ✅ Step 2: Call logout API
-      await fetch('https://govisaa-872569311567.asia-south2.run.app/api/admin/logout', {
+      await fetch('http://localhost:5000/api/admin/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

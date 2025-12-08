@@ -27,7 +27,7 @@ const VisaStatusTracker = () => {
     const fetchStatus = async () => {
       try {
         const response = await fetch(
-          `https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/status/${paymentId}`
+          `http://localhost:5000/api/VisaApplication/status/${paymentId}`
         );
         const data = await response.json();
         
@@ -36,7 +36,7 @@ const VisaStatusTracker = () => {
 
         if (!statusHistory.length) {
           try {
-            const allRes = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/GetAll');
+            const allRes = await fetch('http://localhost:5000/api/VisaApplication/GetAll');
             const allData = await allRes.json();
             const apps = Array.isArray(allData?.data) ? allData.data : [];
             // Match by any of paymentId, paymentOrderId (which can be an orderId for cash), or _id

@@ -3,7 +3,7 @@ const router = express.Router();
 const parser = require('../middileware/Uplod');
 const { verifyAccessToken } = require('../middileware/authMiddleware');
 const { createVisaApplication,getAllVisaApplications,updateVisaStatus ,
-    getVisaApplicationById,getVisaApplicationsByPhone,getVisaStatusById,
+    getVisaApplicationById,getVisaApplicationsByPhone,getVisaStatusById,getVisaApplicationByPaymentId,
     getVisaStatusByPaymentId,getPaymentByPaymentId,getVisaApplicationStats,getLatestVisaApplications,
     getRejectedByPhone,getApprovedByPhone,getVisasByPhone,getStatusHistoryById,getMonthlyStats} = require('../controller/VisaApplication');
 
@@ -39,4 +39,9 @@ router.get('/stats',verifyAccessToken, getVisaApplicationStats);
 router.get('/getLatest',verifyAccessToken, getLatestVisaApplications);
 // ✅ NEW: Monthly statistics route for dashboard chart
 router.get('/monthly-stats',verifyAccessToken, getMonthlyStats);
+router.get(
+  "/by-payment/:paymentId",
+  verifyAccessToken,         // ✅ agar public rakhna hai to isko hata bhi sakte ho
+  getVisaApplicationByPaymentId
+)
 module.exports = router;
