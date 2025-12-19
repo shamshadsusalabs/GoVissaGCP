@@ -105,7 +105,7 @@ const EmployeeManagement = () => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/employee/getAll")
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/employee/getAll")
       if (!response.ok) {
         throw new Error("Failed to fetch employees")
       }
@@ -130,7 +130,7 @@ const EmployeeManagement = () => {
     setFormLoading(true)
 
     try {
-      const response = await fetch("http://localhost:5000/api/employee/signup", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/employee/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +177,7 @@ const EmployeeManagement = () => {
         updateData.password = formData.password
       }
 
-      const response = await fetch(`http://localhost:5000/api/employee/upadtebyId/${editingEmployee._id}`, {
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/upadtebyId/${editingEmployee._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -211,7 +211,7 @@ const EmployeeManagement = () => {
     setDeletingId(deletingEmployee._id)
 
     try {
-      const response = await fetch(`http://localhost:5000/api/employee/delete/${deletingEmployee._id}`, {
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/delete/${deletingEmployee._id}`, {
         method: "DELETE",
       })
 
@@ -235,7 +235,7 @@ const EmployeeManagement = () => {
   const handleVerifyEmployee = async (id: string, currentStatus: boolean) => {
     setVerifyingId(id)
     try {
-      const response = await fetch(`http://localhost:5000/api/employee/verify/${id}`, {
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/employee/verify/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

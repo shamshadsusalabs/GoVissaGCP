@@ -134,7 +134,7 @@ const DashboardPage: React.FC = () => {
       try {
         setLoading(true)
         // Fetch stats
-        const statsResponse = await fetch("http://localhost:5000/api/VisaApplication/stats")
+        const statsResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/stats")
         if (!statsResponse.ok) {
           throw new Error("Failed to fetch stats")
         }
@@ -142,7 +142,7 @@ const DashboardPage: React.FC = () => {
         setStats(statsData)
 
         // Fetch recent applications
-        const recentResponse = await fetch("http://localhost:5000/api/VisaApplication/getLatest")
+        const recentResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getLatest")
         if (!recentResponse.ok) {
           throw new Error("Failed to fetch recent applications")
         }
@@ -151,7 +151,7 @@ const DashboardPage: React.FC = () => {
         setAllApplications(recentData.data) // Store all data for export
 
         // Fetch visa type counts
-        const visaTypesResponse = await fetch("http://localhost:5000/api/configurations/counts/types")
+        const visaTypesResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/counts/types")
         if (!visaTypesResponse.ok) {
           throw new Error("Failed to fetch visa type counts")
         }
@@ -160,7 +160,7 @@ const DashboardPage: React.FC = () => {
 
         // Fetch visa configurations for dynamic visa type mapping
         try {
-          const configResponse = await fetch("http://localhost:5000/api/configurations/getAll")
+          const configResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/configurations/getAll")
           if (configResponse.ok) {
             const configData = await configResponse.json()
             if (configData.success && configData.data) {
@@ -173,7 +173,7 @@ const DashboardPage: React.FC = () => {
 
         // Fetch monthly data
         try {
-          const monthlyResponse = await fetch("http://localhost:5000/api/VisaApplication/monthly-stats")
+          const monthlyResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/monthly-stats")
           if (monthlyResponse.ok) {
             const monthlyDataResponse = await monthlyResponse.json()
             if (monthlyDataResponse.success && monthlyDataResponse.data) {
@@ -211,7 +211,7 @@ const DashboardPage: React.FC = () => {
   const fetchPendingPayments = async () => {
     try {
       const token = localStorage.getItem("accessToken")
-      const response = await fetch("http://localhost:5000/api/payments/pending-approvals", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/pending-approvals", {
         headers: {
           "Authorization": `Bearer ${token}` 
         }
@@ -240,7 +240,7 @@ const DashboardPage: React.FC = () => {
       const adminId = localStorage.getItem("adminId") || "admin"
 
 
-      const response = await fetch("http://localhost:5000/api/payments/approve-payment", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/approve-payment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -388,10 +388,10 @@ const DashboardPage: React.FC = () => {
     try {
       // Fetch ALL applications from API for export
       // Try getAll first, if it fails, use getLatest without limit
-      let response = await fetch("http://localhost:5000/api/VisaApplication/getAll")
+      let response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getAll")
       if (!response.ok) {
         // Fallback to getLatest if getAll doesn't exist
-        response = await fetch("http://localhost:5000/api/VisaApplication/getLatest?limit=1000")
+        response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getLatest?limit=1000")
         if (!response.ok) {
           throw new Error("Failed to fetch applications")
         }

@@ -54,17 +54,17 @@ const BookingForm: React.FC<BookingFormProps> = ({
   handleTravellerChange,
   setPaymentSuccess,
 }) => {
-  
+
   // Calculate expected decision date based on expectedVisaDays
   const calculateExpectedDecisionDate = () => {
     if (!selectedVisaType?.expectedVisaDays || selectedVisaType.expectedVisaDays <= 0) {
       return null
     }
-    
+
     const today = new Date()
     const expectedDays = selectedVisaType.expectedVisaDays
     const expectedDate = new Date(today.getTime() + (expectedDays * 24 * 60 * 60 * 1000))
-    
+
     return expectedDate.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -81,24 +81,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [otpVerified, setOtpVerified] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
   const [otpError, setOtpError] = useState("")
-  
+
   // ✅ NEW: Email OTP states
   const [emailOtpSent, setEmailOtpSent] = useState(false)
   const [emailOtp, setEmailOtp] = useState("")
   const [emailOtpVerified, setEmailOtpVerified] = useState(false)
   const [emailOtpLoading, setEmailOtpLoading] = useState(false)
   const [emailOtpError, setEmailOtpError] = useState("")
-  
+
   const [appliedPromoCode, setAppliedPromoCode] = useState<any>(null)
   const [discountAmount, setDiscountAmount] = useState(0)
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<"online" | "offline" | "cash" | "paylater" | null>(null)
   const [error, setError] = useState<string | null>(null)
-  
+
   // ✅ NEW: Age group states
   const [children, setChildren] = useState(0) // 6y - 12y
   const [youngChildren, setYoungChildren] = useState(0)   // 0y - 6y
-  
+
   // ✅ NEW: Pay Later form state
   // const [showPayLaterForm, setShowPayLaterForm] = useState(false) // Commented out unused variable
   const [payLaterDetails, setPayLaterDetails] = useState({
@@ -116,7 +116,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setOtpLoading(true)
     setOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/send-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/send-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -147,7 +147,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setOtpLoading(true)
     setOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/verify-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/verify-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,7 +215,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // ✅ NEW: Send success email after both OTPs are verified
   const sendSuccessEmail = async (paymentStatus?: string) => {
     try {
-      const response = await fetch("http://localhost:5000/api/User/send-success-email", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/send-success-email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -227,7 +227,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           paymentStatus: paymentStatus || null, // Pass payment status if provided
         }),
       })
-      
+
       if (response.ok) {
         // Success email sent successfully
       } else {
@@ -247,7 +247,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setEmailOtpLoading(true)
     setEmailOtpError("")
     try {
-      const response = await fetch("http://localhost:5000/api/User/send-email-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/send-email-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -281,12 +281,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
       // First check if user is already logged in with phone
       const existingUser = localStorage.getItem("user")
       let currentUser = null
-      
+
       if (existingUser) {
         currentUser = JSON.parse(existingUser)
       }
 
-      const response = await fetch("http://localhost:5000/api/User/verify-email-otp", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/verify-email-otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -297,15 +297,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
         }),
       })
       const data = await response.json()
-      
+
       if (response.ok) {
         setEmailOtpVerified(true)
         setEmailOtpError("")
-        
+
         // If user was already logged in with phone, update their profile with email
         if (currentUser && currentUser._id && !currentUser.email) {
           try {
-            const updateResponse = await fetch("http://localhost:5000/api/User/register-email", {
+            const updateResponse = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/User/register-email", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -315,7 +315,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 userId: currentUser._id,
               }),
             })
-            
+
             if (updateResponse.ok) {
               const updateData = await updateResponse.json()
               localStorage.setItem("user", JSON.stringify(updateData.user))
@@ -324,7 +324,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
             // Failed to update user profile with email
           }
         }
-        
+
         // ✅ NEW: Send success email if both phone and email are now verified
         if (otpVerified) {
           await sendSuccessEmail()
@@ -355,13 +355,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const handlePayment = async () => {
     if (!selectedVisaType) return
-    
+
     // ✅ Validate that a travel date is selected
     if (!selectedDate || selectedDate.trim() === "") {
       setError("Please select a travel date before proceeding with payment.")
       return
     }
-    
+
     try {
       // Age-based pricing calculation for handlePayment
       const totalTravellers = travellers + children + youngChildren
@@ -373,7 +373,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const amountInRupees = Math.round(finalAmount); const amountInPaise = Math.round(finalAmount * 100)
 
       if (appliedPromoCode) {
-        await fetch("http://localhost:5000/api/promocode/incrementUsage", {
+        await fetch("https://govisaa-872569311567.asia-south2.run.app/api/promocode/incrementUsage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -384,7 +384,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         })
       }
 
-      const response = await fetch("http://localhost:5000/api/payments/create-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -432,7 +432,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         handler: async (response: any) => {
           try {
             const verifyResponse = await fetch(
-              "http://localhost:5000/api/payments/verify-payment",
+              "https://govisaa-872569311567.asia-south2.run.app/api/payments/verify-payment",
               {
                 method: "POST",
                 headers: {
@@ -500,13 +500,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const handleWhatsAppRedirect = async () => {
     if (!visaData || !selectedVisaType) return
-    
+
     // ✅ Validate that a travel date is selected
     if (!selectedDate || selectedDate.trim() === "") {
       setError("Please select a travel date before proceeding.")
       return
     }
-    
+
     try {
       // Age-based pricing calculation for WhatsApp redirect
       const totalTravellers = travellers + children + youngChildren
@@ -518,7 +518,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const amountInRupees = Math.round(finalAmount)
 
       if (appliedPromoCode) {
-        await fetch("http://localhost:5000/api/promocode/incrementUsage", {
+        await fetch("https://govisaa-872569311567.asia-south2.run.app/api/promocode/incrementUsage", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -529,7 +529,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         })
       }
 
-      const response = await fetch("http://localhost:5000/api/payments/create-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -570,12 +570,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
       await response.json()
       const message = encodeURIComponent(
         `Hi! I want to apply for ${visaData.country} visa. Here are my details:\n\n` +
-          `📅 Appointment Date: ${selectedDate}\n` +
-          `👥 Travelers: ${totalTravellers}\n` +
-          `📧 Email: ${contactInfo.email}\n` +
-          `📱 Phone: ${contactInfo.phone}\n` +
-          `💰 Total Amount: ₹ ${total}\n\n` +
-          `Please guide me with the offline payment process.`,
+        `📅 Appointment Date: ${selectedDate}\n` +
+        `👥 Travelers: ${totalTravellers}\n` +
+        `📧 Email: ${contactInfo.email}\n` +
+        `📱 Phone: ${contactInfo.phone}\n` +
+        `💰 Total Amount: ₹ ${total}\n\n` +
+        `Please guide me with the offline payment process.`,
       )
       window.open(`https://wa.me/917070357583?text=${message}`, "_blank")
       setPaymentSuccess("offline") // ✅ Pass payment method type for offline
@@ -591,13 +591,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // ✅ NEW: Handle Cash Payment
   const handleCashPayment = async () => {
     if (!visaData || !selectedVisaType) return
-    
+
     // ✅ Validate that a travel date is selected
     if (!selectedDate || selectedDate.trim() === "") {
       setError("Please select a travel date before proceeding.")
       return
     }
-    
+
     try {
       // Age-based pricing calculation for cash payment
       const totalTravellers = travellers + children + youngChildren
@@ -608,7 +608,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const finalAmount = originalAmount - discountAmount
       const amountInRupees = Math.round(finalAmount)
 
-      const response = await fetch("http://localhost:5000/api/payments/create-cash-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-cash-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -658,13 +658,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
   // ✅ NEW: Handle Pay Later Payment
   const handlePayLaterPayment = async () => {
     if (!visaData || !selectedVisaType) return
-    
+
     // ✅ Validate that a travel date is selected
     if (!selectedDate || selectedDate.trim() === "") {
       setError("Please select a travel date before proceeding.")
       return
     }
-    
+
     try {
       // Age-based pricing calculation for pay later
       const totalTravellers = travellers + children + youngChildren
@@ -675,7 +675,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
       const finalAmount = originalAmount - discountAmount
       const amountInRupees = Math.round(finalAmount)
 
-      const response = await fetch("http://localhost:5000/api/payments/create-paylater-order", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/payments/create-paylater-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -739,103 +739,103 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const adultCost = (selectedVisaType.visaFee + selectedVisaType.serviceFee) * travellers
   const childCost = ((selectedVisaType.childVisaFee || 0) + (selectedVisaType.childServiceFee || 0)) * children
   const youngChildCost = ((selectedVisaType.youngChildVisaFee || 0) + (selectedVisaType.youngChildServiceFee || 0)) * youngChildren
-  
+
   const subtotal = adultCost + childCost + youngChildCost
   const total = (subtotal - discountAmount).toFixed(2)
 
   // Individual fee variables for price breakdown display (removed unused variables)
 
-      return (
-        <div className="w-full rounded-2xl border border-gray-200 shadow-xl overflow-hidden bg-white">
-         {selectedVisaType?.expectedVisaDays && selectedVisaType.expectedVisaDays > 0 && (
-           <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 sm:p-6">
-             <p className="font-medium text-sm opacity-90">Expected visa decision by</p>
-             <h4 className="text-xl sm:text-2xl font-bold">{calculateExpectedDecisionDate()}</h4>
-           </div>
-         )}
+  return (
+    <div className="w-full rounded-2xl border border-gray-200 shadow-xl overflow-hidden bg-white">
+      {selectedVisaType?.expectedVisaDays && selectedVisaType.expectedVisaDays > 0 && (
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 sm:p-6">
+          <p className="font-medium text-sm opacity-90">Expected visa decision by</p>
+          <h4 className="text-xl sm:text-2xl font-bold">{calculateExpectedDecisionDate()}</h4>
+        </div>
+      )}
 
-          <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-            <div className="border-b border-gray-200 pb-6">
-              <div className="flex items-center space-x-3 mb-6">
-                <span className="text-2xl text-gray-700">👥</span>
-                <span className="font-semibold text-lg text-gray-800">Travellers</span>
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        <div className="border-b border-gray-200 pb-6">
+          <div className="flex items-center space-x-3 mb-6">
+            <span className="text-2xl text-gray-700">👥</span>
+            <span className="font-semibold text-lg text-gray-800">Travellers</span>
+          </div>
+
+          {/* Age Group Selection */}
+          <div className="space-y-4">
+            {/* Adults (12y+) */}
+            <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+              <div>
+                <div className="font-semibold text-gray-800">ADULTS (12y+)</div>
+                <div className="text-sm text-gray-500">on the day of travel</div>
               </div>
-              
-              {/* Age Group Selection */}
-              <div className="space-y-4">
-                {/* Adults (12y+) */}
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-semibold text-gray-800">ADULTS (12y+)</div>
-                    <div className="text-sm text-gray-500">on the day of travel</div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => handleTravellerChange(-1)}
-                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed text-lg font-bold"
-                      disabled={travellers <= 0}
-                    >
-                      −
-                    </button>
-                    <span className="font-bold text-lg w-6 text-center text-gray-900 bg-blue-500 text-white rounded px-2 py-1">{travellers}</span>
-                    <button
-                      onClick={() => handleTravellerChange(1)}
-                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out text-lg font-bold"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Children (6y - 12y) */}
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-semibold text-gray-800">CHILDREN (6y - 12y)</div>
-                    <div className="text-sm text-gray-500">on the day of travel</div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => setChildren(Math.max(0, children - 1))}
-                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed text-lg font-bold"
-                      disabled={children <= 0}
-                    >
-                      −
-                    </button>
-                    <span className="font-bold text-lg w-6 text-center text-gray-900 bg-blue-500 text-white rounded px-2 py-1">{children}</span>
-                    <button
-                      onClick={() => setChildren(children + 1)}
-                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out text-lg font-bold"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Young Children (0y - 6y) */}
-                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                  <div>
-                    <div className="font-semibold text-gray-800">YOUNG CHILDREN (0y - 6y)</div>
-                    <div className="text-sm text-gray-500">on the day of travel</div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => setYoungChildren(Math.max(0, youngChildren - 1))}
-                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed text-lg font-bold"
-                      disabled={youngChildren <= 0}
-                    >
-                      −
-                    </button>
-                    <span className="font-bold text-lg w-6 text-center text-gray-900 bg-blue-500 text-white rounded px-2 py-1">{youngChildren}</span>
-                    <button
-                      onClick={() => setYoungChildren(youngChildren + 1)}
-                      className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out text-lg font-bold"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => handleTravellerChange(-1)}
+                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed text-lg font-bold"
+                  disabled={travellers <= 0}
+                >
+                  −
+                </button>
+                <span className="font-bold text-lg w-6 text-center text-gray-900 bg-blue-500 text-white rounded px-2 py-1">{travellers}</span>
+                <button
+                  onClick={() => handleTravellerChange(1)}
+                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out text-lg font-bold"
+                >
+                  +
+                </button>
               </div>
             </div>
+
+            {/* Children (6y - 12y) */}
+            <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+              <div>
+                <div className="font-semibold text-gray-800">CHILDREN (6y - 12y)</div>
+                <div className="text-sm text-gray-500">on the day of travel</div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setChildren(Math.max(0, children - 1))}
+                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed text-lg font-bold"
+                  disabled={children <= 0}
+                >
+                  −
+                </button>
+                <span className="font-bold text-lg w-6 text-center text-gray-900 bg-blue-500 text-white rounded px-2 py-1">{children}</span>
+                <button
+                  onClick={() => setChildren(children + 1)}
+                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out text-lg font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Young Children (0y - 6y) */}
+            <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+              <div>
+                <div className="font-semibold text-gray-800">YOUNG CHILDREN (0y - 6y)</div>
+                <div className="text-sm text-gray-500">on the day of travel</div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setYoungChildren(Math.max(0, youngChildren - 1))}
+                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed text-lg font-bold"
+                  disabled={youngChildren <= 0}
+                >
+                  −
+                </button>
+                <span className="font-bold text-lg w-6 text-center text-gray-900 bg-blue-500 text-white rounded px-2 py-1">{youngChildren}</span>
+                <button
+                  onClick={() => setYoungChildren(youngChildren + 1)}
+                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-all duration-200 ease-in-out text-lg font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-6">
           <h5 className="font-bold text-xl text-gray-800">Contact Information</h5>
@@ -990,7 +990,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
         <div className="space-y-4 border-t border-gray-200 pt-8">
           <h5 className="font-bold text-xl text-gray-800">Price Details</h5>
-          
+
           {/* Adults (12+ years) */}
           {travellers > 0 && (
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -1085,7 +1085,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               )}
             </div>
           </div>
-          
+
         </div>
 
         <div className="bg-yellow-50 p-5 rounded-xl border border-yellow-200">
@@ -1114,9 +1114,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
               setShowPaymentOptions(true)
             }}
             disabled={!contactInfo.email || !contactInfo.phone || !otpVerified || !emailOtpVerified}
-            className={`w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 text-sm sm:text-base ${
-              !contactInfo.email || !contactInfo.phone || !otpVerified || !emailOtpVerified ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 text-sm sm:text-base ${!contactInfo.email || !contactInfo.phone || !otpVerified || !emailOtpVerified ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             {!otpVerified || !emailOtpVerified ? "Verify Contact Details to Continue" : "Continue to Payment"}
           </button>
@@ -1126,11 +1125,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <button
                 onClick={() => setPaymentMethod("online")}
-                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${
-                  paymentMethod === "online"
-                    ? "border-blue-600 bg-blue-50 text-blue-800 shadow-md"
-                    : "border-gray-300 bg-white hover:border-blue-300 hover:shadow-sm"
-                }`}
+                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${paymentMethod === "online"
+                  ? "border-blue-600 bg-blue-50 text-blue-800 shadow-md"
+                  : "border-gray-300 bg-white hover:border-blue-300 hover:shadow-sm"
+                  }`}
               >
                 <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">💳</div>
                 <div className="font-bold text-base sm:text-lg">Online Process</div>
@@ -1138,11 +1136,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               </button>
               <button
                 onClick={() => setPaymentMethod("offline")}
-                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${
-                  paymentMethod === "offline"
-                    ? "border-green-600 bg-green-50 text-green-800 shadow-md"
-                    : "border-gray-300 bg-white hover:border-green-300 hover:shadow-sm"
-                }`}
+                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${paymentMethod === "offline"
+                  ? "border-green-600 bg-green-50 text-green-800 shadow-md"
+                  : "border-gray-300 bg-white hover:border-green-300 hover:shadow-sm"
+                  }`}
               >
                 <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">💬</div>
                 <div className="font-bold text-base sm:text-lg">Offline Process</div>
@@ -1150,11 +1147,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               </button>
               <button
                 onClick={() => setPaymentMethod("cash")}
-                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${
-                  paymentMethod === "cash"
-                    ? "border-orange-600 bg-orange-50 text-orange-800 shadow-md"
-                    : "border-gray-300 bg-white hover:border-orange-300 hover:shadow-sm"
-                }`}
+                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${paymentMethod === "cash"
+                  ? "border-orange-600 bg-orange-50 text-orange-800 shadow-md"
+                  : "border-gray-300 bg-white hover:border-orange-300 hover:shadow-sm"
+                  }`}
               >
                 <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">💵</div>
                 <div className="font-bold text-base sm:text-lg">Cash Payment</div>
@@ -1162,11 +1158,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
               </button>
               <button
                 onClick={() => setPaymentMethod("paylater")}
-                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${
-                  paymentMethod === "paylater"
-                    ? "border-purple-600 bg-purple-50 text-purple-800 shadow-md"
-                    : "border-gray-300 bg-white hover:border-purple-300 hover:shadow-sm"
-                }`}
+                className={`p-4 sm:p-6 border-2 rounded-xl text-center flex flex-col items-center justify-center h-auto transition-all duration-200 ease-in-out transform hover:-translate-y-1 ${paymentMethod === "paylater"
+                  ? "border-purple-600 bg-purple-50 text-purple-800 shadow-md"
+                  : "border-gray-300 bg-white hover:border-purple-300 hover:shadow-sm"
+                  }`}
               >
                 <div className="text-3xl sm:text-4xl mb-2 sm:mb-3">🏢</div>
                 <div className="font-bold text-base sm:text-lg">Pay Later</div>
@@ -1187,7 +1182,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     <p className="text-xs text-green-600 leading-relaxed">
                       Our team will guide you through the payment process and document requirements.
                     </p>
-                    
+
                     {/* ✅ NEW: Contact Section for Offline Orders */}
                     <div className="mt-4 p-4 bg-white rounded-lg border border-green-300">
                       <h4 className="font-bold text-green-800 mb-2">📞 For Next Process Contact:</h4>
@@ -1196,7 +1191,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                           <span className="text-green-600">📧</span>
                           <span className="font-medium">Email:</span>
                           <a href="mailto:contact@traveli.asia" className="text-blue-600 hover:underline">
-                            contact@traveli.asia
+                            contact@visaafy.com
                           </a>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1236,7 +1231,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     <p className="text-xs text-orange-600 leading-relaxed">
                       Please bring exact amount and valid ID proof for verification.
                     </p>
-                    
+
                     {/* ✅ NEW: Contact Section for Cash Orders */}
                     <div className="mt-4 p-4 bg-white rounded-lg border border-orange-300">
                       <h4 className="font-bold text-orange-800 mb-2">📞 For Next Process Contact:</h4>
@@ -1244,8 +1239,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                         <div className="flex items-center space-x-2">
                           <span className="text-orange-600">📧</span>
                           <span className="font-medium">Email:</span>
-                          <a href="mailto:contact@traveli.asia" className="text-blue-600 hover:underline">
-                            contact@traveli.asia
+                          <a href="mailto:contact@visaafy.com" className="text-blue-600 hover:underline">
+                            contact@visaafy.com
                           </a>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1271,7 +1266,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     <p className="text-xs text-purple-600 leading-relaxed">
                       Requires corporate details and admin approval.
                     </p>
-                    
+
                     {/* ✅ NEW: Contact Section for Corporate Orders */}
                     <div className="mt-4 p-4 bg-white rounded-lg border border-purple-300">
                       <h4 className="font-bold text-purple-800 mb-2">📞 For Next Process Contact:</h4>
@@ -1279,8 +1274,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
                         <div className="flex items-center space-x-2">
                           <span className="text-purple-600">📧</span>
                           <span className="font-medium">Email:</span>
-                          <a href="mailto:contact@traveli.asia" className="text-blue-600 hover:underline">
-                            contact@traveli.asia
+                          <a href="mailto:contact@visaafy.com" className="text-blue-600 hover:underline">
+                            contact@visaafy.com
                           </a>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -1294,7 +1289,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 {/* ✅ NEW: Pay Later Form */}
                 {paymentMethod === "paylater" && (
                   <div className="bg-white p-4 sm:p-5 rounded-xl border border-purple-200">
@@ -1360,7 +1355,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={() => {
@@ -1389,23 +1384,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
                         handlePayLaterPayment()
                       }
                     }}
-                    className={`flex-1 px-4 sm:px-6 py-3 font-bold rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 text-sm sm:text-base ${
-                      paymentMethod === "online"
-                        ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                        : paymentMethod === "offline"
+                    className={`flex-1 px-4 sm:px-6 py-3 font-bold rounded-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 text-sm sm:text-base ${paymentMethod === "online"
+                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                      : paymentMethod === "offline"
                         ? "bg-green-600 hover:bg-green-700 text-white shadow-md"
                         : paymentMethod === "cash"
-                        ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md"
-                        : "bg-purple-600 hover:bg-purple-700 text-white shadow-md"
-                    }`}
+                          ? "bg-orange-600 hover:bg-orange-700 text-white shadow-md"
+                          : "bg-purple-600 hover:bg-purple-700 text-white shadow-md"
+                      }`}
                   >
-                    {paymentMethod === "offline" 
-                      ? "Connect on WhatsApp" 
+                    {paymentMethod === "offline"
+                      ? "Connect on WhatsApp"
                       : paymentMethod === "online"
-                      ? "Pay Now"
-                      : paymentMethod === "cash"
-                      ? "Create Cash Order"
-                      : "Submit Pay Later Request"
+                        ? "Pay Now"
+                        : paymentMethod === "cash"
+                          ? "Create Cash Order"
+                          : "Submit Pay Later Request"
                     }
                   </button>
                 </div>

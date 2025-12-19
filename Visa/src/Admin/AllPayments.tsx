@@ -91,7 +91,7 @@ const AllPayments: React.FC = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/payments/getAll');
+      const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/payments/getAll');
 
       if (!response.ok) {
         throw new Error(`Failed to fetch payments: ${response.statusText}`);

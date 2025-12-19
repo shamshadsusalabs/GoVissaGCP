@@ -1,22 +1,55 @@
-import React from 'react';
+import React from "react";
+import { FaQuoteLeft } from "react-icons/fa";
 
-const AtlysNews: React.FC = () => {
-  const emptyCards = new Array(5).fill(null); // Still rendering 5 empty cards
+const CustomerSuccess: React.FC = () => {
+  const reviews = [
+    {
+      name: "MK",
+      role: "Visaafy Customer",
+      review:
+        "Totally satisfied with the services. I have taken more than 10 packages — outstanding service ever. Good helpful staff, Swiss visa. Best visa assistance in Gurgaon.",
+    },
+    {
+      name: "Akshat Bajaj",
+      role: "Singapore Visa Customer",
+      review:
+        "Leveraged their services for a Singapore visa. Very prompt service and fast turnaround.",
+    },
+    {
+      name: "Govind Pandey",
+      role: "Schengen & Dubai Visa Customer",
+      review:
+        "The best company in Gurugram. I got my Schengen visa within 5 days & Dubai visa within 3 hours. Very fast service. Highly recommended. Thanks to Rajan Kehar Ji.",
+    },
+  ];
 
   return (
     <section className="bg-gray-50 py-20 px-6">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-5xl font-bold text-center text-gray-900 mb-16 tracking-tight">
-          Visaafy in the News
+
+        {/* Heading */}
+        <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16">
+          Customer Success Stories
         </h2>
 
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 justify-items-center">
-          {emptyCards.map((_, index) => (
+        {/* Cards */}
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3 justify-items-center">
+          {reviews.map((item, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 w-full max-w-[240px] p-6 text-center flex flex-col items-center"
+              className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 
+              p-8 max-w-[360px] border border-gray-100"
             >
-              {/* Empty card - content removed */}
+              <FaQuoteLeft className="text-indigo-500 text-3xl mb-4" />
+
+              <p className="text-gray-700 text-[15px] leading-relaxed mb-6">
+                “{item.review}”
+              </p>
+
+              <div>
+                <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                <p className="text-sm text-gray-500">{item.role}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -25,4 +58,4 @@ const AtlysNews: React.FC = () => {
   );
 };
 
-export default AtlysNews;
+export default CustomerSuccess;

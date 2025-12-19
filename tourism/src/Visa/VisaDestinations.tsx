@@ -60,7 +60,7 @@ const VisaDestinations: React.FC = () => {
   useEffect(() => {
     const fetchDestinations = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/configurations/getAll');
+        const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/configurations/getAll');
         if (!response.ok) throw new Error('Failed to fetch destinations');
 
         const result = await response.json();

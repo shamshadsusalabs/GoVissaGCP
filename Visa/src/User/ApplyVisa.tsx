@@ -77,7 +77,7 @@ export default function PaymentHistory() {
 
     try {
       setStatusLoading((prev) => ({ ...prev, [paymentIdentifier]: true }))
-      const response = await fetch(`http://localhost:5000/api/VisaApplication/getbyPaymentID/${paymentIdentifier}`)
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/getbyPaymentID/${paymentIdentifier}`)
 
       // Handle 404 as "no documents uploaded" instead of error
       if (response.status === 404) {
@@ -293,7 +293,7 @@ export default function PaymentHistory() {
         throw new Error("Phone number not found in user data")
       }
 
-      const response = await fetch(`http://localhost:5000/api/payments/by-phone/${phoneNumber}`)
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/payments/by-phone/${phoneNumber}`)
 
       if (!response.ok) {
         throw new Error("Failed to fetch payment history")
@@ -393,7 +393,7 @@ export default function PaymentHistory() {
                           href="mailto:contact@traveli.asia" 
                           className="text-blue-600 hover:text-blue-800 font-semibold text-xs sm:text-sm hover:underline transition-colors break-all"
                         >
-                          contact@traveli.asia
+                          contact@visaafy.com
                         </a>
                       </div>
                     </div>

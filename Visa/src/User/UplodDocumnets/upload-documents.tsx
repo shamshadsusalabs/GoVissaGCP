@@ -213,7 +213,7 @@ export default function UploadDocuments() {
       try {
         // 1) fetch documents config
         const response = await fetch(
-          `http://localhost:5000/api/configurations/documents/${visaId}/documents-only`,
+          `https://govisaa-872569311567.asia-south2.run.app/api/configurations/documents/${visaId}/documents-only`,
         )
         const data = await response.json()
 
@@ -235,7 +235,7 @@ export default function UploadDocuments() {
           if (paymentId) {
             try {
               const appRes = await fetch(
-                `http://localhost:5000/api/VisaApplication/by-payment/${paymentId}`,
+                `https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/by-payment/${paymentId}`,
               )
 
               if (appRes.ok) {
@@ -544,7 +544,7 @@ export default function UploadDocuments() {
 
       const token = localStorage.getItem("token")
 
-      const response = await fetch("http://localhost:5000/api/VisaApplication/apply-visa", {
+      const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/apply-visa", {
         method: "POST",
         headers: token
           ? {
@@ -657,7 +657,7 @@ export default function UploadDocuments() {
 
     const token = localStorage.getItem("token")
 
-    const response = await fetch("http://localhost:5000/api/VisaApplication/apply-visa", {
+    const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/apply-visa", {
       method: "POST",
       headers: token
         ? {

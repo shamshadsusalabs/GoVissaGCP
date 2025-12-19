@@ -30,7 +30,7 @@ export default function VisaStatusTracker() {
 
     const fetchStatus = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/VisaApplication/visa/status/${id}`)
+        const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/VisaApplication/visa/status/${id}`)
 
         if (!response.ok) {
           throw new Error("Failed to fetch visa status")

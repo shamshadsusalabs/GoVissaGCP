@@ -35,7 +35,7 @@ const CouponCode: React.FC = () => {
   const fetchPromoCodes = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/promocode/getAll');
+      const response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/promocode/getAll');
       if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
       setPromoCodes(data);
@@ -79,7 +79,7 @@ const CouponCode: React.FC = () => {
     if (!confirm('Are you sure you want to delete this promo code?')) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/promocode/${id}`, {
+      const response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/promocode/${id}`, {
         method: 'DELETE'
       });
       if (!response.ok) throw new Error('Failed to delete');
@@ -114,7 +114,7 @@ const CouponCode: React.FC = () => {
 
       let response;
       if (currentPromo) {
-        response = await fetch(`http://localhost:5000/api/promocode/${currentPromo._id}`, {
+        response = await fetch(`https://govisaa-872569311567.asia-south2.run.app/api/promocode/${currentPromo._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ const CouponCode: React.FC = () => {
           body: JSON.stringify(promoData)
         });
       } else {
-        response = await fetch('http://localhost:5000/api/promocode/add', {
+        response = await fetch('https://govisaa-872569311567.asia-south2.run.app/api/promocode/add', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

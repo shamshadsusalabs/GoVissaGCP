@@ -8,80 +8,44 @@ type FAQItem = {
 
 const faqs: FAQItem[] = [
   {
-    question: 'How long does it take to process my visa?',
-    answer: 'Visa processing times vary by country. On average, it takes 3–15 business days. Urgent applications can be processed faster on request.',
+    question: "How long does it take to get a visa through Visaafy?",
+    answer: "Visa processing time depends on the country, type of visa, and embassy. On average, it takes 5–15 business days for standard processing. Visaafy ensures timely updates and helps avoid delays by checking all documents before submission.",
   },
   {
-    question: 'What documents are required?',
-    answer: (
-      <>
-        We'll guide you based on your destination. Common documents include:
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li>Valid passport</li>
-          <li>Passport-size photo</li>
-          <li>Travel itinerary</li>
-          <li>Bank statement or sponsor details</li>
-        </ul>
-      </>
-    ),
+    question: "What are the most common reasons a visa gets rejected?",
+    answer: "Common visa rejection reasons include incomplete documentation, incorrect application details, insufficient financial proof, and lack of supporting letters. Visaafy guides applicants to submit complete and accurate documents, reducing the risk of rejection.",
   },
   {
-    question: 'Can I track my application?',
-    answer: 'Yes! You will receive a tracking link once your application is submitted.',
+    question: "Can Visaafy help with urgent visa applications?",
+    answer: "Yes! Visaafy offers fast-track visa services for urgent travel. They prioritize your application and ensure proper documentation to meet embassy timelines.",
   },
   {
-    question: 'Is my data safe?',
-    answer: 'Absolutely. We use SSL encryption and secure cloud hosting to ensure your information is 100% protected.',
+    question: "What documents do I need for a visa application?",
+    answer: "Typical documents include a passport valid for at least 6 months, visa application form, photographs, financial statements, travel itinerary, and invitation letters (if applicable). Visaafy provides a personalized document checklist to make the process hassle-free.",
   },
   {
-    question: 'What countries do you provide visas for?',
-    answer: (
-      <>
-        We support tourist, business, and student visas for over 40+ countries, including:
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li>UAE, Thailand, Singapore</li>
-          <li>Schengen countries (France, Germany, Italy, etc.)</li>
-          <li>UK, USA, Canada, Australia, and more</li>
-        </ul>
-      </>
-    ),
+    question: "How can I check the status of my visa application?",
+    answer: "After submission, Visaafy provides real-time tracking of your visa application. You’ll receive updates via email and portal, so you always know where your application stands.",
   },
   {
-    question: 'Will I get a refund if my visa application is rejected?',
-    answer: 'Visa processing fees are generally non-refundable, even if your application is rejected. However, we offer consultation services to help strengthen your reapplication and increase approval chances.',
+    question: "Does Visaafy handle rejected visas?",
+    answer: "Yes. If a visa is rejected, Visaafy offers expert guidance on re-application, including reviewing your documents, identifying errors, and improving your chances for approval.",
   },
   {
-    question: 'What can I do if my visa application is rejected?',
-    answer: (
-      <>
-        If your visa is rejected, here are your options:
-        <div className="mt-3 space-y-3">
-          <div>
-            <strong className="text-gray-800">1. Read the Rejection Letter Carefully</strong>
-            <p className="text-sm mt-1">Understand the exact reason(s) for rejection - they're usually listed clearly.</p>
-          </div>
-          <div>
-            <strong className="text-gray-800">2. Check If You Can Appeal</strong>
-            <p className="text-sm mt-1">Some countries allow appeals (e.g., Schengen visas). You may need to:</p>
-            <ul className="list-disc pl-5 mt-1 text-sm space-y-1">
-              <li>Write a formal appeal letter</li>
-              <li>Submit additional documents</li>
-              <li>Do this within 15–30 days (check your rejection letter)</li>
-            </ul>
-          </div>
-          <div>
-            <strong className="text-gray-800">3. If Appeal Isn't Available or Fails</strong>
-            <p className="text-sm mt-1">Prepare a stronger reapplication by:</p>
-            <ul className="list-disc pl-5 mt-1 text-sm space-y-1">
-              <li>Adding missing documents</li>
-              <li>Clarifying your travel purpose</li>
-              <li>Showing stronger ties to home country (job, family, assets)</li>
-              <li>Improving financial documentation</li>
-            </ul>
-          </div>
-        </div>
-      </>
-    ),
+    question: "Do I need travel insurance for my visa application?",
+    answer: "Many countries require travel insurance as part of the visa application. Visaafy can assist in arranging suitable travel insurance to meet visa requirements.",
+  },
+  {
+    question: "Can Visaafy help with multiple types of visas?",
+    answer: "Absolutely. Visaafy specializes in tourist, business, and visitor visas across multiple countries, ensuring applicants get accurate guidance for every type.",
+  },
+  {
+    question: "Is Visaafy reliable for first-time visa applicants?",
+    answer: "Yes. Visaafy’s team guides first-time applicants step by step, providing clear instructions, document checks, and free interview preparation to avoid mistakes that often lead to rejection.",
+  },
+  {
+    question: "How much does it cost to apply for a visa through Visaafy?",
+    answer: "Visaafy charges transparent service fees, depending on the visa type and processing speed. There are no hidden charges, and applicants receive a detailed fee breakdown before starting the application. Charges may be subject to change as per embassy fluctuating charges.",
   },
 ];
 
@@ -96,8 +60,9 @@ const FAQ: React.FC = () => {
     <section className="bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-8">
-          Frequently Asked Questions
+          People Also Ask – FAQ’s
         </h2>
+
         <div className="space-y-4">
           {faqs.map((faq, index) => (
             <div
@@ -115,6 +80,7 @@ const FAQ: React.FC = () => {
                   <FaChevronDown className="text-gray-500 ml-2" />
                 )}
               </button>
+
               {activeIndex === index && (
                 <div className="mt-3 text-gray-600 text-base leading-relaxed">
                   {faq.answer}

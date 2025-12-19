@@ -4,15 +4,15 @@ const { generateAccessToken, generateRefreshToken } = require("../Util/tokenUtil
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const nodemailer = require('nodemailer');
 
-const otpStore = {}; 
+const otpStore = {};
 const emailOtpStore = {}; // New store for email OTPs
 
 // Email transporter configuration
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER || 'shamshadalamansari2@gmail.com',
-    pass: process.env.EMAIL_PASS || 'sasq osvs irwt jtvg' // Use app password for Gmail
+    user: process.env.EMAIL_USER || 'no-reply@visaafy.com',
+    pass: process.env.EMAIL_PASS || 'ebez uzgw yixj bntd' // Use app password for Gmail
   },
   tls: {
     rejectUnauthorized: false
@@ -58,8 +58,8 @@ exports.sendOtp = async (req, res) => {
       });
     } else {
       console.error("❌ SMS API Error Response:", result);
-      return res.status(400).json({ 
-        message: "Failed to send OTP", 
+      return res.status(400).json({
+        message: "Failed to send OTP",
         error: result.response || "Unknown error",
         responseCode: result.responseCode
       });
@@ -309,9 +309,9 @@ exports.registerEmailForUser = async (req, res) => {
     });
   } catch (error) {
     console.error("🔥 Email registration error:", error);
-    return res.status(500).json({ 
-      message: "Server error", 
-      error: error.message 
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message
     });
   }
 };
@@ -348,9 +348,9 @@ exports.loginOrSignupWithEmail = async (req, res) => {
   } catch (error) {
     console.error("🔥 Email Login/Signup error:", error);
     console.error("Error details:", error.message);
-    return res.status(500).json({ 
-      message: "Server error", 
-      error: error.message 
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message
     });
   }
 };
@@ -412,11 +412,11 @@ exports.getAllUsersWithStats = async (req, res) => {
           const paymentOrders = await Payment.find(paymentQuery).lean();
 
           // Calculate statistics
-          const onlinePayments = visaApplications.filter(app => 
+          const onlinePayments = visaApplications.filter(app =>
             app.processingMode === 'online' && app.paymentId && app.paymentId !== 'undefined'
           ).length;
 
-          const offlinePayments = visaApplications.filter(app => 
+          const offlinePayments = visaApplications.filter(app =>
             app.processingMode === 'offline' || !app.paymentId || app.paymentId === 'undefined'
           ).length;
 
@@ -467,9 +467,9 @@ exports.getAllUsersWithStats = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Error fetching users with statistics:", error);
-    return res.status(500).json({ 
-      message: "Server error", 
-      error: error.message 
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message
     });
   }
 };
@@ -490,7 +490,7 @@ exports.sendSuccessEmail = async (req, res) => {
     let paymentMessage = '';
     let paymentColor = '#22c55e';
     let paymentIcon = '✅';
-    
+
     if (paymentStatus === 'online') {
       paymentMessage = `
         <div style="background-color: #dcfce7; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #22c55e;">
