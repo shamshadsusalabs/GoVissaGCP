@@ -1,8 +1,9 @@
 fastapi
 uvicorn[standard]
-easyocr
+paddleocr
+paddlepaddle
 opencv-python-headless
-numpy
+numpy<2
 Pillow
 PyMuPDF
 python-multipart

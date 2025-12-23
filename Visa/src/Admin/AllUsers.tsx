@@ -50,7 +50,13 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
   if (!isOpen || !user) return null
 
   const formatDate = (dateString: string | number) => {
-    const date = typeof dateString === 'number' ? new Date(dateString * 1000) : new Date(dateString)
+    let date: Date
+    if (typeof dateString === 'number') {
+      // If timestamp is less than 10000000000, it's in seconds, otherwise milliseconds
+      date = dateString < 10000000000 ? new Date(dateString * 1000) : new Date(dateString)
+    } else {
+      date = new Date(dateString)
+    }
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -165,11 +171,10 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                           {visa.paymentId && visa.paymentId !== 'undefined' ? visa.paymentId.substring(0, 12) + '...' : 'offline'}
                         </td>
                         <td className="px-4 py-2">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            visa.processingMode === 'online' 
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${visa.processingMode === 'online'
+                              ? 'bg-green-100 text-green-800'
                               : 'bg-orange-100 text-orange-800'
-                          }`}>
+                            }`}>
                             {visa.processingMode}
                           </span>
                         </td>
@@ -208,24 +213,22 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ user, isOpen, onClo
                         <td className="px-4 py-2 text-xs font-mono">{payment.orderId.substring(0, 12)}...</td>
                         <td className="px-4 py-2 text-sm font-bold text-green-600">{formatAmount(payment.amount)}</td>
                         <td className="px-4 py-2">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            payment.status === 'paid' 
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${payment.status === 'paid'
+                              ? 'bg-green-100 text-green-800'
                               : payment.status === 'created'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
                             {payment.status}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-sm">{payment.country}</td>
                         <td className="px-4 py-2 text-sm capitalize">{payment.paymentType}</td>
                         <td className="px-4 py-2">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            payment.isPaymentVerified 
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${payment.isPaymentVerified
+                              ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
-                          }`}>
+                            }`}>
                             {payment.isPaymentVerified ? 'Yes' : 'No'}
                           </span>
                         </td>
@@ -283,7 +286,7 @@ const AllUsers: React.FC = () => {
     try {
       setLoading(true)
       const response = await fetch("https://govisaa-872569311567.asia-south2.run.app/api/user/all-users-with-stats")
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch users")
       }
@@ -562,11 +565,10 @@ const AllUsers: React.FC = () => {
               <button
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
-                  currentPage === i + 1
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${currentPage === i + 1
                     ? "bg-blue-600 text-white shadow-sm"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {i + 1}
               </button>
